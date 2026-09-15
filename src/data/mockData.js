@@ -100,7 +100,10 @@ const reservas = [
     estado: "Confirmada",
     fechaIngreso: "2026-06-10",
     fechaEgreso: "2026-06-15",
-    montoEstimado: 225000
+    cantidadHuespedes: 2,
+    montoEstimado: 225000,
+    idExterno: "AIR-100001",
+    estadoSincronizacion: "Sincronizada",
   },
   {
     idReserva: 2,
@@ -110,7 +113,10 @@ const reservas = [
     estado: "Confirmada",
     fechaIngreso: "2026-06-12",
     fechaEgreso: "2026-06-18",
-    montoEstimado: 480000
+    cantidadHuespedes: 4,
+    montoEstimado: 480000,
+    idExterno: "BKG-200001",
+    estadoSincronizacion: "Sincronizada",
   },
   {
     idReserva: 3,
@@ -120,8 +126,11 @@ const reservas = [
     estado: "Pendiente",
     fechaIngreso: "2026-06-20",
     fechaEgreso: "2026-06-22",
-    montoEstimado: 90000
-  }
+    cantidadHuespedes: 2,
+    montoEstimado: 90000,
+    idExterno: null,
+    estadoSincronizacion: "Solo HostFlow",
+  },
 ];
 
 const alertas = [

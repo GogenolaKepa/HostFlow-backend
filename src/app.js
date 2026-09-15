@@ -6,11 +6,13 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const reservaRoutes = require("./routes/reservaRoutes");
 const propiedadRoutes = require("./routes/propiedadRoutes");
 const huespedRoutes = require("./routes/huespedRoutes");
+const bookingInboundRoutes = require("./routes/bookingInboundRoutes");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 
 app.get("/", (req, res) => {
   res.json({
@@ -23,5 +25,10 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reservas", reservaRoutes);
 app.use("/api/propiedades", propiedadRoutes);
 app.use("/api/huespedes", huespedRoutes);
+
+app.use(
+  "/api/integraciones/booking",
+  bookingInboundRoutes
+);
 
 module.exports = app;
