@@ -5,43 +5,49 @@ class ReservaController {
   // CONSULTAS
   // =========================================================
 
-  obtenerReservas(req, res) {
-    try {
-      const reservas =
-        ReservaService.obtenerReservas();
+  async obtenerReservas(req, res) {
+  try {
+    const reservas =
+      await ReservaService.obtenerReservas();
 
-      return res.status(200).json({
-        mensaje:
-          "Reservas obtenidas correctamente.",
-        reservas,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        mensaje:
-          "Error al obtener las reservas.",
-        error: error.message,
-      });
-    }
+    return res.status(200).json({
+      reservas,
+    });
+  } catch (error) {
+    console.error(
+      "Error al obtener reservas:",
+      error
+    );
+
+    return res.status(500).json({
+      mensaje:
+        "No se pudieron obtener las reservas.",
+      error: error.message,
+    });
   }
+}
 
-  obtenerReservaPorId(req, res) {
-    try {
-      const { id } = req.params;
+  async obtenerReservaPorId(req, res) {
+  try {
+    const { id } = req.params;
 
-      const reserva =
-        ReservaService.obtenerReservaPorId(id);
+    const reserva =
+      await ReservaService.obtenerReservaPorId(id);
 
-      return res.status(200).json({
-        mensaje:
-          "Reserva obtenida correctamente.",
-        reserva,
-      });
-    } catch (error) {
-      return res.status(404).json({
-        mensaje: error.message,
-      });
-    }
+    return res.status(200).json({
+      reserva,
+    });
+  } catch (error) {
+    console.error(
+      "Error al obtener reserva:",
+      error
+    );
+
+    return res.status(404).json({
+      mensaje: error.message,
+    });
   }
+}
 
   // =========================================================
   // RESERVAS MANUALES

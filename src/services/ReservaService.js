@@ -8,25 +8,156 @@ const ChannelService = require("./ChannelService");
 const AirbnbChannelService = require("./AirbnbChannelService");
 const BookingChannelService = require("./BookingChannelService");
 const BookingInboundService = require("./BookingInboundService");
+const AirbnbInboundService = require("./AirbnbInboundService");
+const ReservaRepository = require("../repositories/ReservaRepository");
 
 class ReservaService {
-  obtenerReservas() {
-    return reservas.map((reserva) =>
-      this.formatearReserva(reserva)
-    );
-  }
+  async obtenerReservas() {
+  const reservasDb =
+    await ReservaRepository.obtenerTodas();
 
-  obtenerReservaPorId(idReserva) {
-    const reserva = reservas.find(
-      (r) => r.idReserva === Number(idReserva)
-    );
+  return reservasDb.map(
+    (reserva) => {
+      const solicitudAirbnbPendiente =
+        reserva.canal === "Airbnb"
+          ? AirbnbChannelService.obtenerSolicitudPendientePorReserva(
+              reserva.idReserva
+            )
+          : null;
 
-    if (!reserva) {
-      throw new Error("La reserva no existe.");
+      const operacionBookingPendiente =
+        reserva.canal === "Booking"
+          ? BookingChannelService.obtenerOperacionPendientePorReserva(
+              reserva.idReserva
+            )
+          : null;
+
+      return {
+        ...reserva,
+
+        tipoGestion:
+          ChannelService.obtenerTipoGestion(
+            reserva.canal
+          ),
+
+        accionesDisponibles:
+          ChannelService.obtenerAccionesDisponibles(
+            reserva
+          ),
+
+        solicitudAirbnbPendiente:
+          solicitudAirbnbPendiente
+            ? {
+                idSolicitud:
+                  solicitudAirbnbPendiente.idSolicitud,
+                estado:
+                  solicitudAirbnbPendiente.estado,
+                fechaSolicitud:
+                  solicitudAirbnbPendiente.fechaSolicitud,
+                cambiosSolicitados:
+                  solicitudAirbnbPendiente.cambiosSolicitados,
+              }
+            : null,
+
+        operacionBookingPendiente:
+          operacionBookingPendiente
+            ? {
+                idOperacion:
+                  operacionBookingPendiente.idOperacion,
+                tipo:
+                  operacionBookingPendiente.tipo,
+                estado:
+                  operacionBookingPendiente.estado,
+                fechaOperacion:
+                  operacionBookingPendiente.fechaOperacion,
+                cambiosSolicitados:
+                  operacionBookingPendiente.cambiosSolicitados ||
+                  null,
+              }
+            : null,
+      };
     }
+  );
+}
 
-    return this.formatearReserva(reserva);
+  async obtenerReservaPorId(idReserva) {
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      idReserva
+    );
+
+  if (!reserva) {
+    throw new Error(
+      "La reserva no existe."
+    );
   }
+
+  const solicitudAirbnbPendiente =
+    reserva.canal === "Airbnb"
+      ? AirbnbChannelService.obtenerSolicitudPendientePorReserva(
+          reserva.idReserva
+        )
+      : null;
+
+  const operacionBookingPendiente =
+    reserva.canal === "Booking"
+      ? BookingChannelService.obtenerOperacionPendientePorReserva(
+          reserva.idReserva
+        )
+      : null;
+
+  return {
+    ...reserva,
+
+    tipoGestion:
+      ChannelService.obtenerTipoGestion(
+        reserva.canal
+      ),
+
+    accionesDisponibles:
+      ChannelService.obtenerAccionesDisponibles(
+        reserva
+      ),
+
+    solicitudAirbnbPendiente:
+      solicitudAirbnbPendiente
+        ? {
+            idSolicitud:
+              solicitudAirbnbPendiente.idSolicitud,
+
+            estado:
+              solicitudAirbnbPendiente.estado,
+
+            fechaSolicitud:
+              solicitudAirbnbPendiente.fechaSolicitud,
+
+            cambiosSolicitados:
+              solicitudAirbnbPendiente.cambiosSolicitados,
+          }
+        : null,
+
+    operacionBookingPendiente:
+      operacionBookingPendiente
+        ? {
+            idOperacion:
+              operacionBookingPendiente.idOperacion,
+
+            tipo:
+              operacionBookingPendiente.tipo,
+
+            estado:
+              operacionBookingPendiente.estado,
+
+            fechaOperacion:
+              operacionBookingPendiente.fechaOperacion,
+
+            cambiosSolicitados:
+              operacionBookingPendiente.cambiosSolicitados ||
+              null,
+          }
+        : null,
+  };
+}
 
   // =========================================================
   // RESERVAS MANUALES
@@ -1166,6 +1297,435 @@ procesarCancelacionReservaBooking(
     BookingInboundService.marcarEventoProcesado(
       evento.idEvento
     );
+
+  return {
+    evento:
+      eventoProcesado,
+
+    reserva:
+      this.formatearReserva(
+        reserva
+      ),
+
+    conflictoDetectado: false,
+    advertencia: null,
+  };
+}
+
+// =========================================================
+// AIRBNB - EVENTOS ENTRANTES
+// =========================================================
+
+procesarEventoAirbnb(idEvento) {
+  const evento =
+    AirbnbInboundService.obtenerEventoPorId(
+      idEvento
+    );
+
+  /*
+   * Si exactamente el mismo evento ya fue
+   * procesado, no repetimos la operación.
+   */
+  if (evento.estado === "Procesado") {
+    const reservaExistente =
+      reservas.find(
+        (r) =>
+          r.canal === "Airbnb" &&
+          r.idExterno ===
+            evento.idExterno
+      );
+
+    return {
+      evento,
+
+      reserva:
+        reservaExistente
+          ? this.formatearReserva(
+              reservaExistente
+            )
+          : null,
+
+      reprocesado: true,
+
+      conflictoDetectado: false,
+
+      advertencia:
+        "El evento de Airbnb ya había sido procesado anteriormente.",
+    };
+  }
+
+  switch (evento.tipo) {
+    case "NUEVA_RESERVA":
+      return this.procesarNuevaReservaAirbnb(
+        evento
+      );
+
+    case "RESERVA_MODIFICADA":
+      return this.procesarModificacionReservaAirbnb(
+        evento
+      );
+
+    case "RESERVA_CANCELADA":
+      return this.procesarCancelacionReservaAirbnb(
+        evento
+      );
+
+    default:
+      throw new Error(
+        "El tipo de evento recibido desde Airbnb no es válido."
+      );
+  }
+}
+
+procesarNuevaReservaAirbnb(evento) {
+  /*
+   * Usamos el identificador externo de Airbnb
+   * para evitar reservas duplicadas.
+   */
+  const reservaExistente =
+    reservas.find(
+      (r) =>
+        r.canal === "Airbnb" &&
+        r.idExterno ===
+          evento.idExterno
+    );
+
+  if (reservaExistente) {
+    const eventoProcesado =
+      AirbnbInboundService
+        .marcarEventoProcesado(
+          evento.idEvento
+        );
+
+    return {
+      evento:
+        eventoProcesado,
+
+      reserva:
+        this.formatearReserva(
+          reservaExistente
+        ),
+
+      duplicada: true,
+
+      conflictoDetectado: false,
+
+      advertencia:
+        "La reserva Airbnb ya existía en HostFlow. No se creó un duplicado.",
+    };
+  }
+
+  const datos =
+    evento.datos;
+
+  const propiedad =
+    propiedades.find(
+      (p) =>
+        p.idPropiedad ===
+        Number(datos.idPropiedad)
+    );
+
+  if (!propiedad) {
+    throw new Error(
+      "La propiedad asociada a la reserva de Airbnb no existe en HostFlow."
+    );
+  }
+
+  if (
+    !datos.fechaIngreso ||
+    !datos.fechaEgreso
+  ) {
+    throw new Error(
+      "Airbnb no proporcionó las fechas necesarias para procesar la reserva."
+    );
+  }
+
+  if (
+    new Date(datos.fechaEgreso) <=
+    new Date(datos.fechaIngreso)
+  ) {
+    throw new Error(
+      "Airbnb envió un rango de fechas inválido."
+    );
+  }
+
+  if (
+    Number(datos.cantidadHuespedes) >
+    propiedad.capacidadMaxima
+  ) {
+    throw new Error(
+      "La reserva recibida de Airbnb supera la capacidad máxima registrada para la propiedad."
+    );
+  }
+
+  /*
+   * En este mock buscamos al huésped por
+   * nombre y apellido.
+   */
+  let huesped =
+    huespedes.find(
+      (h) =>
+        h.nombre ===
+          datos.nombreHuesped &&
+        h.apellido ===
+          datos.apellidoHuesped
+    );
+
+  if (!huesped) {
+    const nuevoId =
+      huespedes.length > 0
+        ? Math.max(
+            ...huespedes.map(
+              (h) => h.idHuesped
+            )
+          ) + 1
+        : 1;
+
+    huesped = {
+      idHuesped:
+        nuevoId,
+
+      nombre:
+        datos.nombreHuesped ||
+        "Huésped",
+
+      apellido:
+        datos.apellidoHuesped ||
+        "Airbnb",
+
+      email: null,
+      telefono: null,
+    };
+
+    huespedes.push(
+      huesped
+    );
+  }
+
+  /*
+   * Airbnb es la fuente de verdad de esta
+   * reserva externa.
+   *
+   * Si hay superposición, HostFlow la registra
+   * igualmente y genera una advertencia.
+   */
+  const conflictoDetectado =
+    this.validarConflictoFechas(
+      propiedad.idPropiedad,
+      datos.fechaIngreso,
+      datos.fechaEgreso
+    );
+
+  const nuevaReserva = {
+    idReserva:
+      reservas.length > 0
+        ? Math.max(
+            ...reservas.map(
+              (r) => r.idReserva
+            )
+          ) + 1
+        : 1,
+
+    propiedad,
+    huesped,
+
+    canal:
+      "Airbnb",
+
+    estado:
+      datos.estadoReserva ||
+      "Confirmada",
+
+    fechaIngreso:
+      datos.fechaIngreso,
+
+    fechaEgreso:
+      datos.fechaEgreso,
+
+    cantidadHuespedes:
+      Number(
+        datos.cantidadHuespedes
+      ) || 1,
+
+    montoEstimado:
+      Number(
+        datos.montoEstimado
+      ) || 0,
+
+    idExterno:
+      evento.idExterno,
+
+    estadoSincronizacion:
+      "Sincronizada",
+  };
+
+  reservas.push(
+    nuevaReserva
+  );
+
+  const eventoProcesado =
+    AirbnbInboundService
+      .marcarEventoProcesado(
+        evento.idEvento
+      );
+
+  return {
+    evento:
+      eventoProcesado,
+
+    reserva:
+      this.formatearReserva(
+        nuevaReserva
+      ),
+
+    duplicada: false,
+
+    conflictoDetectado,
+
+    advertencia:
+      conflictoDetectado
+        ? "La reserva fue recibida desde Airbnb, pero genera un conflicto con otra reserva existente en HostFlow."
+        : null,
+  };
+}
+
+procesarModificacionReservaAirbnb(
+  evento
+) {
+  const reserva =
+    reservas.find(
+      (r) =>
+        r.canal === "Airbnb" &&
+        r.idExterno ===
+          evento.idExterno
+    );
+
+  if (!reserva) {
+    throw new Error(
+      "No existe en HostFlow una reserva Airbnb con el identificador externo recibido."
+    );
+  }
+
+  const datos =
+    evento.datos;
+
+  const nuevaFechaIngreso =
+    datos.fechaIngreso ||
+    reserva.fechaIngreso;
+
+  const nuevaFechaEgreso =
+    datos.fechaEgreso ||
+    reserva.fechaEgreso;
+
+  if (
+    new Date(nuevaFechaEgreso) <=
+    new Date(nuevaFechaIngreso)
+  ) {
+    throw new Error(
+      "Airbnb envió una modificación con fechas inválidas."
+    );
+  }
+
+  const conflictoDetectado =
+    this.validarConflictoFechas(
+      reserva.propiedad.idPropiedad,
+      nuevaFechaIngreso,
+      nuevaFechaEgreso,
+      reserva.idReserva
+    );
+
+  /*
+   * Airbnb ya modificó la reserva.
+   * HostFlow sincroniza su copia.
+   */
+  reserva.fechaIngreso =
+    nuevaFechaIngreso;
+
+  reserva.fechaEgreso =
+    nuevaFechaEgreso;
+
+  if (
+    datos.cantidadHuespedes !==
+    undefined
+  ) {
+    reserva.cantidadHuespedes =
+      Number(
+        datos.cantidadHuespedes
+      );
+  }
+
+  if (
+    datos.montoEstimado !==
+    undefined
+  ) {
+    reserva.montoEstimado =
+      Number(
+        datos.montoEstimado
+      );
+  }
+
+  if (
+    datos.estadoReserva
+  ) {
+    reserva.estado =
+      datos.estadoReserva;
+  }
+
+  reserva.estadoSincronizacion =
+    "Sincronizada";
+
+  const eventoProcesado =
+    AirbnbInboundService
+      .marcarEventoProcesado(
+        evento.idEvento
+      );
+
+  return {
+    evento:
+      eventoProcesado,
+
+    reserva:
+      this.formatearReserva(
+        reserva
+      ),
+
+    conflictoDetectado,
+
+    advertencia:
+      conflictoDetectado
+        ? "Airbnb modificó la reserva, pero los nuevos datos generan un conflicto con otra reserva en HostFlow."
+        : null,
+  };
+}
+
+procesarCancelacionReservaAirbnb(
+  evento
+) {
+  const reserva =
+    reservas.find(
+      (r) =>
+        r.canal === "Airbnb" &&
+        r.idExterno ===
+          evento.idExterno
+    );
+
+  if (!reserva) {
+    throw new Error(
+      "No existe en HostFlow una reserva Airbnb con el identificador externo recibido."
+    );
+  }
+
+  reserva.estado =
+    "Cancelada";
+
+  reserva.estadoSincronizacion =
+    "Sincronizada";
+
+  const eventoProcesado =
+    AirbnbInboundService
+      .marcarEventoProcesado(
+        evento.idEvento
+      );
 
   return {
     evento:

@@ -7,6 +7,7 @@ const reservaRoutes = require("./routes/reservaRoutes");
 const propiedadRoutes = require("./routes/propiedadRoutes");
 const huespedRoutes = require("./routes/huespedRoutes");
 const bookingInboundRoutes = require("./routes/bookingInboundRoutes");
+const airbnbInboundRoutes = require("./routes/airbnbInboundRoutes");
 
 const app = express();
 
@@ -29,6 +30,10 @@ app.use("/api/huespedes", huespedRoutes);
 app.use(
   "/api/integraciones/booking",
   bookingInboundRoutes
+);
+app.use(
+  "/api/integraciones/airbnb",
+  airbnbInboundRoutes
 );
 
 module.exports = app;
