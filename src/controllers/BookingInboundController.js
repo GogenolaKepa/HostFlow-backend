@@ -98,26 +98,34 @@ class BookingInboundController {
   // PROCESAR EVENTO EN HOSTFLOW
   // =========================================================
 
-  procesarEvento(req, res) {
-    try {
-      const { idEvento } = req.params;
+ async procesarEvento(
+  req,
+  res
+) {
+  try {
+    const { idEvento } =
+      req.params;
 
-      const resultado =
-        ReservaService.procesarEventoBooking(
+    const resultado =
+      await ReservaService
+        .procesarEventoBooking(
           idEvento
         );
 
-      return res.status(200).json({
-        mensaje:
-          "El evento de Booking fue procesado correctamente por HostFlow.",
-        ...resultado,
-      });
-    } catch (error) {
-      return res.status(400).json({
-        mensaje: error.message,
-      });
-    }
+    return res.status(200).json(
+      resultado
+    );
+  } catch (error) {
+    console.error(
+      "Error al procesar evento Booking:",
+      error
+    );
+
+    return res.status(400).json({
+      mensaje: error.message,
+    });
   }
+}
 }
 
 module.exports =

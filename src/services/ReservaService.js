@@ -163,311 +163,494 @@ class ReservaService {
   // RESERVAS MANUALES
   // =========================================================
 
-  crearReserva(datos) {
-    const {
+  async crearReserva(datos) {
+  const {
+    idPropiedad,
+    idHuesped,
+    fechaIngreso,
+    fechaEgreso,
+    cantidadHuespedes,
+    montoEstimado,
+  } = datos;
+
+  // =========================================================
+  // DATOS OBLIGATORIOS
+  // =========================================================
+
+  if (
+    !idPropiedad ||
+    !idHuesped ||
+    !fechaIngreso ||
+    !fechaEgreso
+  ) {
+    throw new Error(
+      "Faltan datos obligatorios para registrar la reserva."
+    );
+  }
+
+  // =========================================================
+  // VALIDACIÓN DE FECHAS
+  // =========================================================
+
+  if (
+    new Date(fechaEgreso) <=
+    new Date(fechaIngreso)
+  ) {
+    throw new Error(
+      "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  // =========================================================
+  // PROPIEDAD
+  // =========================================================
+
+  const propiedad =
+    await ReservaRepository.obtenerPropiedadPorId(
+      idPropiedad
+    );
+
+  if (!propiedad) {
+    throw new Error(
+      "La propiedad seleccionada no existe."
+    );
+  }
+
+  if (propiedad.estado !== "Activa") {
+    throw new Error(
+      "La propiedad no se encuentra disponible para recibir reservas."
+    );
+  }
+
+  // =========================================================
+  // HUÉSPED
+  // =========================================================
+
+  const huesped =
+    await ReservaRepository.obtenerHuespedPorId(
+      idHuesped
+    );
+
+  if (!huesped) {
+    throw new Error(
+      "El huésped seleccionado no existe."
+    );
+  }
+
+  // =========================================================
+  // CAPACIDAD
+  // =========================================================
+
+  const cantidad =
+    Number(cantidadHuespedes) || 1;
+
+  if (
+    cantidad >
+    propiedad.capacidadMaxima
+  ) {
+    throw new Error(
+      "La cantidad de huéspedes supera la capacidad máxima de la propiedad."
+    );
+  }
+
+  // =========================================================
+  // DISPONIBILIDAD
+  // =========================================================
+
+  const existeConflicto =
+    await ReservaRepository.existeConflictoFechas(
+      idPropiedad,
+      fechaIngreso,
+      fechaEgreso
+    );
+
+  if (existeConflicto) {
+    throw new Error(
+      "La propiedad ya posee una reserva en ese rango de fechas."
+    );
+  }
+
+  // =========================================================
+  // CREAR RESERVA EN AZURE SQL
+  // =========================================================
+
+  const reservaCreada =
+    await ReservaRepository.crearReservaManual({
       idPropiedad,
       idHuesped,
       fechaIngreso,
       fechaEgreso,
-      cantidadHuespedes,
-      montoEstimado,
-    } = datos;
-
-    if (
-      !idPropiedad ||
-      !idHuesped ||
-      !fechaIngreso ||
-      !fechaEgreso
-    ) {
-      throw new Error(
-        "Faltan datos obligatorios para registrar la reserva."
-      );
-    }
-
-    if (
-      new Date(fechaEgreso) <=
-      new Date(fechaIngreso)
-    ) {
-      throw new Error(
-        "La fecha de egreso debe ser posterior a la fecha de ingreso."
-      );
-    }
-
-    const propiedad = propiedades.find(
-      (p) =>
-        p.idPropiedad === Number(idPropiedad)
-    );
-
-    if (!propiedad) {
-      throw new Error(
-        "La propiedad seleccionada no existe."
-      );
-    }
-
-    if (propiedad.estado !== "Activa") {
-      throw new Error(
-        "La propiedad no se encuentra disponible para recibir reservas."
-      );
-    }
-
-    const huesped = huespedes.find(
-      (h) =>
-        h.idHuesped === Number(idHuesped)
-    );
-
-    if (!huesped) {
-      throw new Error(
-        "El huésped seleccionado no existe."
-      );
-    }
-
-    if (
-      cantidadHuespedes &&
-      cantidadHuespedes >
-        propiedad.capacidadMaxima
-    ) {
-      throw new Error(
-        "La cantidad de huéspedes supera la capacidad máxima de la propiedad."
-      );
-    }
-
-    const existeConflicto =
-      this.validarConflictoFechas(
-        Number(idPropiedad),
-        fechaIngreso,
-        fechaEgreso
-      );
-
-    if (existeConflicto) {
-      throw new Error(
-        "La propiedad ya posee una reserva en ese rango de fechas."
-      );
-    }
-
-    const nuevaReserva = {
-      idReserva: reservas.length + 1,
-
-      propiedad,
-      huesped,
-
-      // Una reserva creada desde HostFlow
-      // siempre es una reserva interna/manual.
-      canal: "Manual",
-
-      estado: "Confirmada",
-
-      fechaIngreso,
-      fechaEgreso,
-
-      cantidadHuespedes:
-        Number(cantidadHuespedes) || 1,
-
+      cantidadHuespedes: cantidad,
       montoEstimado:
-        Number(montoEstimado) ||
-        propiedad.precioBase,
+        montoEstimado !== undefined &&
+        montoEstimado !== null &&
+        montoEstimado !== ""
+          ? Number(montoEstimado)
+          : 0,
+    });
 
-      idExterno: null,
+  /*
+   * Volvemos a obtenerla mediante el Service
+   * para agregar tipoGestion, acciones disponibles,
+   * operaciones de canal, etc.
+   */
+  return await this.obtenerReservaPorId(
+    reservaCreada.idReserva
+  );
+}
 
-      estadoSincronizacion:
-        "Solo HostFlow",
-    };
+  async modificarReserva(idReserva, datos) {
+  // =========================================================
+  // OBTENER RESERVA DESDE AZURE SQL
+  // =========================================================
 
-    reservas.push(nuevaReserva);
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      idReserva
+    );
 
-    return this.formatearReserva(
-      nuevaReserva
+  if (!reserva) {
+    throw new Error(
+      "La reserva no existe."
     );
   }
 
-  modificarReserva(idReserva, datos) {
-    const reserva = reservas.find(
-      (r) => r.idReserva === Number(idReserva)
+  // =========================================================
+  // SOLO LAS RESERVAS MANUALES SE EDITAN DIRECTAMENTE
+  // =========================================================
+
+  if (
+    !ChannelService.permiteEdicionDirecta(
+      reserva.canal
+    )
+  ) {
+    throw new Error(
+      `Las reservas provenientes de ${reserva.canal} no pueden modificarse directamente desde HostFlow.`
     );
-
-    if (!reserva) {
-      throw new Error(
-        "La reserva no existe."
-      );
-    }
-
-    if (
-      !ChannelService.permiteEdicionDirecta(
-        reserva.canal
-      )
-    ) {
-      throw new Error(
-        `Las reservas provenientes de ${reserva.canal} no pueden modificarse directamente desde HostFlow.`
-      );
-    }
-
-    if (
-      reserva.estado === "Cancelada" ||
-      reserva.estado === "Finalizada"
-    ) {
-      throw new Error(
-        "La reserva ya no admite modificaciones."
-      );
-    }
-
-    const nuevaFechaIngreso =
-      datos.fechaIngreso ||
-      reserva.fechaIngreso;
-
-    const nuevaFechaEgreso =
-      datos.fechaEgreso ||
-      reserva.fechaEgreso;
-
-    if (
-      new Date(nuevaFechaEgreso) <=
-      new Date(nuevaFechaIngreso)
-    ) {
-      throw new Error(
-        "La fecha de egreso debe ser posterior a la fecha de ingreso."
-      );
-    }
-
-    const existeConflicto =
-      this.validarConflictoFechas(
-        reserva.propiedad.idPropiedad,
-        nuevaFechaIngreso,
-        nuevaFechaEgreso,
-        reserva.idReserva
-      );
-
-    if (existeConflicto) {
-      throw new Error(
-        "La modificación genera un conflicto de fechas."
-      );
-    }
-
-    reserva.fechaIngreso =
-      nuevaFechaIngreso;
-
-    reserva.fechaEgreso =
-      nuevaFechaEgreso;
-
-    if (datos.estado) {
-      reserva.estado = datos.estado;
-    }
-
-    if (
-      datos.montoEstimado !== undefined
-    ) {
-      reserva.montoEstimado = Number(
-        datos.montoEstimado
-      );
-    }
-
-    return this.formatearReserva(reserva);
   }
 
-  cancelarReserva(idReserva) {
-    const reserva = reservas.find(
-      (r) => r.idReserva === Number(idReserva)
+  if (
+    reserva.estado === "Cancelada" ||
+    reserva.estado === "Finalizada"
+  ) {
+    throw new Error(
+      "La reserva ya no admite modificaciones."
+    );
+  }
+
+  // =========================================================
+  // NUEVOS DATOS
+  // =========================================================
+
+  const nuevaFechaIngreso =
+    datos.fechaIngreso ||
+    reserva.fechaIngreso;
+
+  const nuevaFechaEgreso =
+    datos.fechaEgreso ||
+    reserva.fechaEgreso;
+
+  const nuevoEstado =
+    datos.estado ||
+    reserva.estado;
+
+  const nuevoMonto =
+    datos.montoEstimado !== undefined &&
+    datos.montoEstimado !== null &&
+    datos.montoEstimado !== ""
+      ? Number(datos.montoEstimado)
+      : Number(reserva.montoEstimado);
+
+  // =========================================================
+  // VALIDACIONES
+  // =========================================================
+
+  if (
+    new Date(nuevaFechaEgreso) <=
+    new Date(nuevaFechaIngreso)
+  ) {
+    throw new Error(
+      "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    Number.isNaN(nuevoMonto) ||
+    nuevoMonto < 0
+  ) {
+    throw new Error(
+      "El monto estimado no es válido."
+    );
+  }
+
+  // =========================================================
+  // CONFLICTO DE FECHAS EN AZURE SQL
+  // =========================================================
+
+  const existeConflicto =
+    await ReservaRepository.existeConflictoFechas(
+      reserva.idPropiedad,
+      nuevaFechaIngreso,
+      nuevaFechaEgreso,
+      reserva.idReserva
     );
 
-    if (!reserva) {
-      throw new Error(
-        "La reserva no existe."
-      );
-    }
-
-    if (
-      !ChannelService.permiteCancelacionDirecta(
-        reserva.canal
-      )
-    ) {
-      throw new Error(
-        `Las reservas provenientes de ${reserva.canal} no pueden cancelarse directamente desde HostFlow.`
-      );
-    }
-
-    if (reserva.estado === "Cancelada") {
-      throw new Error(
-        "La reserva ya se encuentra cancelada."
-      );
-    }
-
-    if (reserva.estado === "Finalizada") {
-      throw new Error(
-        "Una reserva finalizada no puede cancelarse."
-      );
-    }
-
-    reserva.estado = "Cancelada";
-
-    return this.formatearReserva(reserva);
+  if (existeConflicto) {
+    throw new Error(
+      "La modificación genera un conflicto de fechas."
+    );
   }
+
+  // =========================================================
+  // ACTUALIZAR EN AZURE SQL
+  // =========================================================
+
+  await ReservaRepository.actualizarReservaManual(
+    reserva.idReserva,
+    {
+      fechaIngreso: nuevaFechaIngreso,
+      fechaEgreso: nuevaFechaEgreso,
+      estado: nuevoEstado,
+      montoEstimado: nuevoMonto,
+    }
+  );
+
+  // Volvemos a obtenerla para agregar
+  // tipoGestion, accionesDisponibles, etc.
+  return await this.obtenerReservaPorId(
+    reserva.idReserva
+  );
+}
+
+  async cancelarReserva(idReserva) {
+  // =========================================================
+  // OBTENER RESERVA DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      idReserva
+    );
+
+  if (!reserva) {
+    throw new Error(
+      "La reserva no existe."
+    );
+  }
+
+  // =========================================================
+  // VALIDAR QUE EL CANAL PERMITA CANCELACIÓN DIRECTA
+  // =========================================================
+
+  if (
+    !ChannelService.permiteCancelacionDirecta(
+      reserva.canal
+    )
+  ) {
+    throw new Error(
+      `Las reservas provenientes de ${reserva.canal} no pueden cancelarse directamente desde HostFlow.`
+    );
+  }
+
+  // =========================================================
+  // VALIDAR ESTADO
+  // =========================================================
+
+  if (reserva.estado === "Cancelada") {
+    throw new Error(
+      "La reserva ya se encuentra cancelada."
+    );
+  }
+
+  if (reserva.estado === "Finalizada") {
+    throw new Error(
+      "Una reserva finalizada no puede cancelarse."
+    );
+  }
+
+  // =========================================================
+  // CANCELAR EN AZURE SQL
+  // =========================================================
+
+  await ReservaRepository.cancelarReservaManual(
+    reserva.idReserva
+  );
+
+  // La volvemos a obtener para que regrese con
+  // tipoGestion, accionesDisponibles, etc.
+  return await this.obtenerReservaPorId(
+    reserva.idReserva
+  );
+}
 
   // =========================================================
   // AIRBNB
   // =========================================================
 
-  proponerCambioAirbnb(idReserva, datos) {
-    const reserva = reservas.find(
-      (r) => r.idReserva === Number(idReserva)
+  async proponerCambioAirbnb(
+  idReserva,
+  datos
+) {
+  // =========================================================
+  // OBTENER RESERVA DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      idReserva
     );
 
-    if (!reserva) {
-      throw new Error(
-        "La reserva no existe."
-      );
-    }
+  if (!reserva) {
+    throw new Error(
+      "La reserva no existe."
+    );
+  }
 
-    if (reserva.canal !== "Airbnb") {
-      throw new Error(
-        "La reserva seleccionada no pertenece a Airbnb."
-      );
-    }
+  if (reserva.canal !== "Airbnb") {
+    throw new Error(
+      "La reserva seleccionada no pertenece a Airbnb."
+    );
+  }
 
-    const nuevaFechaIngreso =
-      datos.fechaIngreso ||
-      reserva.fechaIngreso;
+  if (
+    reserva.estado === "Cancelada" ||
+    reserva.estado === "Finalizada"
+  ) {
+    throw new Error(
+      "La reserva ya no admite propuestas de cambio."
+    );
+  }
 
-    const nuevaFechaEgreso =
-      datos.fechaEgreso ||
-      reserva.fechaEgreso;
+  // =========================================================
+  // EVITAR DOS PROPUESTAS PENDIENTES
+  // =========================================================
 
-    if (
-      new Date(nuevaFechaEgreso) <=
-      new Date(nuevaFechaIngreso)
-    ) {
-      throw new Error(
-        "La fecha de egreso debe ser posterior a la fecha de ingreso."
-      );
-    }
-
-    const nuevaCantidadHuespedes =
-      datos.cantidadHuespedes !== undefined
-        ? Number(datos.cantidadHuespedes)
-        : reserva.cantidadHuespedes;
-
-    if (
-      nuevaCantidadHuespedes >
-      reserva.propiedad.capacidadMaxima
-    ) {
-      throw new Error(
-        "La cantidad de huéspedes supera la capacidad máxima de la propiedad."
-      );
-    }
-
-    const existeConflicto =
-      this.validarConflictoFechas(
-        reserva.propiedad.idPropiedad,
-        nuevaFechaIngreso,
-        nuevaFechaEgreso,
-
-        // Ignoramos la propia reserva de Airbnb.
+  const solicitudPendiente =
+    AirbnbChannelService
+      .obtenerSolicitudPendientePorReserva(
         reserva.idReserva
       );
 
-    if (existeConflicto) {
-      throw new Error(
-        "El cambio propuesto genera un conflicto con otra reserva."
-      );
-    }
+  if (solicitudPendiente) {
+    throw new Error(
+      "La reserva ya posee una propuesta de cambio pendiente en Airbnb."
+    );
+  }
 
-    return AirbnbChannelService.proponerCambio(
+  // =========================================================
+  // DATOS PROPUESTOS
+  // =========================================================
+
+  const nuevaFechaIngreso =
+    datos.fechaIngreso ||
+    reserva.fechaIngreso;
+
+  const nuevaFechaEgreso =
+    datos.fechaEgreso ||
+    reserva.fechaEgreso;
+
+  const nuevaCantidadHuespedes =
+    datos.cantidadHuespedes !==
+      undefined
+      ? Number(
+          datos.cantidadHuespedes
+        )
+      : Number(
+          reserva.cantidadHuespedes
+        );
+
+  const nuevoMonto =
+    datos.montoEstimado !== undefined
+      ? Number(
+          datos.montoEstimado
+        )
+      : Number(
+          reserva.montoEstimado
+        );
+
+  // =========================================================
+  // VALIDACIONES
+  // =========================================================
+
+  if (
+    new Date(nuevaFechaEgreso) <=
+    new Date(nuevaFechaIngreso)
+  ) {
+    throw new Error(
+      "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    Number.isNaN(
+      nuevaCantidadHuespedes
+    ) ||
+    nuevaCantidadHuespedes <= 0
+  ) {
+    throw new Error(
+      "La cantidad de huéspedes no es válida."
+    );
+  }
+
+  if (
+    Number.isNaN(nuevoMonto) ||
+    nuevoMonto < 0
+  ) {
+    throw new Error(
+      "El monto propuesto no es válido."
+    );
+  }
+
+  // =========================================================
+  // OBTENER PROPIEDAD REAL DESDE AZURE
+  // =========================================================
+
+  const propiedad =
+    await ReservaRepository
+      .obtenerPropiedadPorId(
+        reserva.idPropiedad
+      );
+
+  if (!propiedad) {
+    throw new Error(
+      "La propiedad asociada a la reserva no existe."
+    );
+  }
+
+  if (
+    nuevaCantidadHuespedes >
+    propiedad.capacidadMaxima
+  ) {
+    throw new Error(
+      "La cantidad de huéspedes supera la capacidad máxima de la propiedad."
+    );
+  }
+
+  // =========================================================
+  // VALIDAR CONFLICTOS CONTRA AZURE SQL
+  // =========================================================
+
+  const existeConflicto =
+    await ReservaRepository
+      .existeConflictoFechas(
+        reserva.idPropiedad,
+        nuevaFechaIngreso,
+        nuevaFechaEgreso,
+        reserva.idReserva
+      );
+
+  if (existeConflicto) {
+    throw new Error(
+      "El cambio propuesto genera un conflicto con otra reserva."
+    );
+  }
+
+  // =========================================================
+  // SIMULACIÓN DE ENVÍO A AIRBNB
+  // =========================================================
+
+  return AirbnbChannelService
+    .proponerCambio(
       reserva,
       {
         fechaIngreso:
@@ -480,264 +663,239 @@ class ReservaService {
           nuevaCantidadHuespedes,
 
         montoEstimado:
-          datos.montoEstimado !== undefined
-            ? Number(datos.montoEstimado)
-            : reserva.montoEstimado,
+          nuevoMonto,
       }
     );
-  }
+}
 
-  procesarAceptacionAirbnb(idSolicitud) {
-    const solicitud =
-      AirbnbChannelService.obtenerSolicitudPorId(
+  async procesarAceptacionAirbnb(
+  idSolicitud
+) {
+  // =========================================================
+  // OBTENER SOLICITUD SIMULADA DE AIRBNB
+  // =========================================================
+
+  const solicitud =
+    AirbnbChannelService
+      .obtenerSolicitudPorId(
         idSolicitud
       );
 
-    if (solicitud.estado !== "Pendiente") {
-      throw new Error(
-        "La solicitud ya fue procesada."
-      );
-    }
+  if (!solicitud) {
+    throw new Error(
+      "La solicitud de Airbnb no existe."
+    );
+  }
 
-    const reserva = reservas.find(
-      (r) =>
-        r.idReserva ===
-        Number(solicitud.idReserva)
+  if (
+    solicitud.estado !== "Pendiente"
+  ) {
+    throw new Error(
+      "La solicitud ya fue procesada."
+    );
+  }
+
+  // =========================================================
+  // OBTENER RESERVA REAL DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      solicitud.idReserva
     );
 
-    if (!reserva) {
-      throw new Error(
-        "La reserva asociada a la solicitud no existe."
-      );
-    }
+  if (!reserva) {
+    throw new Error(
+      "La reserva asociada a la solicitud no existe."
+    );
+  }
 
-    if (reserva.canal !== "Airbnb") {
-      throw new Error(
-        "La reserva asociada no pertenece a Airbnb."
-      );
-    }
+  if (reserva.canal !== "Airbnb") {
+    throw new Error(
+      "La reserva asociada no pertenece a Airbnb."
+    );
+  }
 
-    const cambios =
-      solicitud.cambiosSolicitados;
+  const cambios =
+    solicitud.cambiosSolicitados;
 
-    /*
-     * Airbnb ya confirmó el cambio.
-     * HostFlow debe sincronizar su copia local.
-     *
-     * Comprobamos si apareció un conflicto
-     * inesperado para poder informarlo,
-     * pero NO rechazamos el cambio externo.
-     */
-    const conflictoDetectado =
-      this.validarConflictoFechas(
-        reserva.propiedad.idPropiedad,
+  if (!cambios) {
+    throw new Error(
+      "La solicitud no contiene cambios para sincronizar."
+    );
+  }
+
+  // =========================================================
+  // DETECTAR CONFLICTO
+  // =========================================================
+  //
+  // IMPORTANTE:
+  // Airbnb ya confirmó el cambio.
+  //
+  // Si HostFlow detecta una superposición, NO debemos
+  // rechazar la modificación externa.
+  //
+  // La sincronizamos igualmente y luego advertimos.
+  // =========================================================
+
+  const conflictoDetectado =
+    await ReservaRepository
+      .existeConflictoFechas(
+        reserva.idPropiedad,
         cambios.fechaIngreso,
         cambios.fechaEgreso,
         reserva.idReserva
       );
 
-    reserva.fechaIngreso =
-      cambios.fechaIngreso;
+  // =========================================================
+  // SINCRONIZAR RESERVA EN AZURE SQL
+  // =========================================================
 
-    reserva.fechaEgreso =
-      cambios.fechaEgreso;
+  await ReservaRepository
+    .sincronizarCambioExterno(
+      reserva.idReserva,
+      {
+        fechaIngreso:
+          cambios.fechaIngreso,
 
-    reserva.cantidadHuespedes =
-      Number(cambios.cantidadHuespedes);
+        fechaEgreso:
+          cambios.fechaEgreso,
 
-    reserva.montoEstimado =
-      Number(cambios.montoEstimado);
+        cantidadHuespedes:
+          cambios.cantidadHuespedes,
 
-    reserva.estadoSincronizacion =
-      "Sincronizada";
-
-    const solicitudAceptada =
-      AirbnbChannelService.marcarSolicitudAceptada(
-        idSolicitud
-      );
-
-    return {
-      solicitud:
-        solicitudAceptada,
-
-      reserva:
-        this.formatearReserva(reserva),
-
-      conflictoDetectado,
-
-      advertencia:
-        conflictoDetectado
-          ? "El cambio fue confirmado por Airbnb, pero genera un conflicto con otra reserva en HostFlow."
-          : null,
-    };
-  }
-
-  procesarRechazoAirbnb(idSolicitud) {
-    const solicitud =
-      AirbnbChannelService.obtenerSolicitudPorId(
-        idSolicitud
-      );
-
-    if (solicitud.estado !== "Pendiente") {
-      throw new Error(
-        "La solicitud ya fue procesada."
-      );
-    }
-
-    const reserva = reservas.find(
-      (r) =>
-        r.idReserva ===
-        Number(solicitud.idReserva)
+        montoEstimado:
+          cambios.montoEstimado,
+      }
     );
 
-    if (!reserva) {
-      throw new Error(
-        "La reserva asociada a la solicitud no existe."
-      );
-    }
+  // =========================================================
+  // MARCAR SOLICITUD SIMULADA COMO ACEPTADA
+  // =========================================================
 
-    const solicitudRechazada =
-      AirbnbChannelService.marcarSolicitudRechazada(
+  const solicitudAceptada =
+    AirbnbChannelService
+      .marcarSolicitudAceptada(
         idSolicitud
       );
 
-    return {
-      solicitud:
-        solicitudRechazada,
+  // =========================================================
+  // OBTENER LA RESERVA YA ACTUALIZADA
+  // =========================================================
 
-      // La reserva original permanece intacta.
-      reserva:
-        this.formatearReserva(reserva),
-    };
+  const reservaActualizada =
+    await this.obtenerReservaPorId(
+      reserva.idReserva
+    );
+
+  return {
+    solicitud:
+      solicitudAceptada,
+
+    reserva:
+      reservaActualizada,
+
+    conflictoDetectado,
+
+    advertencia:
+      conflictoDetectado
+        ? "El cambio fue confirmado por Airbnb, pero genera un conflicto con otra reserva en HostFlow."
+        : null,
+  };
+}
+
+  async procesarRechazoAirbnb(
+  idSolicitud
+) {
+  // =========================================================
+  // OBTENER SOLICITUD SIMULADA DE AIRBNB
+  // =========================================================
+
+  const solicitud =
+    AirbnbChannelService
+      .obtenerSolicitudPorId(
+        idSolicitud
+      );
+
+  if (!solicitud) {
+    throw new Error(
+      "La solicitud de Airbnb no existe."
+    );
   }
+
+  if (
+    solicitud.estado !== "Pendiente"
+  ) {
+    throw new Error(
+      "La solicitud ya fue procesada."
+    );
+  }
+
+  // =========================================================
+  // OBTENER RESERVA REAL DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      solicitud.idReserva
+    );
+
+  if (!reserva) {
+    throw new Error(
+      "La reserva asociada a la solicitud no existe."
+    );
+  }
+
+  if (reserva.canal !== "Airbnb") {
+    throw new Error(
+      "La reserva asociada no pertenece a Airbnb."
+    );
+  }
+
+  // =========================================================
+  // AIRBNB RECHAZA LA PROPUESTA
+  // =========================================================
+  //
+  // No modificamos absolutamente nada en Azure.
+  // La reserva original permanece como estaba.
+  // =========================================================
+
+  const solicitudRechazada =
+    AirbnbChannelService
+      .marcarSolicitudRechazada(
+        idSolicitud
+      );
+
+  const reservaActual =
+    await this.obtenerReservaPorId(
+      reserva.idReserva
+    );
+
+  return {
+    solicitud:
+      solicitudRechazada,
+
+    reserva:
+      reservaActual,
+  };
+}
 
   // =========================================================
   // BOOKING
   // =========================================================
 
-  cambiarEstadiaBooking(
-    idReserva,
-    datos
-  ) {
-    const reserva = reservas.find(
-      (r) =>
-        r.idReserva ===
-        Number(idReserva)
-    );
-
-    if (!reserva) {
-      throw new Error(
-        "La reserva no existe."
-      );
-    }
-
-    if (reserva.canal !== "Booking") {
-      throw new Error(
-        "La reserva seleccionada no pertenece a Booking."
-      );
-    }
-
-    /*
-     * Evitamos enviar una segunda operación
-     * mientras Booking todavía tiene una
-     * operación pendiente para la reserva.
-     */
-    const operacionPendiente =
-      BookingChannelService
-        .obtenerOperacionPendientePorReserva(
-          reserva.idReserva
-        );
-
-    if (operacionPendiente) {
-      throw new Error(
-        "La reserva ya posee una operación pendiente de sincronización con Booking."
-      );
-    }
-
-    const nuevaFechaEgreso =
-      datos.fechaEgreso;
-
-    const nuevoMonto =
-      Number(datos.montoEstimado);
-
-    if (!nuevaFechaEgreso) {
-      throw new Error(
-        "Debe indicar la nueva fecha de egreso."
-      );
-    }
-
-    if (
-      new Date(nuevaFechaEgreso) <=
-      new Date(reserva.fechaIngreso)
-    ) {
-      throw new Error(
-        "La fecha de egreso debe ser posterior a la fecha de ingreso."
-      );
-    }
-
-    if (
-      Number.isNaN(nuevoMonto) ||
-      nuevoMonto < 0
-    ) {
-      throw new Error(
-        "El monto indicado no es válido."
-      );
-    }
-
-    /*
-     * Antes de enviar el cambio a Booking,
-     * HostFlow valida que la extensión de la
-     * estadía no genere conflictos conocidos.
-     */
-    const existeConflicto =
-      this.validarConflictoFechas(
-        reserva.propiedad.idPropiedad,
-        reserva.fechaIngreso,
-        nuevaFechaEgreso,
-        reserva.idReserva
-      );
-
-    if (existeConflicto) {
-      throw new Error(
-        "El cambio de estadía genera un conflicto con otra reserva."
-      );
-    }
-
-    /*
-     * Booking recibe la operación.
-     *
-     * Todavía NO modificamos la reserva local.
-     * La operación queda encolada hasta que
-     * Booking la procese y HostFlow vuelva
-     * a sincronizar la reserva.
-     */
-    const operacion =
-      BookingChannelService.cambiarEstadia(
-        reserva,
-        {
-          fechaEgreso:
-            nuevaFechaEgreso,
-
-          montoEstimado:
-            nuevoMonto,
-        }
-      );
-
-    reserva.estadoSincronizacion =
-      "Pendiente";
-
-    return operacion;
-  }
-
-  reportarNoShowBooking(
+  async cambiarEstadiaBooking(
   idReserva,
-  datos = {}
+  datos
 ) {
-  const reserva = reservas.find(
-    (r) =>
-      r.idReserva ===
-      Number(idReserva)
-  );
+  // =========================================================
+  // OBTENER RESERVA REAL DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      idReserva
+    );
 
   if (!reserva) {
     throw new Error(
@@ -751,6 +909,24 @@ class ReservaService {
     );
   }
 
+  // =========================================================
+  // VALIDAR ESTADO DE LA RESERVA
+  // =========================================================
+
+  if (
+    reserva.estado === "Cancelada" ||
+    reserva.estado === "Finalizada" ||
+    reserva.estado === "No show"
+  ) {
+    throw new Error(
+      "La reserva ya no admite cambios de estadía."
+    );
+  }
+
+  // =========================================================
+  // EVITAR DOS OPERACIONES PENDIENTES
+  // =========================================================
+
   const operacionPendiente =
     BookingChannelService
       .obtenerOperacionPendientePorReserva(
@@ -763,6 +939,139 @@ class ReservaService {
     );
   }
 
+  // =========================================================
+  // DATOS SOLICITADOS
+  // =========================================================
+
+  const nuevaFechaEgreso =
+    datos.fechaEgreso;
+
+  const nuevoMonto =
+    Number(datos.montoEstimado);
+
+  if (!nuevaFechaEgreso) {
+    throw new Error(
+      "Debe indicar la nueva fecha de egreso."
+    );
+  }
+
+  if (
+    new Date(nuevaFechaEgreso) <=
+    new Date(reserva.fechaIngreso)
+  ) {
+    throw new Error(
+      "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    Number.isNaN(nuevoMonto) ||
+    nuevoMonto < 0
+  ) {
+    throw new Error(
+      "El monto indicado no es válido."
+    );
+  }
+
+  // =========================================================
+  // VALIDAR CONFLICTO CONTRA AZURE SQL
+  // =========================================================
+
+  const existeConflicto =
+    await ReservaRepository
+      .existeConflictoFechas(
+        reserva.idPropiedad,
+        reserva.fechaIngreso,
+        nuevaFechaEgreso,
+        reserva.idReserva
+      );
+
+  if (existeConflicto) {
+    throw new Error(
+      "El cambio de estadía genera un conflicto con otra reserva."
+    );
+  }
+
+  // =========================================================
+  // ENVIAR OPERACIÓN AL SIMULADOR DE BOOKING
+  // =========================================================
+  //
+  // Todavía NO modificamos fecha ni monto en Azure.
+  //
+  // Booking primero recibe/procesa la operación.
+  // =========================================================
+
+  const operacion =
+    BookingChannelService
+      .cambiarEstadia(
+        reserva,
+        {
+          fechaEgreso:
+            nuevaFechaEgreso,
+
+          montoEstimado:
+            nuevoMonto,
+        }
+      );
+
+  // =========================================================
+  // MARCAR RESERVA COMO PENDIENTE EN AZURE
+  // =========================================================
+
+  await ReservaRepository
+    .actualizarEstadoSincronizacion(
+      reserva.idReserva,
+      "Pendiente"
+    );
+
+  return operacion;
+}
+
+async reportarNoShowBooking(
+  idReserva,
+  datos = {}
+) {
+  // =========================================================
+  // OBTENER RESERVA REAL DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      idReserva
+    );
+
+  if (!reserva) {
+    throw new Error(
+      "La reserva no existe."
+    );
+  }
+
+  if (reserva.canal !== "Booking") {
+    throw new Error(
+      "La reserva seleccionada no pertenece a Booking."
+    );
+  }
+
+  // =========================================================
+  // EVITAR DOS OPERACIONES PENDIENTES
+  // =========================================================
+
+  const operacionPendiente =
+    BookingChannelService
+      .obtenerOperacionPendientePorReserva(
+        reserva.idReserva
+      );
+
+  if (operacionPendiente) {
+    throw new Error(
+      "La reserva ya posee una operación pendiente de sincronización con Booking."
+    );
+  }
+
+  // =========================================================
+  // VALIDAR ESTADO
+  // =========================================================
+
   if (
     reserva.estado === "Cancelada" ||
     reserva.estado === "Finalizada" ||
@@ -773,28 +1082,55 @@ class ReservaService {
     );
   }
 
-  const operacion =
-    BookingChannelService.reportarNoShow(
-      reserva,
-      datos.condonarCargos === true
-    );
+  // =========================================================
+  // ENVIAR REPORTE AL SIMULADOR DE BOOKING
+  // =========================================================
 
-  /*
-   * La operación fue enviada a Booking,
-   * pero esperamos la sincronización antes
-   * de modificar el estado local.
-   */
-  reserva.estadoSincronizacion =
-    "Pendiente";
+  const operacion =
+    BookingChannelService
+      .reportarNoShow(
+        reserva,
+        datos.condonarCargos === true
+      );
+
+  // =========================================================
+  // MARCAR SINCRONIZACIÓN PENDIENTE EN AZURE
+  // =========================================================
+  //
+  // Todavía NO cambiamos el estado de la
+  // reserva a "No show".
+  //
+  // Eso ocurre recién cuando Booking confirma
+  // la operación y sincronizamos.
+  // =========================================================
+
+  await ReservaRepository
+    .actualizarEstadoSincronizacion(
+      reserva.idReserva,
+      "Pendiente"
+    );
 
   return operacion;
 }
 
-procesarSincronizacionBooking(idOperacion) {
+async procesarSincronizacionBooking(
+  idOperacion
+) {
+  // =========================================================
+  // OBTENER OPERACIÓN SIMULADA DE BOOKING
+  // =========================================================
+
   const operacion =
-    BookingChannelService.obtenerOperacionPorId(
-      idOperacion
+    BookingChannelService
+      .obtenerOperacionPorId(
+        idOperacion
+      );
+
+  if (!operacion) {
+    throw new Error(
+      "La operación de Booking no existe."
     );
+  }
 
   if (
     operacion.estado !== "Encolada" &&
@@ -805,11 +1141,14 @@ procesarSincronizacionBooking(idOperacion) {
     );
   }
 
-  const reserva = reservas.find(
-    (r) =>
-      r.idReserva ===
-      Number(operacion.idReserva)
-  );
+  // =========================================================
+  // OBTENER RESERVA REAL DESDE AZURE SQL
+  // =========================================================
+
+  const reserva =
+    await ReservaRepository.obtenerPorId(
+      operacion.idReserva
+    );
 
   if (!reserva) {
     throw new Error(
@@ -825,47 +1164,95 @@ procesarSincronizacionBooking(idOperacion) {
 
   let conflictoDetectado = false;
 
+  // =========================================================
+  // CAMBIO DE ESTADÍA
+  // =========================================================
+
   if (
-    operacion.tipo === "CAMBIO_ESTADIA"
+    operacion.tipo ===
+    "CAMBIO_ESTADIA"
   ) {
     const cambios =
       operacion.cambiosSolicitados;
 
-    /*
-     * Booking ya procesó el cambio.
-     * HostFlow debe reflejar lo que informa
-     * el canal externo.
-     */
-    conflictoDetectado =
-      this.validarConflictoFechas(
-        reserva.propiedad.idPropiedad,
-        reserva.fechaIngreso,
-        cambios.fechaEgreso,
-        reserva.idReserva
+    if (!cambios) {
+      throw new Error(
+        "La operación no contiene los cambios de estadía."
       );
+    }
 
-    reserva.fechaEgreso =
-      cambios.fechaEgreso;
+    // Booking ya confirmó/procesó el cambio.
+    //
+    // Comprobamos si apareció un conflicto
+    // desde que se envió la operación,
+    // pero NO bloqueamos la sincronización.
 
-    reserva.montoEstimado =
-      Number(
-        cambios.montoEstimado
+    conflictoDetectado =
+      await ReservaRepository
+        .existeConflictoFechas(
+          reserva.idPropiedad,
+          reserva.fechaIngreso,
+          cambios.fechaEgreso,
+          reserva.idReserva
+        );
+
+    await ReservaRepository
+      .sincronizarCambioExterno(
+        reserva.idReserva,
+        {
+          // Booking solo está cambiando
+          // egreso + importe.
+          // Conservamos el resto.
+          fechaIngreso:
+            reserva.fechaIngreso,
+
+          fechaEgreso:
+            cambios.fechaEgreso,
+
+          cantidadHuespedes:
+            reserva.cantidadHuespedes,
+
+          montoEstimado:
+            cambios.montoEstimado,
+        }
       );
   }
 
-  if (
-  operacion.tipo === "NO_SHOW"
-) {
-  /*
-   * Booking confirmó el reporte.
-   * Recién ahora HostFlow actualiza
-   * el estado de la reserva.
-   */
-  reserva.estado = "No show";
-}
+  // =========================================================
+  // NO-SHOW
+  // =========================================================
 
-  reserva.estadoSincronizacion =
-    "Sincronizada";
+  else if (
+    operacion.tipo === "NO_SHOW"
+  ) {
+    // Booking confirmó el no-show.
+    // Recién ahora modificamos Azure.
+
+    await ReservaRepository
+      .sincronizarEstadoExterno(
+        reserva.idReserva,
+        "No show"
+      );
+  }
+
+  // =========================================================
+  // TIPO DE OPERACIÓN DESCONOCIDO
+  // =========================================================
+
+  else {
+    throw new Error(
+      "El tipo de operación de Booking no es válido."
+    );
+  }
+
+  // =========================================================
+  // MARCAR OPERACIÓN COMO SINCRONIZADA
+  // =========================================================
+  //
+  // Esto se hace DESPUÉS de actualizar Azure.
+  // Si SQL falla, la operación sigue pendiente
+  // y podemos volver a procesarla.
+  // =========================================================
 
   const operacionSincronizada =
     BookingChannelService
@@ -873,14 +1260,21 @@ procesarSincronizacionBooking(idOperacion) {
         idOperacion
       );
 
+  // =========================================================
+  // DEVOLVER RESERVA ACTUALIZADA DESDE AZURE
+  // =========================================================
+
+  const reservaActualizada =
+    await this.obtenerReservaPorId(
+      reserva.idReserva
+    );
+
   return {
     operacion:
       operacionSincronizada,
 
     reserva:
-      this.formatearReserva(
-        reserva
-      ),
+      reservaActualizada,
 
     conflictoDetectado,
 
@@ -895,54 +1289,87 @@ procesarSincronizacionBooking(idOperacion) {
 // BOOKING - EVENTOS ENTRANTES
 // =========================================================
 
-procesarEventoBooking(idEvento) {
-  const evento =
-    BookingInboundService.obtenerEventoPorId(
-      idEvento
-    );
+async procesarEventoBooking(
+  idEvento
+) {
+  // =========================================================
+  // OBTENER EVENTO SIMULADO DE BOOKING
+  // =========================================================
 
-  /*
-   * Si intentamos procesar dos veces exactamente
-   * el mismo evento, no repetimos ninguna operación.
-   */
-  if (evento.estado === "Procesado") {
-    const reservaExistente =
-      reservas.find(
-        (r) =>
-          r.canal === "Booking" &&
-          r.idExterno === evento.idExterno
+  const evento =
+    BookingInboundService
+      .obtenerEventoPorId(
+        idEvento
       );
+
+  if (!evento) {
+    throw new Error(
+      "El evento de Booking no existe."
+    );
+  }
+
+  // =========================================================
+  // EVENTO YA PROCESADO
+  // =========================================================
+  //
+  // Si Booking vuelve a entregar exactamente
+  // el mismo evento, no repetimos la operación.
+  // =========================================================
+
+  if (
+    evento.estado === "Procesado"
+  ) {
+    const reservaExistente =
+      await ReservaRepository
+        .obtenerPorCanalEIdExterno(
+          "Booking",
+          evento.idExterno
+        );
+
+    const reservaActual =
+      reservaExistente
+        ? await this.obtenerReservaPorId(
+            reservaExistente.idReserva
+          )
+        : null;
 
     return {
       evento,
-      reserva: reservaExistente
-        ? this.formatearReserva(
-            reservaExistente
-          )
-        : null,
+
+      reserva:
+        reservaActual,
 
       reprocesado: true,
+
       conflictoDetectado: false,
+
       advertencia:
         "El evento ya había sido procesado anteriormente.",
     };
   }
 
+  // =========================================================
+  // PROCESAR SEGÚN TIPO
+  // =========================================================
+
   switch (evento.tipo) {
     case "NUEVA_RESERVA":
-      return this.procesarNuevaReservaBooking(
-        evento
-      );
+      return await this
+        .procesarNuevaReservaBooking(
+          evento
+        );
 
     case "RESERVA_MODIFICADA":
-      return this.procesarModificacionReservaBooking(
-        evento
-      );
+      return await this
+        .procesarModificacionReservaBooking(
+          evento
+        );
 
     case "RESERVA_CANCELADA":
-      return this.procesarCancelacionReservaBooking(
-        evento
-      );
+      return await this
+        .procesarCancelacionReservaBooking(
+          evento
+        );
 
     default:
       throw new Error(
@@ -951,25 +1378,30 @@ procesarEventoBooking(idEvento) {
   }
 }
 
-procesarNuevaReservaBooking(evento) {
-  /*
-   * La clave de idempotencia es el ID externo
-   * entregado por Booking.
-   *
-   * Si Booking reenvía la misma reserva,
-   * NO creamos otra copia.
-   */
+async procesarNuevaReservaBooking(
+  evento
+) {
+  // =========================================================
+  // IDEMPOTENCIA - BUSCAR ID EXTERNO EN AZURE
+  // =========================================================
+
   const reservaExistente =
-    reservas.find(
-      (r) =>
-        r.canal === "Booking" &&
-        r.idExterno === evento.idExterno
-    );
+    await ReservaRepository
+      .obtenerPorCanalEIdExterno(
+        "Booking",
+        evento.idExterno
+      );
 
   if (reservaExistente) {
     const eventoProcesado =
-      BookingInboundService.marcarEventoProcesado(
-        evento.idEvento
+      BookingInboundService
+        .marcarEventoProcesado(
+          evento.idEvento
+        );
+
+    const reservaActual =
+      await this.obtenerReservaPorId(
+        reservaExistente.idReserva
       );
 
     return {
@@ -977,11 +1409,10 @@ procesarNuevaReservaBooking(evento) {
         eventoProcesado,
 
       reserva:
-        this.formatearReserva(
-          reservaExistente
-        ),
+        reservaActual,
 
       duplicada: true,
+
       conflictoDetectado: false,
 
       advertencia:
@@ -989,20 +1420,38 @@ procesarNuevaReservaBooking(evento) {
     };
   }
 
-  const datos = evento.datos;
+  // =========================================================
+  // DATOS RECIBIDOS DESDE BOOKING
+  // =========================================================
+
+  const datos =
+    evento.datos;
+
+  if (!datos) {
+    throw new Error(
+      "El evento de Booking no contiene los datos de la reserva."
+    );
+  }
+
+  // =========================================================
+  // VALIDAR PROPIEDAD
+  // =========================================================
 
   const propiedad =
-    propiedades.find(
-      (p) =>
-        p.idPropiedad ===
-        Number(datos.idPropiedad)
-    );
+    await ReservaRepository
+      .obtenerPropiedadPorId(
+        datos.idPropiedad
+      );
 
   if (!propiedad) {
     throw new Error(
       "La propiedad asociada a la reserva de Booking no existe en HostFlow."
     );
   }
+
+  // =========================================================
+  // VALIDAR FECHAS
+  // =========================================================
 
   if (
     !datos.fechaIngreso ||
@@ -1022,8 +1471,16 @@ procesarNuevaReservaBooking(evento) {
     );
   }
 
+  // =========================================================
+  // VALIDAR CANTIDAD DE HUÉSPEDES
+  // =========================================================
+
+  const cantidadHuespedes =
+    Number(datos.cantidadHuespedes) ||
+    1;
+
   if (
-    Number(datos.cantidadHuespedes) >
+    cantidadHuespedes >
     propiedad.capacidadMaxima
   ) {
     throw new Error(
@@ -1031,112 +1488,126 @@ procesarNuevaReservaBooking(evento) {
     );
   }
 
-  /*
-   * Buscamos un huésped existente por nombre
-   * y apellido para este mock.
-   *
-   * Más adelante, con datos reales, podremos usar
-   * identificadores y datos permitidos por el canal.
-   */
+  // =========================================================
+  // BUSCAR / CREAR HUÉSPED EN AZURE
+  // =========================================================
+
+  const nombreHuesped =
+    datos.nombreHuesped ||
+    "Huésped";
+
+  const apellidoHuesped =
+    datos.apellidoHuesped ||
+    "Booking";
+
   let huesped =
-    huespedes.find(
-      (h) =>
-        h.nombre ===
-          datos.nombreHuesped &&
-        h.apellido ===
-          datos.apellidoHuesped
-    );
+    await ReservaRepository
+      .obtenerHuespedPorNombreYApellido(
+        nombreHuesped,
+        apellidoHuesped
+      );
 
   if (!huesped) {
-    const nuevoId =
-      huespedes.length > 0
-        ? Math.max(
-            ...huespedes.map(
-              (h) => h.idHuesped
-            )
-          ) + 1
-        : 1;
+    huesped =
+      await ReservaRepository
+        .crearHuespedExterno({
+          nombre:
+            nombreHuesped,
 
-    huesped = {
-      idHuesped: nuevoId,
-      nombre:
-        datos.nombreHuesped ||
-        "Huésped",
+          apellido:
+            apellidoHuesped,
 
-      apellido:
-        datos.apellidoHuesped ||
-        "Booking",
+          email:
+            datos.emailHuesped ||
+            null,
 
-      email: null,
-      telefono: null,
-    };
+          telefono:
+            datos.telefonoHuesped ||
+            null,
 
-    huespedes.push(huesped);
+          documento:
+            datos.documentoHuesped ||
+            null,
+
+          nacionalidad:
+            datos.nacionalidadHuesped ||
+            null,
+        });
   }
 
-  /*
-   * Como Booking es la fuente de verdad de una
-   * reserva externa, si aparece un conflicto
-   * HostFlow NO rechaza la reserva.
-   *
-   * La registra y genera una advertencia.
-   */
+  // =========================================================
+  // DETECTAR CONFLICTO
+  // =========================================================
+  //
+  // Booking ya es la fuente de esta reserva.
+  //
+  // Si existe un conflicto, HostFlow NO rechaza
+  // el evento. Registra igualmente la reserva y
+  // luego informa la advertencia.
+  // =========================================================
+
   const conflictoDetectado =
-    this.validarConflictoFechas(
-      propiedad.idPropiedad,
-      datos.fechaIngreso,
-      datos.fechaEgreso
-    );
+    await ReservaRepository
+      .existeConflictoFechas(
+        propiedad.idPropiedad,
+        datos.fechaIngreso,
+        datos.fechaEgreso
+      );
 
-  const nuevaReserva = {
-    idReserva:
-      reservas.length > 0
-        ? Math.max(
-            ...reservas.map(
-              (r) => r.idReserva
-            )
-          ) + 1
-        : 1,
+  // =========================================================
+  // CREAR RESERVA BOOKING EN AZURE
+  // =========================================================
 
-    propiedad,
-    huesped,
+  const nuevaReserva =
+    await ReservaRepository
+      .crearReservaExterna({
+        idPropiedad:
+          propiedad.idPropiedad,
 
-    canal: "Booking",
+        idHuesped:
+          huesped.idHuesped,
 
-    estado:
-      datos.estadoReserva ||
-      "Confirmada",
+        canal:
+          "Booking",
 
-    fechaIngreso:
-      datos.fechaIngreso,
+        estado:
+          datos.estadoReserva ||
+          "Confirmada",
 
-    fechaEgreso:
-      datos.fechaEgreso,
+        fechaIngreso:
+          datos.fechaIngreso,
 
-    cantidadHuespedes:
-      Number(
-        datos.cantidadHuespedes
-      ) || 1,
+        fechaEgreso:
+          datos.fechaEgreso,
 
-    montoEstimado:
-      Number(
-        datos.montoEstimado
-      ) || 0,
+        cantidadHuespedes,
 
-    idExterno:
-      evento.idExterno,
+        montoEstimado:
+          Number(
+            datos.montoEstimado
+          ) || 0,
 
-    estadoSincronizacion:
-      "Sincronizada",
-  };
+        idExterno:
+          evento.idExterno,
+      });
 
-  reservas.push(
-    nuevaReserva
-  );
+  // =========================================================
+  // MARCAR EVENTO COMO PROCESADO
+  // =========================================================
 
   const eventoProcesado =
-    BookingInboundService.marcarEventoProcesado(
-      evento.idEvento
+    BookingInboundService
+      .marcarEventoProcesado(
+        evento.idEvento
+      );
+
+  // =========================================================
+  // DEVOLVER RESERVA COMPLETA
+  // =========================================================
+
+  const reservaActual =
+    await this.obtenerReservaPorId(
+      nuevaReserva.idReserva
     );
 
   return {
@@ -1144,9 +1615,7 @@ procesarNuevaReservaBooking(evento) {
       eventoProcesado,
 
     reserva:
-      this.formatearReserva(
-        nuevaReserva
-      ),
+      reservaActual,
 
     duplicada: false,
 
