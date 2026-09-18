@@ -1,30 +1,58 @@
-const PropiedadService = require("../services/PropiedadService");
+const PropiedadService = require(
+  "../services/PropiedadService"
+);
 
 class PropiedadController {
-  obtenerPropiedades(req, res) {
+  // =========================================================
+  // OBTENER TODAS
+  // =========================================================
+
+  async obtenerPropiedades(
+    req,
+    res
+  ) {
     try {
-      const propiedades = PropiedadService.obtenerPropiedades();
+      const propiedades =
+        await PropiedadService.obtenerPropiedades();
 
       return res.status(200).json({
-        mensaje: "Propiedades obtenidas correctamente.",
+        mensaje:
+          "Propiedades obtenidas correctamente.",
         propiedades,
       });
     } catch (error) {
+      console.error(
+        "Error al obtener propiedades:",
+        error
+      );
+
       return res.status(500).json({
-        mensaje: "Error al obtener las propiedades.",
+        mensaje:
+          "Error al obtener las propiedades.",
         error: error.message,
       });
     }
   }
 
-  obtenerPropiedadPorId(req, res) {
+  // =========================================================
+  // OBTENER POR ID
+  // =========================================================
+
+  async obtenerPropiedadPorId(
+    req,
+    res
+  ) {
     try {
       const { id } = req.params;
 
-      const propiedad = PropiedadService.obtenerPropiedadPorId(id);
+      const propiedad =
+        await PropiedadService.obtenerPropiedadPorId(
+          id
+        );
 
       return res.status(200).json({
-        mensaje: "Propiedad obtenida correctamente.",
+        mensaje:
+          "Propiedad obtenida correctamente.",
         propiedad,
       });
     } catch (error) {
@@ -34,54 +62,102 @@ class PropiedadController {
     }
   }
 
-  crearPropiedad(req, res) {
+  // =========================================================
+  // CREAR
+  // =========================================================
+
+  async crearPropiedad(
+    req,
+    res
+  ) {
     try {
-      const nuevaPropiedad = PropiedadService.crearPropiedad(req.body);
+      const nuevaPropiedad =
+        await PropiedadService.crearPropiedad(
+          req.body
+        );
 
       return res.status(201).json({
-        mensaje: "Propiedad registrada correctamente.",
+        mensaje:
+          "Propiedad registrada correctamente.",
         propiedad: nuevaPropiedad,
       });
     } catch (error) {
+      console.error(
+        "Error al crear propiedad:",
+        error
+      );
+
       return res.status(400).json({
         mensaje: error.message,
       });
     }
   }
 
-  modificarPropiedad(req, res) {
+  // =========================================================
+  // MODIFICAR
+  // =========================================================
+
+  async modificarPropiedad(
+    req,
+    res
+  ) {
     try {
       const { id } = req.params;
 
-      const propiedadActualizada = PropiedadService.modificarPropiedad(
-        id,
-        req.body
-      );
+      const propiedadActualizada =
+        await PropiedadService.modificarPropiedad(
+          id,
+          req.body
+        );
 
       return res.status(200).json({
-        mensaje: "Propiedad modificada correctamente.",
-        propiedad: propiedadActualizada,
+        mensaje:
+          "Propiedad modificada correctamente.",
+        propiedad:
+          propiedadActualizada,
       });
     } catch (error) {
+      console.error(
+        "Error al modificar propiedad:",
+        error
+      );
+
       return res.status(400).json({
         mensaje: error.message,
       });
     }
   }
 
-  cambiarEstadoPropiedad(req, res) {
+  // =========================================================
+  // CAMBIAR ESTADO
+  // =========================================================
+
+  async cambiarEstadoPropiedad(
+    req,
+    res
+  ) {
     try {
       const { id } = req.params;
       const { estado } = req.body;
 
       const propiedadActualizada =
-        PropiedadService.cambiarEstadoPropiedad(id, estado);
+        await PropiedadService.cambiarEstadoPropiedad(
+          id,
+          estado
+        );
 
       return res.status(200).json({
-        mensaje: "Estado de propiedad actualizado correctamente.",
-        propiedad: propiedadActualizada,
+        mensaje:
+          "Estado de propiedad actualizado correctamente.",
+        propiedad:
+          propiedadActualizada,
       });
     } catch (error) {
+      console.error(
+        "Error al cambiar estado de propiedad:",
+        error
+      );
+
       return res.status(400).json({
         mensaje: error.message,
       });
@@ -89,4 +165,5 @@ class PropiedadController {
   }
 }
 
-module.exports = new PropiedadController();
+module.exports =
+  new PropiedadController();
