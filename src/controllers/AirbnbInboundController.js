@@ -98,26 +98,36 @@ class AirbnbInboundController {
   // PROCESAR EVENTO EN HOSTFLOW
   // =========================================================
 
-  procesarEvento(req, res) {
-    try {
-      const { idEvento } = req.params;
+ async procesarEvento(
+  req,
+  res
+) {
+  try {
+    const { idEvento } =
+      req.params;
 
-      const resultado =
-        ReservaService.procesarEventoAirbnb(
+    const resultado =
+      await ReservaService
+        .procesarEventoAirbnb(
           idEvento
         );
 
-      return res.status(200).json({
-        mensaje:
-          "El evento de Airbnb fue procesado correctamente por HostFlow.",
-        ...resultado,
-      });
-    } catch (error) {
-      return res.status(400).json({
+    return res
+      .status(200)
+      .json(resultado);
+  } catch (error) {
+    console.error(
+      "Error al procesar evento Airbnb:",
+      error
+    );
+
+    return res
+      .status(400)
+      .json({
         mensaje: error.message,
       });
-    }
   }
+}
 }
 
 module.exports =

@@ -286,7 +286,8 @@ async existeConflictoFechas(
   );
 }
 async crearHuespedExterno(datos) {
-  const pool = await poolPromise;
+  const pool =
+    await poolPromise;
 
   const resultado =
     await pool
@@ -321,6 +322,11 @@ async crearHuespedExterno(datos) {
         sql.NVarChar(100),
         datos.nacionalidad || null
       )
+      .input(
+        "origenRegistro",
+        sql.NVarChar(50),
+        datos.origenRegistro
+      )
       .query(`
         INSERT INTO dbo.Huespedes (
           Nombre,
@@ -329,6 +335,7 @@ async crearHuespedExterno(datos) {
           Telefono,
           Documento,
           Nacionalidad,
+          OrigenRegistro,
           FechaCreacion
         )
         OUTPUT
@@ -345,8 +352,9 @@ async crearHuespedExterno(datos) {
           INSERTED.Documento
             AS documento,
           INSERTED.Nacionalidad
-            AS nacionalidad
-
+            AS nacionalidad,
+          INSERTED.OrigenRegistro
+            AS origenRegistro
         VALUES (
           @nombre,
           @apellido,
@@ -354,6 +362,7 @@ async crearHuespedExterno(datos) {
           @telefono,
           @documento,
           @nacionalidad,
+          @origenRegistro,
           SYSDATETIME()
         );
       `);
@@ -595,6 +604,89 @@ async sincronizarCambioExterno(
     `);
 
   return this.obtenerPorId(idReserva);
+}
+async sincronizarReservaExterna(
+  idReserva,
+  datos
+) {
+  const pool = await poolPromise;
+
+  await pool
+    .request()
+    .input(
+      "idReserva",
+      sql.Int,
+      Number(idReserva)
+    )
+    .input(
+      "fechaIngreso",
+      sql.Date,
+      datos.fechaIngreso
+    )
+    .input(
+      "fechaEgreso",
+      sql.Date,
+      datos.fechaEgreso
+    )
+    .input(
+      "cantidadHuespedes",
+      sql.Int,
+      Number(datos.cantidadHuespedes)
+    )
+    .input(
+      "montoEstimado",
+      sql.Decimal(18, 2),
+      Number(datos.montoEstimado)
+    )
+    .input(
+      "estado",
+      sql.NVarChar(50),
+      datos.estado || null
+    )
+    .query(`
+      DECLARE @IdEstadoReserva INT = NULL;
+
+      IF @estado IS NOT NULL
+      BEGIN
+        SELECT
+          @IdEstadoReserva = IdEstadoReserva
+        FROM dbo.EstadosReserva
+        WHERE Nombre = @estado;
+
+        IF @IdEstadoReserva IS NULL
+        BEGIN
+          THROW 50001,
+            'El estado indicado no existe.',
+            1;
+        END;
+      END;
+
+      UPDATE dbo.Reservas
+      SET
+        FechaIngreso = @fechaIngreso,
+        FechaEgreso = @fechaEgreso,
+        CantidadHuespedes = @cantidadHuespedes,
+        MontoEstimado = @montoEstimado,
+
+        IdEstadoReserva =
+          CASE
+            WHEN @estado IS NULL
+              THEN IdEstadoReserva
+            ELSE @IdEstadoReserva
+          END,
+
+        EstadoSincronizacion =
+          N'Sincronizada',
+
+        FechaActualizacion =
+          SYSDATETIME()
+
+      WHERE IdReserva = @idReserva;
+    `);
+
+  return this.obtenerPorId(
+    idReserva
+  );
 }
 async actualizarEstadoSincronizacion(
   idReserva,
@@ -882,6 +974,82 @@ async crearReservaExterna(datos) {
   return this.obtenerPorId(
     idReserva
   );
+}
+async obtenerPorHuesped(
+  idHuesped
+) {
+  const pool =
+    await poolPromise;
+
+  const resultado =
+    await pool
+      .request()
+      .input(
+        "idHuesped",
+        sql.Int,
+        Number(idHuesped)
+      )
+      .query(`
+        SELECT
+          r.IdReserva AS idReserva,
+
+          r.IdPropiedad AS idPropiedad,
+          p.Nombre AS propiedad,
+
+          r.IdHuesped AS idHuesped,
+
+          cr.Nombre AS canal,
+
+          er.Nombre AS estado,
+
+          CONVERT(
+            VARCHAR(10),
+            r.FechaIngreso,
+            23
+          ) AS fechaIngreso,
+
+          CONVERT(
+            VARCHAR(10),
+            r.FechaEgreso,
+            23
+          ) AS fechaEgreso,
+
+          r.CantidadHuespedes
+            AS cantidadHuespedes,
+
+          r.MontoEstimado
+            AS montoEstimado,
+
+          r.IdExterno
+            AS idExterno,
+
+          r.EstadoSincronizacion
+            AS estadoSincronizacion
+
+        FROM dbo.Reservas r
+
+        INNER JOIN dbo.Propiedades p
+          ON p.IdPropiedad =
+             r.IdPropiedad
+
+        INNER JOIN dbo.CanalesReserva cr
+          ON cr.IdCanalReserva =
+             r.IdCanalReserva
+
+        INNER JOIN dbo.EstadosReserva er
+          ON er.IdEstadoReserva =
+             r.IdEstadoReserva
+
+        WHERE
+          r.IdHuesped =
+          @idHuesped
+
+        ORDER BY
+          r.FechaIngreso DESC,
+          r.IdReserva DESC;
+      `);
+
+  return resultado.recordset;
 }
 }
 

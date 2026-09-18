@@ -1,74 +1,399 @@
-const { huespedes } = require("../data/mockData");
+const HuespedRepository =
+  require("../repositories/HuespedRepository");
+  const ReservaRepository =
+  require("../repositories/ReservaRepository");
 
 class HuespedService {
-  obtenerHuespedes() {
-    return huespedes.map((huesped) => ({
-      idHuesped: huesped.idHuesped,
-      nombre: huesped.nombre,
-      apellido: huesped.apellido,
-      email: huesped.email || "No registrado",
-      telefono: huesped.telefono || "No registrado",
-      dni: huesped.dni || "No registrado",
-    }));
+  // =========================================================
+  // FORMATEAR HUÉSPED
+  // =========================================================
+
+  formatearHuesped(huesped) {
+  return {
+    idHuesped:
+      huesped.idHuesped,
+
+    nombre:
+      huesped.nombre,
+
+    apellido:
+      huesped.apellido,
+
+    email:
+      huesped.email ||
+      "No registrado",
+
+    telefono:
+      huesped.telefono ||
+      "No registrado",
+
+    dni:
+      huesped.dni ||
+      "No registrado",
+
+    nacionalidad:
+      huesped.nacionalidad ||
+      "No registrada",
+
+    origenRegistro:
+      huesped.origenRegistro ||
+      "Manual",
+  };
+}
+
+  // =========================================================
+  // OBTENER TODOS
+  // =========================================================
+
+  async obtenerHuespedes() {
+  const huespedes =
+    await HuespedRepository
+      .obtenerTodos();
+
+  return huespedes.map(
+    (huesped) => {
+      let situacion =
+        "Sin reservas activas";
+
+      if (
+        Number(
+          huesped.tieneReservaActiva
+        ) === 1
+      ) {
+        situacion =
+          "Hospedado actualmente";
+      } else if (
+        Number(
+          huesped.tieneReservaFutura
+        ) === 1
+      ) {
+        situacion =
+          "Próxima reserva";
+      }
+
+      return {
+        ...this.formatearHuesped(
+          huesped
+        ),
+
+        cantidadReservas:
+          Number(
+            huesped.cantidadReservas
+          ) || 0,
+
+        tieneReservaActiva:
+          Number(
+            huesped.tieneReservaActiva
+          ) === 1,
+
+        tieneReservaFutura:
+          Number(
+            huesped.tieneReservaFutura
+          ) === 1,
+
+        situacion,
+      };
+    }
+  );
+}
+
+  // =========================================================
+  // OBTENER POR ID
+  // =========================================================
+
+  async obtenerHuespedPorId(
+  idHuesped
+) {
+  // =========================================================
+  // OBTENER HUÉSPED
+  // =========================================================
+
+  const huesped =
+    await HuespedRepository
+      .obtenerPorId(
+        idHuesped
+      );
+
+  if (!huesped) {
+    throw new Error(
+      "El huésped no existe."
+    );
   }
 
-  obtenerHuespedPorId(idHuesped) {
-    const huesped = huespedes.find(
-      (h) => h.idHuesped === Number(idHuesped)
+  // =========================================================
+  // OBTENER RESERVAS DEL HUÉSPED
+  // =========================================================
+
+  const reservas =
+    await ReservaRepository
+      .obtenerPorHuesped(
+        idHuesped
+      );
+
+  // =========================================================
+  // FECHA ACTUAL
+  // =========================================================
+
+  const hoy =
+    new Date();
+
+  hoy.setHours(
+    0,
+    0,
+    0,
+    0
+  );
+
+  // =========================================================
+  // RESERVAS ACTIVAS
+  // =========================================================
+  //
+  // Puede existir más de una si algún canal externo
+  // genera una superposición.
+  // Por eso devolvemos un array.
+  // =========================================================
+
+  const reservasActivas =
+    reservas.filter(
+      (reserva) => {
+        if (
+          reserva.estado ===
+            "Cancelada" ||
+          reserva.estado ===
+            "Finalizada" ||
+          reserva.estado ===
+            "No show"
+        ) {
+          return false;
+        }
+
+        const ingreso =
+          new Date(
+            `${reserva.fechaIngreso}T00:00:00`
+          );
+
+        const egreso =
+          new Date(
+            `${reserva.fechaEgreso}T00:00:00`
+          );
+
+        return (
+          ingreso <= hoy &&
+          hoy < egreso
+        );
+      }
     );
 
-    if (!huesped) {
-      throw new Error("El huésped no existe.");
-    }
+  // =========================================================
+  // PRÓXIMA RESERVA
+  // =========================================================
 
-    return huesped;
-  }
+  const reservasFuturas =
+    reservas
+      .filter(
+        (reserva) => {
+          if (
+            reserva.estado ===
+              "Cancelada" ||
+            reserva.estado ===
+              "Finalizada" ||
+            reserva.estado ===
+              "No show"
+          ) {
+            return false;
+          }
 
-  crearHuesped(datos) {
-    const { nombre, apellido, email, telefono, dni } = datos;
+          const ingreso =
+            new Date(
+              `${reserva.fechaIngreso}T00:00:00`
+            );
 
-    if (!nombre || !apellido || !email) {
-      throw new Error("Nombre, apellido y email son obligatorios.");
-    }
+          return ingreso > hoy;
+        }
+      )
+      .sort(
+        (a, b) =>
+          new Date(
+            `${a.fechaIngreso}T00:00:00`
+          ) -
+          new Date(
+            `${b.fechaIngreso}T00:00:00`
+          )
+      );
 
-    const emailExistente = huespedes.find(
-      (h) => h.email === email
-    );
+  const proximaReserva =
+    reservasFuturas[0] ||
+    null;
 
-    if (emailExistente) {
-      throw new Error("Ya existe un huésped registrado con ese email.");
-    }
+  // =========================================================
+  // RESPUESTA
+  // =========================================================
 
-    const nuevoId =
-      huespedes.length > 0
-        ? Math.max(...huespedes.map((h) => h.idHuesped)) + 1
-        : 1;
+  return {
+    ...this.formatearHuesped(
+      huesped
+    ),
 
-    const nuevoHuesped = {
-      idHuesped: nuevoId,
+    cantidadReservas:
+      reservas.length,
+
+    tieneReservaActiva:
+      reservasActivas.length > 0,
+
+    reservasActivas,
+
+    proximaReserva,
+
+    historialReservas:
+      reservas,
+  };
+}
+
+  // =========================================================
+  // CREAR HUÉSPED
+  // =========================================================
+
+  async crearHuesped(
+    datos
+  ) {
+    const {
       nombre,
       apellido,
       email,
-      telefono: telefono || "No registrado",
-      dni: dni || "No registrado",
-    };
+      telefono,
+      dni,
+      nacionalidad,
+    } = datos;
 
-    huespedes.push(nuevoHuesped);
+    if (
+      !nombre ||
+      !apellido ||
+      !email
+    ) {
+      throw new Error(
+        "Nombre, apellido y email son obligatorios."
+      );
+    }
 
-    return nuevoHuesped;
+    const emailExistente =
+      await HuespedRepository
+        .obtenerPorEmail(
+          email
+        );
+
+    if (emailExistente) {
+      throw new Error(
+        "Ya existe un huésped registrado con ese email."
+      );
+    }
+
+    const nuevoHuesped =
+      await HuespedRepository
+        .crear({
+          nombre,
+          apellido,
+          email,
+          telefono:
+            telefono || null,
+          dni:
+            dni || null,
+          nacionalidad:
+            nacionalidad || null,
+        });
+
+    return this.formatearHuesped(
+      nuevoHuesped
+    );
   }
 
-  modificarHuesped(idHuesped, datos) {
-    const huesped = this.obtenerHuespedPorId(idHuesped);
+  // =========================================================
+  // MODIFICAR HUÉSPED
+  // =========================================================
 
-    huesped.nombre = datos.nombre || huesped.nombre;
-    huesped.apellido = datos.apellido || huesped.apellido;
-    huesped.email = datos.email || huesped.email;
-    huesped.telefono = datos.telefono || huesped.telefono;
-    huesped.dni = datos.dni || huesped.dni;
+  async modificarHuesped(
+    idHuesped,
+    datos
+  ) {
+    const huespedActual =
+      await HuespedRepository
+        .obtenerPorId(
+          idHuesped
+        );
 
-    return huesped;
+    if (!huespedActual) {
+      throw new Error(
+        "El huésped no existe."
+      );
+    }
+
+    // Si cambia el email, verificamos que
+    // no pertenezca a otro huésped.
+    if (
+      datos.email &&
+      datos.email !==
+        huespedActual.email
+    ) {
+      const emailExistente =
+        await HuespedRepository
+          .obtenerPorEmail(
+            datos.email
+          );
+
+      if (
+        emailExistente &&
+        Number(
+          emailExistente.idHuesped
+        ) !==
+          Number(idHuesped)
+      ) {
+        throw new Error(
+          "Ya existe un huésped registrado con ese email."
+        );
+      }
+    }
+
+    const huespedActualizado =
+      await HuespedRepository
+        .actualizar(
+          idHuesped,
+          {
+            nombre:
+              datos.nombre ||
+              huespedActual.nombre,
+
+            apellido:
+              datos.apellido ||
+              huespedActual.apellido,
+
+            email:
+              datos.email ||
+              huespedActual.email,
+
+            telefono:
+              datos.telefono !==
+              undefined
+                ? datos.telefono
+                : huespedActual.telefono,
+
+            dni:
+              datos.dni !==
+              undefined
+                ? datos.dni
+                : huespedActual.dni,
+
+            nacionalidad:
+              datos.nacionalidad !==
+              undefined
+                ? datos.nacionalidad
+                : huespedActual.nacionalidad,
+          }
+        );
+
+    return this.formatearHuesped(
+      huespedActualizado
+    );
   }
 }
 
-module.exports = new HuespedService();
+module.exports =
+  new HuespedService();
