@@ -1,4 +1,6 @@
-const express = require("express");
+const express = require(
+  "express"
+);
 
 const PropiedadController = require(
   "../controllers/PropiedadController"
@@ -12,7 +14,12 @@ const PropiedadImagenController = require(
   "../controllers/PropiedadImagenController"
 );
 
-const router = express.Router();
+const propiedadImagenUpload = require(
+  "../middlewares/propiedadImagenUpload"
+);
+
+const router =
+  express.Router();
 
 // =========================================================
 // PROPIEDADES
@@ -102,8 +109,12 @@ router.get(
 // IMÁGENES - TODAS
 // =========================================================
 //
-// Incluye activas, pendientes de eliminación
-// y eliminadas.
+// Incluye:
+//
+// - Activas
+// - PendienteEliminacion
+// - Eliminadas
+//
 // =========================================================
 
 router.get(
@@ -116,13 +127,81 @@ router.get(
 );
 
 // =========================================================
-// AGREGAR IMAGEN
+// AGREGAR IMAGEN MEDIANTE URL
 // =========================================================
 
 router.post(
   "/:id/imagenes",
   (req, res) =>
     PropiedadImagenController.agregarImagen(
+      req,
+      res
+    )
+);
+
+// =========================================================
+// SUBIR IMÁGENES DESDE DISPOSITIVO
+// =========================================================
+//
+// Endpoint:
+//
+// POST /api/propiedades/:id/imagenes/upload
+//
+// Content-Type:
+//
+// multipart/form-data
+//
+// Campo esperado:
+//
+// imagenes
+//
+// Permite seleccionar hasta 20 imágenes.
+//
+// Ejemplo:
+//
+// imagenes: foto1.jpg
+// imagenes: foto2.jpg
+// imagenes: foto3.webp
+//
+// =========================================================
+
+router.post(
+  "/:id/imagenes/upload",
+
+  (
+    req,
+    res,
+    next
+  ) => {
+    propiedadImagenUpload.array(
+      "imagenes",
+      20
+    )(
+      req,
+      res,
+      (error) => {
+        if (error) {
+          console.error(
+            "Error de Multer al subir imágenes:",
+            error
+          );
+
+          return res
+            .status(400)
+            .json({
+              mensaje:
+                error.message ||
+                "No se pudieron procesar las imágenes seleccionadas.",
+            });
+        }
+
+        next();
+      }
+    );
+  },
+
+  (req, res) =>
+    PropiedadImagenController.subirImagenes(
       req,
       res
     )
@@ -193,4 +272,5 @@ router.patch(
     )
 );
 
-module.exports = router;
+module.exports =
+  router;

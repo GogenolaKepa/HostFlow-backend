@@ -95,7 +95,7 @@ class PropiedadImagenController {
   }
 
   // =========================================================
-  // AGREGAR IMAGEN
+  // AGREGAR IMAGEN MEDIANTE URL
   // =========================================================
 
   async agregarImagen(
@@ -124,6 +124,174 @@ class PropiedadImagenController {
     } catch (error) {
       console.error(
         "Error al agregar imagen:",
+        error
+      );
+
+      return res
+        .status(400)
+        .json({
+          mensaje:
+            error.message,
+        });
+    }
+  }
+
+  // =========================================================
+  // SUBIR IMÁGENES DESDE DISPOSITIVO
+  // =========================================================
+  //
+  // Recibe archivos mediante multipart/form-data.
+  //
+  // Campo esperado:
+  //
+  // imagenes
+  //
+  // Puede recibir hasta 20 archivos por request.
+  //
+  // Multer guarda físicamente los archivos en:
+  //
+  // uploads/propiedades/:id/
+  //
+  // Después construimos una URL pública y reutilizamos
+  // exactamente el mismo servicio de imágenes que utiliza
+  // HostFlow para las imágenes agregadas mediante URL.
+  //
+  // De esta manera:
+  //
+  // Archivo local
+  //      ↓
+  // /uploads/propiedades/...
+  //      ↓
+  // PropiedadImagenService.agregarImagen()
+  //      ↓
+  // PropiedadImagenes
+  //      ↓
+  // Airbnb / Booking
+  //
+  // =========================================================
+
+  async subirImagenes(
+    req,
+    res
+  ) {
+    try {
+      const { id } =
+        req.params;
+
+      const archivos =
+        req.files;
+
+      if (
+        !archivos ||
+        !Array.isArray(
+          archivos
+        ) ||
+        archivos.length === 0
+      ) {
+        return res
+          .status(400)
+          .json({
+            mensaje:
+              "Debe seleccionar al menos una imagen.",
+          });
+      }
+
+      const resultados = [];
+
+      // -----------------------------------------------------
+      // Descripción opcional
+      // -----------------------------------------------------
+      //
+      // Por ahora permitimos mandar una descripción general.
+      //
+      // En la interfaz podemos dejarla vacía cuando se suben
+      // muchas imágenes y después editar cada foto
+      // individualmente.
+      // -----------------------------------------------------
+
+      const descripcion =
+        req.body
+          ?.descripcion
+          ?.trim() ||
+        null;
+
+      // -----------------------------------------------------
+      // PROCESAR CADA ARCHIVO
+      // -----------------------------------------------------
+
+      for (
+        const archivo
+        of archivos
+      ) {
+        /*
+         * Ejemplo generado:
+         *
+         * http://localhost:4000/
+         * uploads/propiedades/2/
+         * prop-2-123456.jpg
+         */
+
+        const urlImagen =
+          `${req.protocol}://${req.get(
+            "host"
+          )}` +
+          `/uploads/propiedades/${id}/` +
+          `${archivo.filename}`;
+
+        const resultado =
+          await PropiedadImagenService
+            .agregarImagen(
+              id,
+              {
+                urlImagen,
+
+                descripcion,
+
+                origen:
+                  "Manual",
+              }
+            );
+
+        resultados.push({
+          nombreOriginal:
+            archivo.originalname,
+
+          nombreArchivo:
+            archivo.filename,
+
+          tipo:
+            archivo.mimetype,
+
+          tamanio:
+            archivo.size,
+
+          urlImagen,
+
+          resultado,
+        });
+      }
+
+      // -----------------------------------------------------
+      // RESPUESTA
+      // -----------------------------------------------------
+
+      return res
+        .status(201)
+        .json({
+          mensaje:
+            archivos.length === 1
+              ? "Imagen subida correctamente."
+              : `${archivos.length} imágenes subidas correctamente.`,
+
+          cantidad:
+            archivos.length,
+
+          imagenes:
+            resultados,
+        });
+    } catch (error) {
+      console.error(
+        "Error al subir imágenes desde dispositivo:",
         error
       );
 

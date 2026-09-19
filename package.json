@@ -17,7 +17,8 @@
     "express": "^4.22.2",
     "jsonwebtoken": "^9.0.3",
     "msql": "^1.0.3",
-    "mssql": "^12.7.2"
+    "mssql": "^12.7.2",
+    "multer": "^2.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

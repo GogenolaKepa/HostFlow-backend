@@ -112,6 +112,274 @@ class PropiedadImagenCanalService {
     );
   }
 
+
+  // =========================================================
+  // RESOLVER PROPIEDAD POR ID EXTERNO
+  // =========================================================
+  //
+  // Se utiliza para eventos inbound provenientes de Airbnb
+  // o Booking.
+  //
+  // Ejemplo:
+  //
+  // Airbnb -> AIR-HF-2
+  // Booking -> BKG-HF-2
+  //
+  // =========================================================
+
+  async obtenerPropiedadPorIdExterno(
+    canal,
+    idExternoPropiedad
+  ) {
+    this.obtenerProveedor(
+      canal
+    );
+
+    if (!idExternoPropiedad) {
+      throw new Error(
+        "Debe indicar el identificador externo de la propiedad."
+      );
+    }
+
+    const vinculacionPropiedad =
+      await PropiedadCanalRepository
+        .obtenerPorCanalEIdExterno(
+          canal,
+          idExternoPropiedad
+        );
+
+    if (!vinculacionPropiedad) {
+      throw new Error(
+        `No existe en HostFlow una propiedad vinculada con ${canal} y el identificador externo indicado.`
+      );
+    }
+
+    const propiedad =
+      await PropiedadRepository
+        .obtenerPorId(
+          vinculacionPropiedad
+            .idPropiedad
+        );
+
+    if (!propiedad) {
+      throw new Error(
+        "La propiedad vinculada al canal externo no existe en HostFlow."
+      );
+    }
+
+    return {
+      propiedad,
+      vinculacionPropiedad,
+    };
+  }
+
+  // =========================================================
+  // OBTENER IMAGEN LOCAL POR ID EXTERNO
+  // =========================================================
+  //
+  // Permite encontrar la imagen de HostFlow a partir del
+  // identificador que posee en Airbnb o Booking.
+  //
+  // =========================================================
+
+  async obtenerImagenPorIdExterno(
+    canal,
+    idExternoImagen
+  ) {
+    this.obtenerProveedor(
+      canal
+    );
+
+    if (!idExternoImagen) {
+      throw new Error(
+        "Debe indicar el identificador externo de la imagen."
+      );
+    }
+
+    const vinculacionImagen =
+      await PropiedadImagenCanalRepository
+        .obtenerPorCanalEIdExterno(
+          canal,
+          idExternoImagen
+        );
+
+    if (!vinculacionImagen) {
+      return null;
+    }
+
+    const imagen =
+      await PropiedadImagenRepository
+        .obtenerPorId(
+          vinculacionImagen
+            .idPropiedadImagen
+        );
+
+    if (!imagen) {
+      throw new Error(
+        "Existe una vinculación externa para una imagen que ya no existe en HostFlow."
+      );
+    }
+
+    return {
+      imagen,
+      vinculacionImagen,
+    };
+  }
+
+  // =========================================================
+  // REGISTRAR VINCULACIÓN DEL CANAL DE ORIGEN
+  // =========================================================
+  //
+  // Cuando una imagen nace en Airbnb o Booking, HostFlow
+  // debe guardar cuál es su ID real en ese proveedor antes
+  // de propagarla hacia el otro canal.
+  //
+  // Este método también es idempotente:
+  //
+  // - Si la vinculación no existe, la crea.
+  // - Si existe sin ID externo, lo confirma.
+  // - Si ya posee el mismo ID externo, solamente la deja
+  //   sincronizada.
+  // - Si intenta asociarse otro ID externo diferente a la
+  //   misma imagen/canal, se rechaza.
+  //
+  // =========================================================
+
+  async registrarVinculacionOrigen(
+    idPropiedadImagen,
+    canal,
+    idExternoImagen
+  ) {
+    this.obtenerProveedor(
+      canal
+    );
+
+    if (!idExternoImagen) {
+      throw new Error(
+        "Debe indicar el identificador externo de la imagen."
+      );
+    }
+
+    const imagen =
+      await PropiedadImagenRepository
+        .obtenerPorId(
+          idPropiedadImagen
+        );
+
+    if (!imagen) {
+      throw new Error(
+        "La imagen no existe en HostFlow."
+      );
+    }
+
+    const vinculacionPorIdExterno =
+      await PropiedadImagenCanalRepository
+        .obtenerPorCanalEIdExterno(
+          canal,
+          idExternoImagen
+        );
+
+    if (
+      vinculacionPorIdExterno &&
+      Number(
+        vinculacionPorIdExterno
+          .idPropiedadImagen
+      ) !==
+        Number(
+          idPropiedadImagen
+        )
+    ) {
+      throw new Error(
+        `El identificador externo de imagen ya está asociado a otra imagen de HostFlow en ${canal}.`
+      );
+    }
+
+    let vinculacion =
+      await PropiedadImagenCanalRepository
+        .obtenerPorImagenYCanal(
+          idPropiedadImagen,
+          canal
+        );
+
+    if (!vinculacion) {
+      await PropiedadImagenCanalRepository
+        .iniciarSincronizacion(
+          idPropiedadImagen,
+          canal
+        );
+
+      return PropiedadImagenCanalRepository
+        .confirmarSincronizacion(
+          idPropiedadImagen,
+          canal,
+          idExternoImagen
+        );
+    }
+
+    if (
+      vinculacion.idExterno &&
+      vinculacion.idExterno !==
+        idExternoImagen
+    ) {
+      throw new Error(
+        `La imagen ya posee otro identificador externo en ${canal}.`
+      );
+    }
+
+    if (
+      !vinculacion.idExterno
+    ) {
+      return PropiedadImagenCanalRepository
+        .confirmarSincronizacion(
+          idPropiedadImagen,
+          canal,
+          idExternoImagen
+        );
+    }
+
+    return PropiedadImagenCanalRepository
+      .marcarSincronizada(
+        idPropiedadImagen,
+        canal
+      );
+  }
+
+  // =========================================================
+  // ELIMINAR VINCULACIÓN DEL CANAL DE ORIGEN
+  // =========================================================
+  //
+  // En una eliminación inbound, la imagen YA fue eliminada
+  // en Airbnb/Booking. Por eso no debemos enviarle de vuelta
+  // una eliminación al mismo proveedor.
+  //
+  // =========================================================
+
+  async eliminarVinculacionOrigen(
+    idPropiedadImagen,
+    canal
+  ) {
+    this.obtenerProveedor(
+      canal
+    );
+
+    const vinculacion =
+      await PropiedadImagenCanalRepository
+        .obtenerPorImagenYCanal(
+          idPropiedadImagen,
+          canal
+        );
+
+    if (!vinculacion) {
+      return null;
+    }
+
+    return PropiedadImagenCanalRepository
+      .eliminarVinculacion(
+        idPropiedadImagen,
+        canal
+      );
+  }
+
   // =========================================================
   // SINCRONIZAR NUEVA IMAGEN
   // =========================================================
@@ -511,11 +779,35 @@ class PropiedadImagenCanalService {
       );
     }
 
-    const vinculacionesImagen =
+    let vinculacionesImagen =
       await PropiedadImagenCanalRepository
         .obtenerPorImagen(
           idPropiedadImagen
         );
+
+    /*
+     * Si la eliminación nació en un canal externo,
+     * el recurso ya no existe allí.
+     *
+     * Eliminamos primero esa vinculación local para:
+     *
+     * - no devolverle la operación al canal de origen;
+     * - no conservar un ID externo que ya dejó de existir;
+     * - permitir que una futura imagen reutilice ese ID
+     *   sin chocar contra el índice único.
+     */
+    if (canalOrigen) {
+      await this.eliminarVinculacionOrigen(
+        idPropiedadImagen,
+        canalOrigen
+      );
+
+      vinculacionesImagen =
+        await PropiedadImagenCanalRepository
+          .obtenerPorImagen(
+            idPropiedadImagen
+          );
+    }
 
     /*
      * Si nunca fue enviada a ningún canal,
