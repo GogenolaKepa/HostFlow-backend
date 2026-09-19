@@ -6,7 +6,81 @@ const AirbnbInboundService = require("./AirbnbInboundService");
 const ReservaRepository = require("../repositories/ReservaRepository");
 
 class ReservaService {
+  // =========================================================
+  // FECHA ACTUAL DE NEGOCIO - ARGENTINA
+  // =========================================================
+  //
+  // Construimos YYYY-MM-DD usando la zona horaria de Argentina
+  // para no depender de la configuración horaria del servidor.
+  // =========================================================
+
+  obtenerFechaActualArgentina() {
+    const partes =
+      new Intl.DateTimeFormat(
+        "es-AR",
+        {
+          timeZone:
+            "America/Argentina/Buenos_Aires",
+
+          year:
+            "numeric",
+
+          month:
+            "2-digit",
+
+          day:
+            "2-digit",
+        }
+      ).formatToParts(
+        new Date()
+      );
+
+    const valores = {};
+
+    partes.forEach(
+      (parte) => {
+        if (
+          parte.type !==
+          "literal"
+        ) {
+          valores[
+            parte.type
+          ] =
+            parte.value;
+        }
+      }
+    );
+
+    return `${valores.year}-${valores.month}-${valores.day}`;
+  }
+
+  // =========================================================
+  // FINALIZAR RESERVAS VENCIDAS
+  // =========================================================
+  //
+  // Regla:
+  //
+  // Confirmada + FechaEgreso < hoy
+  //              ↓
+  //          Finalizada
+  //
+  // La persistencia real se realiza en Azure SQL mediante
+  // ReservaRepository.
+  // =========================================================
+
+  async finalizarReservasVencidas() {
+    const fechaActual =
+      this.obtenerFechaActualArgentina();
+
+    return await ReservaRepository
+      .finalizarReservasVencidas(
+        fechaActual
+      );
+  }
+
   async obtenerReservas() {
+    await this
+      .finalizarReservasVencidas();
   const reservasDb =
     await ReservaRepository.obtenerTodas();
 
@@ -75,6 +149,9 @@ class ReservaService {
 }
 
   async obtenerReservaPorId(idReserva) {
+  await this
+    .finalizarReservasVencidas();
+
   const reserva =
     await ReservaRepository.obtenerPorId(
       idReserva
@@ -158,6 +235,9 @@ class ReservaService {
   // =========================================================
 
   async crearReserva(datos) {
+  await this
+    .finalizarReservasVencidas();
+
   const {
     idPropiedad,
     idHuesped,
@@ -294,6 +374,9 @@ class ReservaService {
 }
 
   async modificarReserva(idReserva, datos) {
+  await this
+    .finalizarReservasVencidas();
+
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
   // =========================================================
@@ -417,6 +500,9 @@ class ReservaService {
 }
 
   async cancelarReserva(idReserva) {
+  await this
+    .finalizarReservasVencidas();
+
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
   // =========================================================
@@ -485,6 +571,9 @@ class ReservaService {
   idReserva,
   datos
 ) {
+  await this
+    .finalizarReservasVencidas();
+
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
   // =========================================================
@@ -882,6 +971,9 @@ class ReservaService {
   idReserva,
   datos
 ) {
+  await this
+    .finalizarReservasVencidas();
+
   // =========================================================
   // OBTENER RESERVA REAL DESDE AZURE SQL
   // =========================================================
@@ -1025,6 +1117,9 @@ async reportarNoShowBooking(
   idReserva,
   datos = {}
 ) {
+  await this
+    .finalizarReservasVencidas();
+
   // =========================================================
   // OBTENER RESERVA REAL DESDE AZURE SQL
   // =========================================================

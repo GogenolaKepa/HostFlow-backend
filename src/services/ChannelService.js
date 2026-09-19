@@ -9,13 +9,36 @@ class ChannelService {
     const estado =
       reserva.estado;
 
-    // Una reserva cancelada, finalizada o no-show
-    // ya no admite acciones operativas normales.
+    // =========================================================
+    // ESTADOS CERRADOS
+    // =========================================================
+    //
+    // Cancelada y No show quedan en modo consulta.
+    //
+    // Finalizada también queda en modo consulta, pero si la
+    // reserva provino de Airbnb o Booking conservamos la acción
+    // ABRIR_EN_CANAL para poder volver a la reserva histórica
+    // del proveedor cuando tengamos el deep-link disponible.
+    // =========================================================
+
     if (
       estado === "Cancelada" ||
-      estado === "Finalizada" ||
       estado === "No show"
     ) {
+      return ["VER"];
+    }
+
+    if (estado === "Finalizada") {
+      if (
+        canal === "Airbnb" ||
+        canal === "Booking"
+      ) {
+        return [
+          "VER",
+          "ABRIR_EN_CANAL",
+        ];
+      }
+
       return ["VER"];
     }
 

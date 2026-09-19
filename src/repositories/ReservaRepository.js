@@ -48,6 +48,100 @@ class ReservaRepository {
 
     return resultado.recordset;
   }
+
+  // =========================================================
+  // FINALIZAR RESERVAS VENCIDAS
+  // =========================================================
+  //
+  // Una reserva Confirmada pasa a Finalizada cuando su fecha
+  // de egreso es anterior a la fecha actual de negocio.
+  //
+  // La fecha se recibe desde el Service para no depender de la
+  // zona horaria configurada en Azure SQL.
+  // =========================================================
+
+  async finalizarReservasVencidas(
+    fechaActual
+  ) {
+    if (!fechaActual) {
+      throw new Error(
+        "La fecha actual es obligatoria para finalizar reservas vencidas."
+      );
+    }
+
+    const pool =
+      await poolPromise;
+
+    const resultado =
+      await pool
+        .request()
+        .input(
+          "fechaActual",
+          sql.Date,
+          fechaActual
+        )
+        .query(`
+          DECLARE @IdEstadoConfirmada INT;
+          DECLARE @IdEstadoFinalizada INT;
+
+          SELECT
+            @IdEstadoConfirmada =
+              IdEstadoReserva
+          FROM dbo.EstadosReserva
+          WHERE Nombre = N'Confirmada';
+
+          SELECT
+            @IdEstadoFinalizada =
+              IdEstadoReserva
+          FROM dbo.EstadosReserva
+          WHERE Nombre = N'Finalizada';
+
+          IF @IdEstadoConfirmada IS NULL
+          BEGIN
+            THROW 50001,
+              'No existe el estado Confirmada.',
+              1;
+          END;
+
+          IF @IdEstadoFinalizada IS NULL
+          BEGIN
+            THROW 50002,
+              'No existe el estado Finalizada.',
+              1;
+          END;
+
+          UPDATE dbo.Reservas
+          SET
+            IdEstadoReserva =
+              @IdEstadoFinalizada,
+
+            FechaActualizacion =
+              SYSDATETIME()
+
+          OUTPUT
+            INSERTED.IdReserva
+              AS idReserva
+
+          WHERE
+            IdEstadoReserva =
+              @IdEstadoConfirmada
+
+            AND FechaEgreso <
+              @fechaActual;
+        `);
+
+    return {
+      cantidadFinalizadas:
+        resultado.recordset.length,
+
+      idsReservas:
+        resultado.recordset.map(
+          (reserva) =>
+            reserva.idReserva
+        ),
+    };
+  }
+
   async obtenerPorId(idReserva) {
   const pool = await poolPromise;
 
@@ -271,8 +365,10 @@ async existeConflictoFechas(
       WHERE
         r.IdPropiedad = @idPropiedad
 
-        AND er.Nombre <> N'Cancelada'
-
+        AND er.Nombre NOT IN (
+          N'Cancelada',
+          N'No show'
+        )
         ${condicionReservaIgnorada}
 
         AND @fechaIngreso < r.FechaEgreso
