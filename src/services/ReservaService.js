@@ -4,6 +4,10 @@ const BookingChannelService = require("./BookingChannelService");
 const BookingInboundService = require("./BookingInboundService");
 const AirbnbInboundService = require("./AirbnbInboundService");
 const ReservaRepository = require("../repositories/ReservaRepository");
+const ReservaEventoRepository = require("../repositories/ReservaEventoRepository");
+const ReservaMensajeRepository = require("../repositories/ReservaMensajeRepository");
+const ReservaIncidenciaRepository = require("../repositories/ReservaIncidenciaRepository");
+const ReservaObservacionRepository = require("../repositories/ReservaObservacionRepository");
 
 class ReservaService {
   // =========================================================
@@ -13,6 +17,81 @@ class ReservaService {
   // Construimos YYYY-MM-DD usando la zona horaria de Argentina
   // para no depender de la configuración horaria del servidor.
   // =========================================================
+
+  // =========================================================
+  // REGISTRAR EVENTO DE RESERVA
+  // =========================================================
+  //
+  // El timeline complementa la operación principal.
+  // Si el registro del evento falla, dejamos el error en consola
+  // pero no convertimos una reserva ya guardada en un error para
+  // el usuario. Más adelante podemos llevar ambas escrituras a
+  // una misma transacción si queremos atomicidad total.
+  // =========================================================
+
+  async registrarEventoReserva(datosEvento) {
+    try {
+      return await ReservaEventoRepository
+        .crearEvento(datosEvento);
+    } catch (error) {
+      console.error(
+        "[HostFlow] No se pudo registrar el evento de la reserva:",
+        error
+      );
+
+      return null;
+    }
+  }
+
+  async registrarConflictoReserva({
+    idReserva,
+    canal,
+    fechaIngreso,
+    fechaEgreso,
+    contexto,
+    idExterno = null,
+    idOperacion = null,
+    idSolicitud = null,
+  }) {
+    return await this.registrarEventoReserva({
+      idReserva,
+
+      tipo:
+        "CONFLICTO_DETECTADO",
+
+      titulo:
+        "Conflicto de disponibilidad detectado",
+
+      descripcion:
+        "HostFlow detectó una superposición con otra reserva. Como el cambio proviene de un canal externo confirmado, la información del canal se conserva y el conflicto queda registrado para revisión.",
+
+      origen:
+        "Sistema",
+
+      datosJson: {
+        canal:
+          canal || null,
+
+        contexto:
+          contexto || null,
+
+        fechaIngreso:
+          fechaIngreso || null,
+
+        fechaEgreso:
+          fechaEgreso || null,
+
+        idExterno:
+          idExterno || null,
+
+        idOperacion:
+          idOperacion || null,
+
+        idSolicitud:
+          idSolicitud || null,
+      },
+    });
+  }
 
   obtenerFechaActualArgentina() {
     const partes =
@@ -72,10 +151,75 @@ class ReservaService {
     const fechaActual =
       this.obtenerFechaActualArgentina();
 
-    return await ReservaRepository
-      .finalizarReservasVencidas(
-        fechaActual
-      );
+    const resultado =
+      await ReservaRepository
+        .finalizarReservasVencidas(
+          fechaActual
+        );
+
+    // =========================================================
+    // TIMELINE - FINALIZACIÓN AUTOMÁTICA
+    // =========================================================
+    //
+    // El Repository devuelve únicamente los IDs de reservas
+    // que efectivamente pasaron de Confirmada a Finalizada.
+    //
+    // Como una reserva ya Finalizada no vuelve a entrar en ese
+    // UPDATE, este evento se registra una sola vez.
+    // =========================================================
+
+    for (
+      const idReserva
+      of resultado.idsReservas || []
+    ) {
+      const reserva =
+        await ReservaRepository
+          .obtenerPorId(
+            idReserva
+          );
+
+      await this.registrarEventoReserva({
+        idReserva,
+
+        tipo:
+          "RESERVA_FINALIZADA",
+
+        titulo:
+          "Reserva finalizada automáticamente",
+
+        descripcion:
+          "HostFlow marcó la reserva como finalizada porque la fecha de egreso ya había pasado.",
+
+        origen:
+          "Sistema",
+
+        datosJson: {
+          estadoAnterior:
+            "Confirmada",
+
+          estadoNuevo:
+            "Finalizada",
+
+          fechaEgreso:
+            reserva?.fechaEgreso ||
+            null,
+
+          canal:
+            reserva?.canal ||
+            null,
+
+          propiedad:
+            reserva?.propiedad ||
+            null,
+
+          huesped:
+            reserva?.huesped ||
+            null,
+        },
+      });
+    }
+
+    return resultado;
   }
 
   async obtenerReservas() {
@@ -147,6 +291,776 @@ class ReservaService {
     }
   );
 }
+
+  // =========================================================
+  // HISTORIAL / TIMELINE DE UNA RESERVA
+  // =========================================================
+  //
+  // Devuelve los eventos persistidos de una reserva
+  // ordenados cronológicamente.
+  // =========================================================
+
+  async obtenerEventosReserva(idReserva) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    return await ReservaEventoRepository
+      .obtenerPorReserva(
+        reserva.idReserva
+      );
+  }
+
+  // =========================================================
+  // MENSAJES DE UNA RESERVA
+  // =========================================================
+
+  async obtenerMensajesReserva(
+    idReserva
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    return await ReservaMensajeRepository
+      .obtenerPorReserva(
+        reserva.idReserva
+      );
+  }
+
+  async registrarMensajeReserva(
+    idReserva,
+    datos = {}
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const mensaje =
+      String(
+        datos.mensaje || ""
+      ).trim();
+
+    if (!mensaje) {
+      throw new Error(
+        "El mensaje no puede estar vacío."
+      );
+    }
+
+    const direccion =
+      datos.direccion ===
+        "Entrante"
+        ? "Entrante"
+        : "Saliente";
+
+    const remitenteTipo =
+      datos.remitenteTipo ||
+      (
+        direccion ===
+          "Entrante"
+          ? "Huesped"
+          : "Anfitrion"
+      );
+
+    const remitenteNombre =
+      datos.remitenteNombre ||
+      (
+        direccion ===
+          "Entrante"
+          ? reserva.huesped
+          : "HostFlow"
+      );
+
+    let origen =
+      datos.origen;
+
+    if (!origen) {
+      if (
+        direccion ===
+          "Entrante" &&
+        (
+          reserva.canal ===
+            "Airbnb" ||
+          reserva.canal ===
+            "Booking"
+        )
+      ) {
+        origen =
+          reserva.canal;
+      } else if (
+        reserva.canal ===
+          "Manual"
+      ) {
+        origen =
+          "Manual";
+      } else {
+        origen =
+          "HostFlow";
+      }
+    }
+
+    const estado =
+      datos.estado ||
+      (
+        direccion ===
+          "Saliente"
+          ? "Enviado"
+          : "Registrado"
+      );
+
+    const metadataBase =
+      datos.metadataJson &&
+      typeof datos.metadataJson ===
+        "object" &&
+      !Array.isArray(
+        datos.metadataJson
+      )
+        ? datos.metadataJson
+        : {};
+
+    return await ReservaMensajeRepository
+      .crearMensaje({
+        idReserva:
+          reserva.idReserva,
+
+        direccion,
+
+        remitenteTipo,
+
+        remitenteNombre,
+
+        mensaje,
+
+        origen,
+
+        idExterno:
+          datos.idExterno ||
+          null,
+
+        estado,
+
+        fechaMensaje:
+          datos.fechaMensaje ||
+          null,
+
+        metadataJson: {
+          ...metadataBase,
+
+          canalReserva:
+            reserva.canal,
+
+          idExternoReserva:
+            reserva.idExterno ||
+            null,
+        },
+      });
+  }
+
+  // =========================================================
+  // INCIDENCIAS DE UNA RESERVA
+  // =========================================================
+
+  async obtenerIncidenciasReserva(
+    idReserva
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    return await ReservaIncidenciaRepository
+      .obtenerPorReserva(
+        reserva.idReserva
+      );
+  }
+
+  async registrarIncidenciaReserva(
+    idReserva,
+    datos = {}
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const tipo =
+      String(
+        datos.tipo || ""
+      ).trim();
+
+    const titulo =
+      String(
+        datos.titulo || ""
+      ).trim();
+
+    const descripcion =
+      String(
+        datos.descripcion || ""
+      ).trim();
+
+    if (!tipo) {
+      throw new Error(
+        "El tipo de incidencia es obligatorio."
+      );
+    }
+
+    if (!titulo) {
+      throw new Error(
+        "El título de la incidencia es obligatorio."
+      );
+    }
+
+    if (!descripcion) {
+      throw new Error(
+        "La descripción de la incidencia es obligatoria."
+      );
+    }
+
+    const severidad =
+      datos.severidad ||
+      "Baja";
+
+    const origen =
+      datos.origen ||
+      "HostFlow";
+
+    const incidencia =
+      await ReservaIncidenciaRepository
+        .crearIncidencia({
+          idReserva:
+            reserva.idReserva,
+
+          tipo,
+
+          titulo,
+
+          descripcion,
+
+          severidad,
+
+          estado:
+            "Abierta",
+
+          origen,
+
+          fechaIncidencia:
+            datos.fechaIncidencia ||
+            null,
+
+          datosJson:
+            datos.datosJson ||
+            null,
+        });
+
+    await this.registrarEventoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      tipo:
+        "INCIDENCIA_REGISTRADA",
+
+      titulo:
+        "Incidencia registrada",
+
+      descripcion:
+        `Se registró la incidencia "${incidencia.titulo}".`,
+
+      origen:
+        incidencia.origen ===
+          "Manual"
+          ? "Manual"
+          : "HostFlow",
+
+      datosJson: {
+        idIncidenciaReserva:
+          incidencia.idIncidenciaReserva,
+
+        tipo:
+          incidencia.tipo,
+
+        titulo:
+          incidencia.titulo,
+
+        severidad:
+          incidencia.severidad,
+
+        estado:
+          incidencia.estado,
+      },
+    });
+
+    return incidencia;
+  }
+
+  async actualizarIncidenciaReserva(
+    idReserva,
+    idIncidenciaReserva,
+    datos = {}
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const incidenciaActual =
+      await ReservaIncidenciaRepository
+        .obtenerPorId(
+          idIncidenciaReserva
+        );
+
+    if (
+      !incidenciaActual ||
+      Number(
+        incidenciaActual.idReserva
+      ) !==
+        Number(
+          reserva.idReserva
+        )
+    ) {
+      throw new Error(
+        "La incidencia no pertenece a la reserva indicada."
+      );
+    }
+
+    if (
+      datos.estado ===
+      "Resuelta"
+    ) {
+      throw new Error(
+        "Para resolver una incidencia utilizá la acción específica de resolución."
+      );
+    }
+
+    const incidenciaActualizada =
+      await ReservaIncidenciaRepository
+        .actualizarIncidencia(
+          idIncidenciaReserva,
+          datos
+        );
+
+    await this.registrarEventoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      tipo:
+        "INCIDENCIA_ACTUALIZADA",
+
+      titulo:
+        "Incidencia actualizada",
+
+      descripcion:
+        `Se actualizaron datos de la incidencia "${incidenciaActualizada.titulo}".`,
+
+      origen:
+        "HostFlow",
+
+      datosJson: {
+        idIncidenciaReserva:
+          incidenciaActualizada
+            .idIncidenciaReserva,
+
+        antes: {
+          tipo:
+            incidenciaActual.tipo,
+
+          titulo:
+            incidenciaActual.titulo,
+
+          severidad:
+            incidenciaActual.severidad,
+
+          estado:
+            incidenciaActual.estado,
+        },
+
+        despues: {
+          tipo:
+            incidenciaActualizada.tipo,
+
+          titulo:
+            incidenciaActualizada.titulo,
+
+          severidad:
+            incidenciaActualizada
+              .severidad,
+
+          estado:
+            incidenciaActualizada.estado,
+        },
+      },
+    });
+
+    return incidenciaActualizada;
+  }
+
+  async resolverIncidenciaReserva(
+    idReserva,
+    idIncidenciaReserva,
+    resolucion
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const incidenciaActual =
+      await ReservaIncidenciaRepository
+        .obtenerPorId(
+          idIncidenciaReserva
+        );
+
+    if (
+      !incidenciaActual ||
+      Number(
+        incidenciaActual.idReserva
+      ) !==
+        Number(
+          reserva.idReserva
+        )
+    ) {
+      throw new Error(
+        "La incidencia no pertenece a la reserva indicada."
+      );
+    }
+
+    if (
+      incidenciaActual.estado ===
+      "Resuelta"
+    ) {
+      throw new Error(
+        "La incidencia ya se encuentra resuelta."
+      );
+    }
+
+    const resolucionNormalizada =
+      String(
+        resolucion || ""
+      ).trim();
+
+    if (!resolucionNormalizada) {
+      throw new Error(
+        "Debe indicar cómo se resolvió la incidencia."
+      );
+    }
+
+    const incidenciaResuelta =
+      await ReservaIncidenciaRepository
+        .resolverIncidencia(
+          idIncidenciaReserva,
+          resolucionNormalizada
+        );
+
+    await this.registrarEventoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      tipo:
+        "INCIDENCIA_RESUELTA",
+
+      titulo:
+        "Incidencia resuelta",
+
+      descripcion:
+        `Se resolvió la incidencia "${incidenciaResuelta.titulo}".`,
+
+      origen:
+        "HostFlow",
+
+      datosJson: {
+        idIncidenciaReserva:
+          incidenciaResuelta
+            .idIncidenciaReserva,
+
+        tipo:
+          incidenciaResuelta.tipo,
+
+        severidad:
+          incidenciaResuelta
+            .severidad,
+
+        estadoAnterior:
+          incidenciaActual.estado,
+
+        estadoNuevo:
+          incidenciaResuelta.estado,
+
+        resolucion:
+          incidenciaResuelta.resolucion,
+      },
+    });
+
+    return incidenciaResuelta;
+  }
+
+  // =========================================================
+  // OBSERVACIONES INTERNAS DE UNA RESERVA
+  // =========================================================
+  //
+  // Las observaciones son notas internas del administrador.
+  // No representan mensajes al huésped y, por diseño, no
+  // generan eventos en el timeline para evitar ruido operativo.
+  // =========================================================
+
+  async obtenerObservacionesReserva(
+    idReserva
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    return await ReservaObservacionRepository
+      .obtenerPorReserva(
+        reserva.idReserva
+      );
+  }
+
+  async registrarObservacionReserva(
+    idReserva,
+    datos = {}
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const observacion =
+      String(
+        datos.observacion || ""
+      ).trim();
+
+    if (!observacion) {
+      throw new Error(
+        "La observación no puede estar vacía."
+      );
+    }
+
+    return await ReservaObservacionRepository
+      .crearObservacion({
+        idReserva:
+          reserva.idReserva,
+
+        categoria:
+          datos.categoria ||
+          "General",
+
+        observacion,
+
+        fijada:
+          datos.fijada === true,
+
+        autorNombre:
+          datos.autorNombre ||
+          "HostFlow",
+      });
+  }
+
+  async actualizarObservacionReserva(
+    idReserva,
+    idObservacionReserva,
+    datos = {}
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const observacionActual =
+      await ReservaObservacionRepository
+        .obtenerPorId(
+          idObservacionReserva
+        );
+
+    if (
+      !observacionActual ||
+      Number(
+        observacionActual.idReserva
+      ) !==
+        Number(
+          reserva.idReserva
+        )
+    ) {
+      throw new Error(
+        "La observación no pertenece a la reserva indicada."
+      );
+    }
+
+    const observacionActualizada =
+      await ReservaObservacionRepository
+        .actualizarObservacion(
+          idObservacionReserva,
+          {
+            categoria:
+              datos.categoria,
+
+            observacion:
+              datos.observacion,
+
+            fijada:
+              datos.fijada,
+
+            autorNombre:
+              datos.autorNombre,
+          }
+        );
+
+    return observacionActualizada;
+  }
+
+  async cambiarFijadaObservacionReserva(
+    idReserva,
+    idObservacionReserva,
+    fijada
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const observacionActual =
+      await ReservaObservacionRepository
+        .obtenerPorId(
+          idObservacionReserva
+        );
+
+    if (
+      !observacionActual ||
+      Number(
+        observacionActual.idReserva
+      ) !==
+        Number(
+          reserva.idReserva
+        )
+    ) {
+      throw new Error(
+        "La observación no pertenece a la reserva indicada."
+      );
+    }
+
+    if (
+      typeof fijada !== "boolean"
+    ) {
+      throw new Error(
+        "Debe indicar si la observación queda fijada o no."
+      );
+    }
+
+    return await ReservaObservacionRepository
+      .cambiarFijada(
+        idObservacionReserva,
+        fijada
+      );
+  }
+
+  async eliminarObservacionReserva(
+    idReserva,
+    idObservacionReserva
+  ) {
+    const reserva =
+      await ReservaRepository.obtenerPorId(
+        idReserva
+      );
+
+    if (!reserva) {
+      throw new Error(
+        "La reserva no existe."
+      );
+    }
+
+    const observacionActual =
+      await ReservaObservacionRepository
+        .obtenerPorId(
+          idObservacionReserva
+        );
+
+    if (
+      !observacionActual ||
+      Number(
+        observacionActual.idReserva
+      ) !==
+        Number(
+          reserva.idReserva
+        )
+    ) {
+      throw new Error(
+        "La observación no pertenece a la reserva indicada."
+      );
+    }
+
+    return await ReservaObservacionRepository
+      .eliminarObservacion(
+        idObservacionReserva
+      );
+  }
 
   async obtenerReservaPorId(idReserva) {
   await this
@@ -348,6 +1262,13 @@ class ReservaService {
   // CREAR RESERVA EN AZURE SQL
   // =========================================================
 
+  const montoFinal =
+    montoEstimado !== undefined &&
+    montoEstimado !== null &&
+    montoEstimado !== ""
+      ? Number(montoEstimado)
+      : 0;
+
   const reservaCreada =
     await ReservaRepository.crearReservaManual({
       idPropiedad,
@@ -356,12 +1277,63 @@ class ReservaService {
       fechaEgreso,
       cantidadHuespedes: cantidad,
       montoEstimado:
-        montoEstimado !== undefined &&
-        montoEstimado !== null &&
-        montoEstimado !== ""
-          ? Number(montoEstimado)
-          : 0,
+        montoFinal,
     });
+
+  // =========================================================
+  // TIMELINE - RESERVA CREADA
+  // =========================================================
+  //
+  // Este es el primer evento persistido del historial real.
+  // No generamos eventos retroactivos para reservas antiguas.
+  // =========================================================
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reservaCreada.idReserva,
+
+    tipo:
+      "RESERVA_CREADA",
+
+    titulo:
+      "Reserva creada en HostFlow",
+
+    descripcion:
+      "La reserva fue registrada manualmente desde HostFlow.",
+
+    origen:
+      "Manual",
+
+    datosJson: {
+      canal:
+        "Manual",
+
+      estado:
+        "Confirmada",
+
+      idPropiedad:
+        Number(idPropiedad),
+
+      propiedad:
+        propiedad.nombre,
+
+      idHuesped:
+        Number(idHuesped),
+
+      huesped:
+        `${huesped.nombre} ${huesped.apellido}`,
+
+      fechaIngreso,
+
+      fechaEgreso,
+
+      cantidadHuespedes:
+        cantidad,
+
+      montoEstimado:
+        montoFinal,
+    },
+  });
 
   /*
    * Volvemos a obtenerla mediante el Service
@@ -492,6 +1464,107 @@ class ReservaService {
     }
   );
 
+  // =========================================================
+  // TIMELINE - RESERVA MODIFICADA
+  // =========================================================
+
+  const camposModificados = [];
+
+  if (
+    reserva.fechaIngreso !==
+    nuevaFechaIngreso
+  ) {
+    camposModificados.push(
+      "fechaIngreso"
+    );
+  }
+
+  if (
+    reserva.fechaEgreso !==
+    nuevaFechaEgreso
+  ) {
+    camposModificados.push(
+      "fechaEgreso"
+    );
+  }
+
+  if (
+    reserva.estado !==
+    nuevoEstado
+  ) {
+    camposModificados.push(
+      "estado"
+    );
+  }
+
+  if (
+    Number(
+      reserva.montoEstimado
+    ) !==
+    Number(nuevoMonto)
+  ) {
+    camposModificados.push(
+      "montoEstimado"
+    );
+  }
+
+  if (
+    camposModificados.length > 0
+  ) {
+    await this.registrarEventoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      tipo:
+        "RESERVA_MODIFICADA",
+
+      titulo:
+        "Reserva modificada en HostFlow",
+
+      descripcion:
+        "Se actualizaron datos de la reserva manual.",
+
+      origen:
+        "Manual",
+
+      datosJson: {
+        camposModificados,
+
+        antes: {
+          fechaIngreso:
+            reserva.fechaIngreso,
+
+          fechaEgreso:
+            reserva.fechaEgreso,
+
+          estado:
+            reserva.estado,
+
+          montoEstimado:
+            Number(
+              reserva.montoEstimado
+            ),
+        },
+
+        despues: {
+          fechaIngreso:
+            nuevaFechaIngreso,
+
+          fechaEgreso:
+            nuevaFechaEgreso,
+
+          estado:
+            nuevoEstado,
+
+          montoEstimado:
+            Number(
+              nuevoMonto
+            ),
+        },
+      },
+    });
+  }
+
   // Volvemos a obtenerla para agregar
   // tipoGestion, accionesDisponibles, etc.
   return await this.obtenerReservaPorId(
@@ -555,6 +1628,46 @@ class ReservaService {
   await ReservaRepository.cancelarReservaManual(
     reserva.idReserva
   );
+
+  // =========================================================
+  // TIMELINE - RESERVA CANCELADA
+  // =========================================================
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "RESERVA_CANCELADA",
+
+    titulo:
+      "Reserva cancelada en HostFlow",
+
+    descripcion:
+      "La reserva manual fue cancelada desde HostFlow.",
+
+    origen:
+      "Manual",
+
+    datosJson: {
+      estadoAnterior:
+        reserva.estado,
+
+      estadoNuevo:
+        "Cancelada",
+
+      fechaIngreso:
+        reserva.fechaIngreso,
+
+      fechaEgreso:
+        reserva.fechaEgreso,
+
+      montoEstimado:
+        Number(
+          reserva.montoEstimado
+        ),
+    },
+  });
 
   // La volvemos a obtener para que regrese con
   // tipoGestion, accionesDisponibles, etc.
@@ -732,10 +1845,67 @@ class ReservaService {
   // SIMULACIÓN DE ENVÍO A AIRBNB
   // =========================================================
 
-  return AirbnbChannelService
-    .proponerCambio(
-      reserva,
-      {
+  const solicitud =
+    AirbnbChannelService
+      .proponerCambio(
+        reserva,
+        {
+          fechaIngreso:
+            nuevaFechaIngreso,
+
+          fechaEgreso:
+            nuevaFechaEgreso,
+
+          cantidadHuespedes:
+            nuevaCantidadHuespedes,
+
+          montoEstimado:
+            nuevoMonto,
+        }
+      );
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "PROPUESTA_CAMBIO_ENVIADA",
+
+    titulo:
+      "Propuesta de cambio enviada a Airbnb",
+
+    descripcion:
+      "HostFlow envió una propuesta de modificación para la reserva de Airbnb.",
+
+    origen:
+      "HostFlow",
+
+    datosJson: {
+      canal:
+        "Airbnb",
+
+      idSolicitud:
+        solicitud.idSolicitud,
+
+      antes: {
+        fechaIngreso:
+          reserva.fechaIngreso,
+
+        fechaEgreso:
+          reserva.fechaEgreso,
+
+        cantidadHuespedes:
+          Number(
+            reserva.cantidadHuespedes
+          ),
+
+        montoEstimado:
+          Number(
+            reserva.montoEstimado
+          ),
+      },
+
+      propuesto: {
         fechaIngreso:
           nuevaFechaIngreso,
 
@@ -747,8 +1917,11 @@ class ReservaService {
 
         montoEstimado:
           nuevoMonto,
-      }
-    );
+      },
+    },
+  });
+
+  return solicitud;
 }
 
   async procesarAceptacionAirbnb(
@@ -862,6 +2035,94 @@ class ReservaService {
         idSolicitud
       );
 
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "PROPUESTA_CAMBIO_ACEPTADA",
+
+    titulo:
+      "Airbnb aceptó la propuesta de cambio",
+
+    descripcion:
+      "Airbnb confirmó la propuesta y HostFlow sincronizó los nuevos datos de la reserva.",
+
+    origen:
+      "Airbnb",
+
+    datosJson: {
+      canal:
+        "Airbnb",
+
+      idSolicitud:
+        Number(idSolicitud),
+
+      conflictoDetectado,
+
+      antes: {
+        fechaIngreso:
+          reserva.fechaIngreso,
+
+        fechaEgreso:
+          reserva.fechaEgreso,
+
+        cantidadHuespedes:
+          Number(
+            reserva.cantidadHuespedes
+          ),
+
+        montoEstimado:
+          Number(
+            reserva.montoEstimado
+          ),
+      },
+
+      despues: {
+        fechaIngreso:
+          cambios.fechaIngreso,
+
+        fechaEgreso:
+          cambios.fechaEgreso,
+
+        cantidadHuespedes:
+          Number(
+            cambios.cantidadHuespedes
+          ),
+
+        montoEstimado:
+          Number(
+            cambios.montoEstimado
+          ),
+      },
+    },
+  });
+
+  if (conflictoDetectado) {
+    await this.registrarConflictoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      canal:
+        "Airbnb",
+
+      fechaIngreso:
+        cambios.fechaIngreso,
+
+      fechaEgreso:
+        cambios.fechaEgreso,
+
+      contexto:
+        "PROPUESTA_CAMBIO_ACEPTADA",
+
+      idExterno:
+        reserva.idExterno,
+
+      idSolicitud:
+        Number(idSolicitud),
+    });
+  }
+
   // =========================================================
   // OBTENER LA RESERVA YA ACTUALIZADA
   // =========================================================
@@ -949,6 +2210,35 @@ class ReservaService {
         idSolicitud
       );
 
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "PROPUESTA_CAMBIO_RECHAZADA",
+
+    titulo:
+      "Airbnb rechazó la propuesta de cambio",
+
+    descripcion:
+      "La propuesta fue rechazada por Airbnb y la reserva original permaneció sin cambios.",
+
+    origen:
+      "Airbnb",
+
+    datosJson: {
+      canal:
+        "Airbnb",
+
+      idSolicitud:
+        Number(idSolicitud),
+
+      cambiosPropuestos:
+        solicitud.cambiosSolicitados ||
+        null,
+    },
+  });
+
   const reservaActual =
     await this.obtenerReservaPorId(
       reserva.idReserva
@@ -974,10 +2264,6 @@ class ReservaService {
   await this
     .finalizarReservasVencidas();
 
-  // =========================================================
-  // OBTENER RESERVA REAL DESDE AZURE SQL
-  // =========================================================
-
   const reserva =
     await ReservaRepository.obtenerPorId(
       idReserva
@@ -995,10 +2281,6 @@ class ReservaService {
     );
   }
 
-  // =========================================================
-  // VALIDAR ESTADO DE LA RESERVA
-  // =========================================================
-
   if (
     reserva.estado === "Cancelada" ||
     reserva.estado === "Finalizada" ||
@@ -1008,10 +2290,6 @@ class ReservaService {
       "La reserva ya no admite cambios de estadía."
     );
   }
-
-  // =========================================================
-  // EVITAR DOS OPERACIONES PENDIENTES
-  // =========================================================
 
   const operacionPendiente =
     BookingChannelService
@@ -1024,10 +2302,6 @@ class ReservaService {
       "La reserva ya posee una operación pendiente de sincronización con Booking."
     );
   }
-
-  // =========================================================
-  // DATOS SOLICITADOS
-  // =========================================================
 
   const nuevaFechaEgreso =
     datos.fechaEgreso;
@@ -1059,10 +2333,6 @@ class ReservaService {
     );
   }
 
-  // =========================================================
-  // VALIDAR CONFLICTO CONTRA AZURE SQL
-  // =========================================================
-
   const existeConflicto =
     await ReservaRepository
       .existeConflictoFechas(
@@ -1078,15 +2348,6 @@ class ReservaService {
     );
   }
 
-  // =========================================================
-  // ENVIAR OPERACIÓN AL SIMULADOR DE BOOKING
-  // =========================================================
-  //
-  // Todavía NO modificamos fecha ni monto en Azure.
-  //
-  // Booking primero recibe/procesa la operación.
-  // =========================================================
-
   const operacion =
     BookingChannelService
       .cambiarEstadia(
@@ -1100,15 +2361,54 @@ class ReservaService {
         }
       );
 
-  // =========================================================
-  // MARCAR RESERVA COMO PENDIENTE EN AZURE
-  // =========================================================
-
   await ReservaRepository
     .actualizarEstadoSincronizacion(
       reserva.idReserva,
       "Pendiente"
     );
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "CAMBIO_ESTADIA_ENVIADO",
+
+    titulo:
+      "Cambio de estadía enviado a Booking",
+
+    descripcion:
+      "HostFlow envió una solicitud de cambio y quedó pendiente de sincronización con Booking.",
+
+    origen:
+      "HostFlow",
+
+    datosJson: {
+      canal:
+        "Booking",
+
+      idOperacion:
+        operacion.idOperacion,
+
+      antes: {
+        fechaEgreso:
+          reserva.fechaEgreso,
+
+        montoEstimado:
+          Number(
+            reserva.montoEstimado
+          ),
+      },
+
+      solicitado: {
+        fechaEgreso:
+          nuevaFechaEgreso,
+
+        montoEstimado:
+          nuevoMonto,
+      },
+    },
+  });
 
   return operacion;
 }
@@ -1119,10 +2419,6 @@ async reportarNoShowBooking(
 ) {
   await this
     .finalizarReservasVencidas();
-
-  // =========================================================
-  // OBTENER RESERVA REAL DESDE AZURE SQL
-  // =========================================================
 
   const reserva =
     await ReservaRepository.obtenerPorId(
@@ -1141,10 +2437,6 @@ async reportarNoShowBooking(
     );
   }
 
-  // =========================================================
-  // EVITAR DOS OPERACIONES PENDIENTES
-  // =========================================================
-
   const operacionPendiente =
     BookingChannelService
       .obtenerOperacionPendientePorReserva(
@@ -1157,10 +2449,6 @@ async reportarNoShowBooking(
     );
   }
 
-  // =========================================================
-  // VALIDAR ESTADO
-  // =========================================================
-
   if (
     reserva.estado === "Cancelada" ||
     reserva.estado === "Finalizada" ||
@@ -1171,27 +2459,15 @@ async reportarNoShowBooking(
     );
   }
 
-  // =========================================================
-  // ENVIAR REPORTE AL SIMULADOR DE BOOKING
-  // =========================================================
+  const condonarCargos =
+    datos.condonarCargos === true;
 
   const operacion =
     BookingChannelService
       .reportarNoShow(
         reserva,
-        datos.condonarCargos === true
+        condonarCargos
       );
-
-  // =========================================================
-  // MARCAR SINCRONIZACIÓN PENDIENTE EN AZURE
-  // =========================================================
-  //
-  // Todavía NO cambiamos el estado de la
-  // reserva a "No show".
-  //
-  // Eso ocurre recién cuando Booking confirma
-  // la operación y sincronizamos.
-  // =========================================================
 
   await ReservaRepository
     .actualizarEstadoSincronizacion(
@@ -1199,16 +2475,48 @@ async reportarNoShowBooking(
       "Pendiente"
     );
 
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "REPORTE_NO_SHOW_ENVIADO",
+
+    titulo:
+      "No-show reportado a Booking",
+
+    descripcion:
+      "HostFlow envió el reporte de no-show y quedó pendiente de confirmación por Booking.",
+
+    origen:
+      "HostFlow",
+
+    datosJson: {
+      canal:
+        "Booking",
+
+      idOperacion:
+        operacion.idOperacion,
+
+      estadoActual:
+        reserva.estado,
+
+      condonarCargos,
+
+      fechaIngreso:
+        reserva.fechaIngreso,
+
+      fechaEgreso:
+        reserva.fechaEgreso,
+    },
+  });
+
   return operacion;
 }
 
 async procesarSincronizacionBooking(
   idOperacion
 ) {
-  // =========================================================
-  // OBTENER OPERACIÓN SIMULADA DE BOOKING
-  // =========================================================
-
   const operacion =
     BookingChannelService
       .obtenerOperacionPorId(
@@ -1230,10 +2538,6 @@ async procesarSincronizacionBooking(
     );
   }
 
-  // =========================================================
-  // OBTENER RESERVA REAL DESDE AZURE SQL
-  // =========================================================
-
   const reserva =
     await ReservaRepository.obtenerPorId(
       operacion.idReserva
@@ -1252,10 +2556,7 @@ async procesarSincronizacionBooking(
   }
 
   let conflictoDetectado = false;
-
-  // =========================================================
-  // CAMBIO DE ESTADÍA
-  // =========================================================
+  let eventoTimeline = null;
 
   if (
     operacion.tipo ===
@@ -1270,12 +2571,6 @@ async procesarSincronizacionBooking(
       );
     }
 
-    // Booking ya confirmó/procesó el cambio.
-    //
-    // Comprobamos si apareció un conflicto
-    // desde que se envió la operación,
-    // pero NO bloqueamos la sincronización.
-
     conflictoDetectado =
       await ReservaRepository
         .existeConflictoFechas(
@@ -1289,9 +2584,6 @@ async procesarSincronizacionBooking(
       .sincronizarCambioExterno(
         reserva.idReserva,
         {
-          // Booking solo está cambiando
-          // egreso + importe.
-          // Conservamos el resto.
           fechaIngreso:
             reserva.fechaIngreso,
 
@@ -1305,43 +2597,102 @@ async procesarSincronizacionBooking(
             cambios.montoEstimado,
         }
       );
-  }
 
-  // =========================================================
-  // NO-SHOW
-  // =========================================================
+    eventoTimeline = {
+      tipo:
+        "CAMBIO_ESTADIA_SINCRONIZADO",
 
-  else if (
+      titulo:
+        "Booking confirmó el cambio de estadía",
+
+      descripcion:
+        "Booking procesó la operación y HostFlow sincronizó los nuevos datos de la reserva.",
+
+      datosJson: {
+        canal:
+          "Booking",
+
+        idOperacion:
+          Number(idOperacion),
+
+        conflictoDetectado,
+
+        antes: {
+          fechaIngreso:
+            reserva.fechaIngreso,
+
+          fechaEgreso:
+            reserva.fechaEgreso,
+
+          montoEstimado:
+            Number(
+              reserva.montoEstimado
+            ),
+        },
+
+        despues: {
+          fechaIngreso:
+            reserva.fechaIngreso,
+
+          fechaEgreso:
+            cambios.fechaEgreso,
+
+          montoEstimado:
+            Number(
+              cambios.montoEstimado
+            ),
+        },
+      },
+    };
+  } else if (
     operacion.tipo === "NO_SHOW"
   ) {
-    // Booking confirmó el no-show.
-    // Recién ahora modificamos Azure.
-
     await ReservaRepository
       .sincronizarEstadoExterno(
         reserva.idReserva,
         "No show"
       );
-  }
 
-  // =========================================================
-  // TIPO DE OPERACIÓN DESCONOCIDO
-  // =========================================================
+    eventoTimeline = {
+      tipo:
+        "NO_SHOW_CONFIRMADO",
 
-  else {
+      titulo:
+        "Booking confirmó el no-show",
+
+      descripcion:
+        "Booking confirmó el reporte y HostFlow actualizó el estado de la reserva.",
+
+      datosJson: {
+        canal:
+          "Booking",
+
+        idOperacion:
+          Number(idOperacion),
+
+        estadoAnterior:
+          reserva.estado,
+
+        estadoNuevo:
+          "No show",
+
+        condonarCargos:
+          operacion.condonarCargos ??
+          operacion.datos?.condonarCargos ??
+          null,
+
+        fechaIngreso:
+          reserva.fechaIngreso,
+
+        fechaEgreso:
+          reserva.fechaEgreso,
+      },
+    };
+  } else {
     throw new Error(
       "El tipo de operación de Booking no es válido."
     );
   }
-
-  // =========================================================
-  // MARCAR OPERACIÓN COMO SINCRONIZADA
-  // =========================================================
-  //
-  // Esto se hace DESPUÉS de actualizar Azure.
-  // Si SQL falla, la operación sigue pendiente
-  // y podemos volver a procesarla.
-  // =========================================================
 
   const operacionSincronizada =
     BookingChannelService
@@ -1349,9 +2700,56 @@ async procesarSincronizacionBooking(
         idOperacion
       );
 
-  // =========================================================
-  // DEVOLVER RESERVA ACTUALIZADA DESDE AZURE
-  // =========================================================
+  if (eventoTimeline) {
+    await this.registrarEventoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      tipo:
+        eventoTimeline.tipo,
+
+      titulo:
+        eventoTimeline.titulo,
+
+      descripcion:
+        eventoTimeline.descripcion,
+
+      origen:
+        "Booking",
+
+      datosJson:
+        eventoTimeline.datosJson,
+    });
+  }
+
+  if (
+    conflictoDetectado &&
+    operacion.tipo === "CAMBIO_ESTADIA"
+  ) {
+    await this.registrarConflictoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      canal:
+        "Booking",
+
+      fechaIngreso:
+        reserva.fechaIngreso,
+
+      fechaEgreso:
+        operacion.cambiosSolicitados
+          ?.fechaEgreso,
+
+      contexto:
+        "CAMBIO_ESTADIA_SINCRONIZADO",
+
+      idExterno:
+        reserva.idExterno,
+
+      idOperacion:
+        Number(idOperacion),
+    });
+  }
 
   const reservaActualizada =
     await this.obtenerReservaPorId(
@@ -1683,6 +3081,82 @@ async procesarNuevaReservaBooking(
           evento.idExterno,
       });
 
+
+  await this.registrarEventoReserva({
+    idReserva:
+      nuevaReserva.idReserva,
+
+    tipo:
+      "RESERVA_RECIBIDA",
+
+    titulo:
+      "Reserva recibida desde Booking",
+
+    descripcion:
+      "HostFlow recibió y sincronizó una nueva reserva confirmada desde Booking.",
+
+    origen:
+      "Booking",
+
+    datosJson: {
+      canal:
+        "Booking",
+
+      idExterno:
+        evento.idExterno,
+
+      idEventoExterno:
+        evento.idEvento,
+
+      estado:
+        datos.estadoReserva ||
+        "Confirmada",
+
+      propiedad:
+        propiedad.nombre,
+
+      huesped:
+        `${huesped.nombre} ${huesped.apellido}`,
+
+      fechaIngreso:
+        datos.fechaIngreso,
+
+      fechaEgreso:
+        datos.fechaEgreso,
+
+      cantidadHuespedes,
+
+      montoEstimado:
+        Number(
+          datos.montoEstimado
+        ) || 0,
+
+      conflictoDetectado,
+    },
+  });
+
+if (conflictoDetectado) {
+    await this.registrarConflictoReserva({
+      idReserva:
+        nuevaReserva.idReserva,
+
+      canal:
+        "Booking",
+
+      fechaIngreso:
+        datos.fechaIngreso,
+
+      fechaEgreso:
+        datos.fechaEgreso,
+
+      contexto:
+        "RESERVA_RECIBIDA",
+
+      idExterno:
+        evento.idExterno,
+    });
+  }
+
   // =========================================================
   // MARCAR EVENTO COMO PROCESADO
   // =========================================================
@@ -1723,10 +3197,6 @@ async procesarNuevaReservaBooking(
 async procesarModificacionReservaBooking(
   evento
 ) {
-  // =========================================================
-  // BUSCAR RESERVA BOOKING EN AZURE
-  // =========================================================
-
   const reserva =
     await ReservaRepository
       .obtenerPorCanalEIdExterno(
@@ -1748,14 +3218,6 @@ async procesarModificacionReservaBooking(
       "El evento de Booking no contiene datos para modificar la reserva."
     );
   }
-
-  // =========================================================
-  // CALCULAR NUEVOS VALORES
-  // =========================================================
-  //
-  // Booking puede enviar solamente algunos campos.
-  // Los que no llegan conservan el valor actual.
-  // =========================================================
 
   const nuevaFechaIngreso =
     datos.fechaIngreso ||
@@ -1785,10 +3247,6 @@ async procesarModificacionReservaBooking(
           reserva.montoEstimado
         );
 
-  // =========================================================
-  // VALIDACIONES
-  // =========================================================
-
   if (
     new Date(nuevaFechaEgreso) <=
     new Date(nuevaFechaIngreso)
@@ -1814,18 +3272,6 @@ async procesarModificacionReservaBooking(
     );
   }
 
-  // =========================================================
-  // DETECTAR CONFLICTO
-  // =========================================================
-  //
-  // IMPORTANTE:
-  // Booking ya confirmó la modificación.
-  //
-  // Si HostFlow detecta una superposición,
-  // NO bloqueamos la sincronización.
-  // Actualizamos Azure y mostramos advertencia.
-  // =========================================================
-
   const conflictoDetectado =
     await ReservaRepository
       .existeConflictoFechas(
@@ -1834,10 +3280,6 @@ async procesarModificacionReservaBooking(
         nuevaFechaEgreso,
         reserva.idReserva
       );
-
-  // =========================================================
-  // SINCRONIZAR AZURE
-  // =========================================================
 
   await ReservaRepository
     .sincronizarReservaExterna(
@@ -1861,8 +3303,155 @@ async procesarModificacionReservaBooking(
       }
     );
 
-  // Marcamos el evento como procesado
-  // solamente después de que Azure se actualizó.
+  const camposModificados = [];
+
+  if (
+    reserva.fechaIngreso !==
+    nuevaFechaIngreso
+  ) {
+    camposModificados.push(
+      "fechaIngreso"
+    );
+  }
+
+  if (
+    reserva.fechaEgreso !==
+    nuevaFechaEgreso
+  ) {
+    camposModificados.push(
+      "fechaEgreso"
+    );
+  }
+
+  if (
+    Number(
+      reserva.cantidadHuespedes
+    ) !==
+    Number(
+      nuevaCantidadHuespedes
+    )
+  ) {
+    camposModificados.push(
+      "cantidadHuespedes"
+    );
+  }
+
+  if (
+    Number(
+      reserva.montoEstimado
+    ) !==
+    Number(
+      nuevoMontoEstimado
+    )
+  ) {
+    camposModificados.push(
+      "montoEstimado"
+    );
+  }
+
+  if (
+    datos.estadoReserva &&
+    reserva.estado !==
+      datos.estadoReserva
+  ) {
+    camposModificados.push(
+      "estado"
+    );
+  }
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "RESERVA_MODIFICADA",
+
+    titulo:
+      "Reserva modificada desde Booking",
+
+    descripcion:
+      "Booking informó cambios y HostFlow sincronizó la reserva local.",
+
+    origen:
+      "Booking",
+
+    datosJson: {
+      canal:
+        "Booking",
+
+      idExterno:
+        evento.idExterno,
+
+      idEventoExterno:
+        evento.idEvento,
+
+      conflictoDetectado,
+
+      camposModificados,
+
+      antes: {
+        fechaIngreso:
+          reserva.fechaIngreso,
+
+        fechaEgreso:
+          reserva.fechaEgreso,
+
+        cantidadHuespedes:
+          Number(
+            reserva.cantidadHuespedes
+          ),
+
+        montoEstimado:
+          Number(
+            reserva.montoEstimado
+          ),
+
+        estado:
+          reserva.estado,
+      },
+
+      despues: {
+        fechaIngreso:
+          nuevaFechaIngreso,
+
+        fechaEgreso:
+          nuevaFechaEgreso,
+
+        cantidadHuespedes:
+          nuevaCantidadHuespedes,
+
+        montoEstimado:
+          nuevoMontoEstimado,
+
+        estado:
+          datos.estadoReserva ||
+          reserva.estado,
+      },
+    },
+  });
+
+if (conflictoDetectado) {
+    await this.registrarConflictoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      canal:
+        "Booking",
+
+      fechaIngreso:
+        nuevaFechaIngreso,
+
+      fechaEgreso:
+        nuevaFechaEgreso,
+
+      contexto:
+        "RESERVA_MODIFICADA",
+
+      idExterno:
+        evento.idExterno,
+    });
+  }
+
   const eventoProcesado =
     BookingInboundService
       .marcarEventoProcesado(
@@ -1893,10 +3482,6 @@ async procesarModificacionReservaBooking(
 async procesarCancelacionReservaBooking(
   evento
 ) {
-  // =========================================================
-  // BUSCAR RESERVA BOOKING EN AZURE
-  // =========================================================
-
   const reserva =
     await ReservaRepository
       .obtenerPorCanalEIdExterno(
@@ -1910,23 +3495,57 @@ async procesarCancelacionReservaBooking(
     );
   }
 
-  // =========================================================
-  // SINCRONIZAR CANCELACIÓN
-  // =========================================================
-  //
-  // La cancelación ya ocurrió en Booking.
-  // HostFlow no la bloquea: solamente sincroniza
-  // su copia local.
-  // =========================================================
-
   await ReservaRepository
     .sincronizarEstadoExterno(
       reserva.idReserva,
       "Cancelada"
     );
 
-  // Marcamos el evento como procesado
-  // únicamente después de actualizar Azure.
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "RESERVA_CANCELADA",
+
+    titulo:
+      "Reserva cancelada desde Booking",
+
+    descripcion:
+      "Booking informó la cancelación y HostFlow sincronizó el estado de la reserva.",
+
+    origen:
+      "Booking",
+
+    datosJson: {
+      canal:
+        "Booking",
+
+      idExterno:
+        evento.idExterno,
+
+      idEventoExterno:
+        evento.idEvento,
+
+      estadoAnterior:
+        reserva.estado,
+
+      estadoNuevo:
+        "Cancelada",
+
+      fechaIngreso:
+        reserva.fechaIngreso,
+
+      fechaEgreso:
+        reserva.fechaEgreso,
+
+      montoEstimado:
+        Number(
+          reserva.montoEstimado
+        ),
+    },
+  });
+
   const eventoProcesado =
     BookingInboundService
       .marcarEventoProcesado(
@@ -2259,6 +3878,81 @@ async procesarNuevaReservaAirbnb(
           evento.idExterno,
       });
 
+  await this.registrarEventoReserva({
+    idReserva:
+      nuevaReserva.idReserva,
+
+    tipo:
+      "RESERVA_RECIBIDA",
+
+    titulo:
+      "Reserva recibida desde Airbnb",
+
+    descripcion:
+      "HostFlow recibió y sincronizó una nueva reserva confirmada desde Airbnb.",
+
+    origen:
+      "Airbnb",
+
+    datosJson: {
+      canal:
+        "Airbnb",
+
+      idExterno:
+        evento.idExterno,
+
+      idEventoExterno:
+        evento.idEvento,
+
+      estado:
+        datos.estadoReserva ||
+        "Confirmada",
+
+      propiedad:
+        propiedad.nombre,
+
+      huesped:
+        `${huesped.nombre} ${huesped.apellido}`,
+
+      fechaIngreso:
+        datos.fechaIngreso,
+
+      fechaEgreso:
+        datos.fechaEgreso,
+
+      cantidadHuespedes,
+
+      montoEstimado:
+        Number(
+          datos.montoEstimado
+        ) || 0,
+
+      conflictoDetectado,
+    },
+  });
+
+if (conflictoDetectado) {
+    await this.registrarConflictoReserva({
+      idReserva:
+        nuevaReserva.idReserva,
+
+      canal:
+        "Airbnb",
+
+      fechaIngreso:
+        datos.fechaIngreso,
+
+      fechaEgreso:
+        datos.fechaEgreso,
+
+      contexto:
+        "RESERVA_RECIBIDA",
+
+      idExterno:
+        evento.idExterno,
+    });
+  }
+
   // El evento se considera procesado solamente
   // después de guardar correctamente en Azure.
 
@@ -2294,10 +3988,6 @@ async procesarNuevaReservaAirbnb(
 async procesarModificacionReservaAirbnb(
   evento
 ) {
-  // =========================================================
-  // BUSCAR RESERVA AIRBNB EN AZURE
-  // =========================================================
-
   const reserva =
     await ReservaRepository
       .obtenerPorCanalEIdExterno(
@@ -2319,10 +4009,6 @@ async procesarModificacionReservaAirbnb(
       "El evento de Airbnb no contiene datos para modificar la reserva."
     );
   }
-
-  // =========================================================
-  // NUEVOS VALORES
-  // =========================================================
 
   const nuevaFechaIngreso =
     datos.fechaIngreso ||
@@ -2352,10 +4038,6 @@ async procesarModificacionReservaAirbnb(
           reserva.montoEstimado
         );
 
-  // =========================================================
-  // VALIDACIONES
-  // =========================================================
-
   if (
     new Date(nuevaFechaEgreso) <=
     new Date(nuevaFechaIngreso)
@@ -2381,15 +4063,6 @@ async procesarModificacionReservaAirbnb(
     );
   }
 
-  // =========================================================
-  // CONFLICTOS
-  // =========================================================
-  //
-  // Airbnb ya confirmó el cambio.
-  // Si genera una superposición, HostFlow
-  // sincroniza igualmente y muestra advertencia.
-  // =========================================================
-
   const conflictoDetectado =
     await ReservaRepository
       .existeConflictoFechas(
@@ -2398,10 +4071,6 @@ async procesarModificacionReservaAirbnb(
         nuevaFechaEgreso,
         reserva.idReserva
       );
-
-  // =========================================================
-  // SINCRONIZAR EN AZURE
-  // =========================================================
 
   await ReservaRepository
     .sincronizarReservaExterna(
@@ -2425,8 +4094,154 @@ async procesarModificacionReservaAirbnb(
       }
     );
 
-  // Marcamos el evento como procesado
-  // solamente después de actualizar Azure.
+  const camposModificados = [];
+
+  if (
+    reserva.fechaIngreso !==
+    nuevaFechaIngreso
+  ) {
+    camposModificados.push(
+      "fechaIngreso"
+    );
+  }
+
+  if (
+    reserva.fechaEgreso !==
+    nuevaFechaEgreso
+  ) {
+    camposModificados.push(
+      "fechaEgreso"
+    );
+  }
+
+  if (
+    Number(
+      reserva.cantidadHuespedes
+    ) !==
+    Number(
+      nuevaCantidadHuespedes
+    )
+  ) {
+    camposModificados.push(
+      "cantidadHuespedes"
+    );
+  }
+
+  if (
+    Number(
+      reserva.montoEstimado
+    ) !==
+    Number(
+      nuevoMontoEstimado
+    )
+  ) {
+    camposModificados.push(
+      "montoEstimado"
+    );
+  }
+
+  if (
+    datos.estadoReserva &&
+    reserva.estado !==
+      datos.estadoReserva
+  ) {
+    camposModificados.push(
+      "estado"
+    );
+  }
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "RESERVA_MODIFICADA",
+
+    titulo:
+      "Reserva modificada desde Airbnb",
+
+    descripcion:
+      "Airbnb informó cambios y HostFlow sincronizó la reserva local.",
+
+    origen:
+      "Airbnb",
+
+    datosJson: {
+      canal:
+        "Airbnb",
+
+      idExterno:
+        evento.idExterno,
+
+      idEventoExterno:
+        evento.idEvento,
+
+      conflictoDetectado,
+
+      camposModificados,
+
+      antes: {
+        fechaIngreso:
+          reserva.fechaIngreso,
+
+        fechaEgreso:
+          reserva.fechaEgreso,
+
+        cantidadHuespedes:
+          Number(
+            reserva.cantidadHuespedes
+          ),
+
+        montoEstimado:
+          Number(
+            reserva.montoEstimado
+          ),
+
+        estado:
+          reserva.estado,
+      },
+
+      despues: {
+        fechaIngreso:
+          nuevaFechaIngreso,
+
+        fechaEgreso:
+          nuevaFechaEgreso,
+
+        cantidadHuespedes:
+          nuevaCantidadHuespedes,
+
+        montoEstimado:
+          nuevoMontoEstimado,
+
+        estado:
+          datos.estadoReserva ||
+          reserva.estado,
+      },
+    },
+  });
+
+if (conflictoDetectado) {
+    await this.registrarConflictoReserva({
+      idReserva:
+        reserva.idReserva,
+
+      canal:
+        "Airbnb",
+
+      fechaIngreso:
+        nuevaFechaIngreso,
+
+      fechaEgreso:
+        nuevaFechaEgreso,
+
+      contexto:
+        "RESERVA_MODIFICADA",
+
+      idExterno:
+        evento.idExterno,
+    });
+  }
 
   const eventoProcesado =
     AirbnbInboundService
@@ -2476,6 +4291,51 @@ async procesarCancelacionReservaAirbnb(
       reserva.idReserva,
       "Cancelada"
     );
+
+  await this.registrarEventoReserva({
+    idReserva:
+      reserva.idReserva,
+
+    tipo:
+      "RESERVA_CANCELADA",
+
+    titulo:
+      "Reserva cancelada desde Airbnb",
+
+    descripcion:
+      "Airbnb informó la cancelación y HostFlow sincronizó el estado de la reserva.",
+
+    origen:
+      "Airbnb",
+
+    datosJson: {
+      canal:
+        "Airbnb",
+
+      idExterno:
+        evento.idExterno,
+
+      idEventoExterno:
+        evento.idEvento,
+
+      estadoAnterior:
+        reserva.estado,
+
+      estadoNuevo:
+        "Cancelada",
+
+      fechaIngreso:
+        reserva.fechaIngreso,
+
+      fechaEgreso:
+        reserva.fechaEgreso,
+
+      montoEstimado:
+        Number(
+          reserva.montoEstimado
+        ),
+    },
+  });
 
   const eventoProcesado =
     AirbnbInboundService
