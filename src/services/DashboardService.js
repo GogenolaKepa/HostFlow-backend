@@ -1,23 +1,101 @@
-const DashboardResumen = require("../models/DashboardResumen");
-const { propiedades, reservas, huespedes, alertas } = require("../data/mockData");
+const DashboardResumen = require(
+  "../models/DashboardResumen"
+);
+
+const {
+  propiedades,
+  reservas,
+  huespedes,
+} = require(
+  "../data/mockData"
+);
+
+const AlertaService = require(
+  "./AlertaService"
+);
 
 class DashboardService {
-  obtenerResumen() {
-    const propiedadesActivas = propiedades.filter((p) => p.estado === "Activa").length;
+  // =========================================================
+  // ALERTAS REALES
+  // =========================================================
 
-    const reservasActivas = reservas.filter(
-      (r) => r.estado === "Confirmada" || r.estado === "Pendiente"
-    ).length;
+  async obtenerAlertas() {
+    const alertas =
+      await AlertaService
+        .obtenerAlertas();
 
-    const huespedesRegistrados = huespedes.length;
+    /*
+     * En Inicio mostramos solamente alertas
+     * operativas activas.
+     *
+     * Las resueltas siguen disponibles en
+     * el Centro de alertas.
+     */
+    return alertas
+      .filter(
+        (alerta) =>
+          alerta.estado !==
+          "Resuelta"
+      )
+      .slice(
+        0,
+        4
+      );
+  }
 
-    const ingresosMes = reservas
-      .filter((r) => r.estado === "Confirmada")
-      .reduce((total, reserva) => total + reserva.montoEstimado, 0);
+  // =========================================================
+  // RESUMEN
+  // =========================================================
 
-    const ocupacionMensual = 68;
+  obtenerResumen(
+    alertasActivas = []
+  ) {
+    const propiedadesActivas =
+      propiedades.filter(
+        (p) =>
+          p.estado ===
+          "Activa"
+      ).length;
 
-    const alertasPendientes = alertas.filter((a) => !a.leida).length;
+    const reservasActivas =
+      reservas.filter(
+        (r) =>
+          r.estado ===
+            "Confirmada" ||
+          r.estado ===
+            "Pendiente"
+      ).length;
+
+    const huespedesRegistrados =
+      huespedes.length;
+
+    const ingresosMes =
+      reservas
+        .filter(
+          (r) =>
+            r.estado ===
+            "Confirmada"
+        )
+        .reduce(
+          (
+            total,
+            reserva
+          ) =>
+            total +
+            reserva.montoEstimado,
+          0
+        );
+
+    const ocupacionMensual =
+      68;
+
+    /*
+     * Ya no usamos alertas mock.
+     * El contador del Dashboard sale de
+     * las alertas reales activas de Azure.
+     */
+    const alertasPendientes =
+      alertasActivas.length;
 
     return new DashboardResumen(
       propiedadesActivas,
@@ -29,21 +107,37 @@ class DashboardService {
     );
   }
 
-  obtenerProximasReservas() {
-    return reservas.map((reserva) => ({
-      idReserva: reserva.idReserva,
-      huesped: `${reserva.huesped.nombre} ${reserva.huesped.apellido}`,
-      propiedad: reserva.propiedad.nombre,
-      canal: reserva.canal,
-      estado: reserva.estado,
-      fechaIngreso: reserva.fechaIngreso,
-      fechaEgreso: reserva.fechaEgreso
-    }));
-  }
+  // =========================================================
+  // PRÓXIMAS RESERVAS
+  // =========================================================
 
-  obtenerAlertas() {
-    return alertas;
+  obtenerProximasReservas() {
+    return reservas.map(
+      (reserva) => ({
+        idReserva:
+          reserva.idReserva,
+
+        huesped:
+          `${reserva.huesped.nombre} ${reserva.huesped.apellido}`,
+
+        propiedad:
+          reserva.propiedad.nombre,
+
+        canal:
+          reserva.canal,
+
+        estado:
+          reserva.estado,
+
+        fechaIngreso:
+          reserva.fechaIngreso,
+
+        fechaEgreso:
+          reserva.fechaEgreso,
+      })
+    );
   }
 }
 
-module.exports = new DashboardService();
+module.exports =
+  new DashboardService();

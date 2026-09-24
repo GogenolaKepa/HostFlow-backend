@@ -85,6 +85,66 @@ class PropiedadCanalController {
       });
     }
   }
+
+  // =========================================================
+  // SINCRONIZAR MANUALMENTE CON UN CANAL
+  // =========================================================
+
+  async sincronizarPropiedad(
+    req,
+    res
+  ) {
+    try {
+      const { id } = req.params;
+      const { canal } = req.body;
+
+      if (!canal) {
+        return res.status(400).json({
+          mensaje:
+            "Debe indicar el canal que desea sincronizar.",
+        });
+      }
+
+      const resultado =
+        await PropiedadCanalService
+          .sincronizarPropiedadEnCanal(
+            id,
+            canal
+          );
+
+      return res.status(200).json({
+        mensaje:
+          resultado.mensaje,
+
+        canal:
+          resultado.canal,
+
+        respuestaProveedor:
+          resultado.respuestaProveedor,
+
+        vinculacion:
+          resultado.vinculacion,
+      });
+    } catch (error) {
+      console.error(
+        "Error al sincronizar propiedad manualmente:",
+        error
+      );
+
+      return res.status(400).json({
+        mensaje:
+          error.message,
+
+        canal:
+          error.canal ||
+          null,
+
+        vinculacion:
+          error.vinculacion ||
+          null,
+      });
+    }
+  }
 }
 
 module.exports =

@@ -92,6 +92,15 @@ router.post(
     )
 );
 
+router.post(
+  "/:id/canales/sincronizar",
+  (req, res) =>
+    PropiedadCanalController.sincronizarPropiedad(
+      req,
+      res
+    )
+);
+
 // =========================================================
 // IMÁGENES - GALERÍA ACTIVA
 // =========================================================

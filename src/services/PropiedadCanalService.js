@@ -164,6 +164,143 @@ class PropiedadCanalService {
   }
 
 // =========================================================
+// SINCRONIZAR MANUALMENTE UNA PROPIEDAD EN UN CANAL
+// =========================================================
+
+async sincronizarPropiedadEnCanal(
+  idPropiedad,
+  canal
+) {
+  const propiedad =
+    await PropiedadRepository.obtenerPorId(
+      idPropiedad
+    );
+
+  if (!propiedad) {
+    throw new Error(
+      "La propiedad no existe."
+    );
+  }
+
+  /*
+   * Valida que el canal sea soportado
+   * y obtiene el simulador correspondiente.
+   */
+  const proveedor =
+    this.obtenerProveedor(
+      canal
+    );
+
+  const vinculacionActual =
+    await PropiedadCanalRepository
+      .obtenerPorPropiedadYCanal(
+        idPropiedad,
+        canal
+      );
+
+  if (!vinculacionActual) {
+    throw new Error(
+      `La propiedad no está vinculada con ${canal}.`
+    );
+  }
+
+  if (
+    vinculacionActual.estadoPublicacion !==
+    "Publicada"
+  ) {
+    throw new Error(
+      `La propiedad debe estar publicada en ${canal} para poder sincronizarla manualmente.`
+    );
+  }
+
+  try {
+    /*
+     * 1. HostFlow deja constancia de que
+     *    comenzó una sincronización.
+     */
+    const vinculacionPendiente =
+      await PropiedadCanalRepository
+        .marcarPendiente(
+          idPropiedad,
+          canal
+        );
+
+    /*
+     * 2. Se envía el estado actual de
+     *    la propiedad al proveedor simulado.
+     */
+    const respuestaProveedor =
+      await proveedor
+        .actualizarPublicacion(
+          propiedad,
+          vinculacionPendiente
+        );
+
+    /*
+     * 3. Si el proveedor confirma,
+     *    guardamos fecha y estado.
+     */
+    const vinculacionSincronizada =
+      await PropiedadCanalRepository
+        .marcarSincronizada(
+          idPropiedad,
+          canal
+        );
+
+    return {
+      mensaje:
+        `Propiedad sincronizada correctamente con ${canal}.`,
+
+      canal,
+
+      respuestaProveedor,
+
+      vinculacion:
+        vinculacionSincronizada,
+    };
+  } catch (error) {
+    /*
+     * Si falla el proveedor, la copia local
+     * de HostFlow no se revierte.
+     *
+     * Solamente se deja el canal en Error.
+     */
+    let vinculacionError =
+      null;
+
+    try {
+      vinculacionError =
+        await PropiedadCanalRepository
+          .marcarError(
+            idPropiedad,
+            canal,
+            error.message
+          );
+    } catch (
+      errorPersistencia
+    ) {
+      console.error(
+        `No se pudo registrar el error de sincronización manual de ${canal}:`,
+        errorPersistencia
+      );
+    }
+
+    const errorSincronizacion =
+      new Error(
+        `No se pudo sincronizar la propiedad con ${canal}: ${error.message}`
+      );
+
+    errorSincronizacion.canal =
+      canal;
+
+    errorSincronizacion.vinculacion =
+      vinculacionError;
+
+    throw errorSincronizacion;
+  }
+}
+
+// =========================================================
 // SINCRONIZAR CAMBIOS DE PROPIEDAD
 // =========================================================
 

@@ -1,24 +1,48 @@
-const DashboardService = require("../services/DashboardService");
+const DashboardService = require(
+  "../services/DashboardService"
+);
 
 class DashboardController {
-  obtenerDashboard(req, res) {
+  async obtenerDashboard(
+    req,
+    res
+  ) {
     try {
-      const resumen = DashboardService.obtenerResumen();
-      const proximasReservas = DashboardService.obtenerProximasReservas();
-      const alertas = DashboardService.obtenerAlertas();
+      const alertas =
+        await DashboardService
+          .obtenerAlertas();
+
+      const resumen =
+        DashboardService
+          .obtenerResumen(
+            alertas
+          );
+
+      const proximasReservas =
+        DashboardService
+          .obtenerProximasReservas();
 
       return res.status(200).json({
         resumen,
         proximasReservas,
-        alertas
+        alertas,
       });
     } catch (error) {
+      console.error(
+        "Error al obtener dashboard:",
+        error
+      );
+
       return res.status(500).json({
-        mensaje: "Error al obtener el dashboard.",
-        error: error.message
+        mensaje:
+          "Error al obtener el dashboard.",
+
+        error:
+          error.message,
       });
     }
   }
 }
 
-module.exports = new DashboardController();
+module.exports =
+  new DashboardController();

@@ -30,6 +30,10 @@ const huespedRoutes = require(
   "./routes/huespedRoutes"
 );
 
+const alertaRoutes = require(
+  "./routes/alertaRoutes"
+);
+
 const bookingInboundRoutes = require(
   "./routes/bookingInboundRoutes"
 );
@@ -83,7 +87,6 @@ app.use(
 
 app.use(
   "/uploads",
-
   express.static(
     path.join(
       process.cwd(),
@@ -136,6 +139,11 @@ app.use(
 app.use(
   "/api/huespedes",
   huespedRoutes
+);
+
+app.use(
+  "/api/alertas",
+  alertaRoutes
 );
 
 // =========================================================
