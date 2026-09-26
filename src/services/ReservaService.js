@@ -9,6 +9,8 @@ const ReservaMensajeRepository = require("../repositories/ReservaMensajeReposito
 const ReservaIncidenciaRepository = require("../repositories/ReservaIncidenciaRepository");
 const ReservaObservacionRepository = require("../repositories/ReservaObservacionRepository");
 
+const FORMATO_HORA_RESERVA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 class ReservaService {
   // =========================================================
   // FECHA ACTUAL DE NEGOCIO - ARGENTINA
@@ -1156,10 +1158,18 @@ class ReservaService {
     idPropiedad,
     idHuesped,
     fechaIngreso,
+    horaIngreso,
     fechaEgreso,
+    horaEgreso,
     cantidadHuespedes,
     montoEstimado,
   } = datos;
+
+  const horaIngresoNormalizada =
+    String(horaIngreso || "").trim();
+
+  const horaEgresoNormalizada =
+    String(horaEgreso || "").trim();
 
   // =========================================================
   // DATOS OBLIGATORIOS
@@ -1169,7 +1179,9 @@ class ReservaService {
     !idPropiedad ||
     !idHuesped ||
     !fechaIngreso ||
-    !fechaEgreso
+    !horaIngresoNormalizada ||
+    !fechaEgreso ||
+    !horaEgresoNormalizada
   ) {
     throw new Error(
       "Faltan datos obligatorios para registrar la reserva."
@@ -1186,6 +1198,19 @@ class ReservaService {
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      horaIngresoNormalizada
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      horaEgresoNormalizada
+    )
+  ) {
+    throw new Error(
+      "Los horarios de check-in y check-out no son válidos."
     );
   }
 
@@ -1274,7 +1299,11 @@ class ReservaService {
       idPropiedad,
       idHuesped,
       fechaIngreso,
+      horaIngreso:
+        horaIngresoNormalizada,
       fechaEgreso,
+      horaEgreso:
+        horaEgresoNormalizada,
       cantidadHuespedes: cantidad,
       montoEstimado:
         montoFinal,
@@ -1325,7 +1354,13 @@ class ReservaService {
 
       fechaIngreso,
 
+      horaIngreso:
+        horaIngresoNormalizada,
+
       fechaEgreso,
+
+      horaEgreso:
+        horaEgresoNormalizada,
 
       cantidadHuespedes:
         cantidad,
@@ -1395,9 +1430,33 @@ class ReservaService {
     datos.fechaIngreso ||
     reserva.fechaIngreso;
 
+  const nuevaHoraIngreso =
+    datos.horaIngreso !== undefined &&
+    datos.horaIngreso !== null &&
+    datos.horaIngreso !== ""
+      ? String(
+          datos.horaIngreso
+        ).trim()
+      : String(
+          reserva.horaIngreso ||
+            "00:00"
+        ).trim();
+
   const nuevaFechaEgreso =
     datos.fechaEgreso ||
     reserva.fechaEgreso;
+
+  const nuevaHoraEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : String(
+          reserva.horaEgreso ||
+            "00:00"
+        ).trim();
 
   const nuevoEstado =
     datos.estado ||
@@ -1420,6 +1479,19 @@ class ReservaService {
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraIngreso
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraEgreso
+    )
+  ) {
+    throw new Error(
+      "Los horarios de check-in y check-out no son válidos."
     );
   }
 
@@ -1458,7 +1530,9 @@ class ReservaService {
     reserva.idReserva,
     {
       fechaIngreso: nuevaFechaIngreso,
+      horaIngreso: nuevaHoraIngreso,
       fechaEgreso: nuevaFechaEgreso,
+      horaEgreso: nuevaHoraEgreso,
       estado: nuevoEstado,
       montoEstimado: nuevoMonto,
     }
@@ -1480,11 +1554,35 @@ class ReservaService {
   }
 
   if (
+    String(
+      reserva.horaIngreso ||
+        "00:00"
+    ) !==
+    nuevaHoraIngreso
+  ) {
+    camposModificados.push(
+      "horaIngreso"
+    );
+  }
+
+  if (
     reserva.fechaEgreso !==
     nuevaFechaEgreso
   ) {
     camposModificados.push(
       "fechaEgreso"
+    );
+  }
+
+  if (
+    String(
+      reserva.horaEgreso ||
+        "00:00"
+    ) !==
+    nuevaHoraEgreso
+  ) {
+    camposModificados.push(
+      "horaEgreso"
     );
   }
 
@@ -1534,8 +1632,16 @@ class ReservaService {
           fechaIngreso:
             reserva.fechaIngreso,
 
+          horaIngreso:
+            reserva.horaIngreso ||
+            "00:00",
+
           fechaEgreso:
             reserva.fechaEgreso,
+
+          horaEgreso:
+            reserva.horaEgreso ||
+            "00:00",
 
           estado:
             reserva.estado,
@@ -1550,8 +1656,14 @@ class ReservaService {
           fechaIngreso:
             nuevaFechaIngreso,
 
+          horaIngreso:
+            nuevaHoraIngreso,
+
           fechaEgreso:
             nuevaFechaEgreso,
+
+          horaEgreso:
+            nuevaHoraEgreso,
 
           estado:
             nuevoEstado,
