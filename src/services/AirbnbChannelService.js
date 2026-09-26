@@ -1,3 +1,6 @@
+const FORMATO_HORA_RESERVA =
+  /^([01]\d|2[0-3]):[0-5]\d$/;
+
 class AirbnbChannelService {
   constructor() {
     this.solicitudesCambio = [];
@@ -37,8 +40,22 @@ class AirbnbChannelService {
     const fechaIngreso =
       datos.fechaIngreso || reserva.fechaIngreso;
 
+    const horaIngreso =
+      String(
+        datos.horaIngreso ||
+        reserva.horaIngreso ||
+        "00:00"
+      ).trim();
+
     const fechaEgreso =
       datos.fechaEgreso || reserva.fechaEgreso;
+
+    const horaEgreso =
+      String(
+        datos.horaEgreso ||
+        reserva.horaEgreso ||
+        "00:00"
+      ).trim();
 
     if (
       new Date(fechaEgreso) <=
@@ -46,6 +63,19 @@ class AirbnbChannelService {
     ) {
       throw new Error(
         "La fecha de egreso debe ser posterior a la fecha de ingreso."
+      );
+    }
+
+    if (
+      !FORMATO_HORA_RESERVA.test(
+        horaIngreso
+      ) ||
+      !FORMATO_HORA_RESERVA.test(
+        horaEgreso
+      )
+    ) {
+      throw new Error(
+        "Los horarios propuestos no son válidos."
       );
     }
 
@@ -61,7 +91,10 @@ class AirbnbChannelService {
 
       cambiosSolicitados: {
         fechaIngreso,
+        horaIngreso,
+
         fechaEgreso,
+        horaEgreso,
 
         cantidadHuespedes:
           datos.cantidadHuespedes ??
@@ -76,8 +109,20 @@ class AirbnbChannelService {
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          String(
+            reserva.horaIngreso ||
+            "00:00"
+          ).trim(),
+
         fechaEgreso:
           reserva.fechaEgreso,
+
+        horaEgreso:
+          String(
+            reserva.horaEgreso ||
+            "00:00"
+          ).trim(),
 
         cantidadHuespedes:
           reserva.cantidadHuespedes,
@@ -117,15 +162,15 @@ class AirbnbChannelService {
     return solicitud;
   }
 
-    obtenerSolicitudPendientePorReserva(idReserva) {
+  obtenerSolicitudPendientePorReserva(idReserva) {
     return (
-        this.solicitudesCambio.find(
+      this.solicitudesCambio.find(
         (solicitud) =>
-            solicitud.idReserva === Number(idReserva) &&
-            solicitud.estado === "Pendiente"
-        ) || null
+          solicitud.idReserva === Number(idReserva) &&
+          solicitud.estado === "Pendiente"
+      ) || null
     );
-    }
+  }
 
   marcarSolicitudAceptada(idSolicitud) {
     const solicitud =

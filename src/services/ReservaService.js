@@ -1853,9 +1853,33 @@ class ReservaService {
     datos.fechaIngreso ||
     reserva.fechaIngreso;
 
+  const nuevaHoraIngreso =
+    datos.horaIngreso !== undefined &&
+    datos.horaIngreso !== null &&
+    datos.horaIngreso !== ""
+      ? String(
+          datos.horaIngreso
+        ).trim()
+      : String(
+          reserva.horaIngreso ||
+            "00:00"
+        ).trim();
+
   const nuevaFechaEgreso =
     datos.fechaEgreso ||
     reserva.fechaEgreso;
+
+  const nuevaHoraEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : String(
+          reserva.horaEgreso ||
+            "00:00"
+        ).trim();
 
   const nuevaCantidadHuespedes =
     datos.cantidadHuespedes !==
@@ -1886,6 +1910,19 @@ class ReservaService {
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraIngreso
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraEgreso
+    )
+  ) {
+    throw new Error(
+      "Los horarios propuestos no son válidos."
     );
   }
 
@@ -1965,8 +2002,14 @@ class ReservaService {
           fechaIngreso:
             nuevaFechaIngreso,
 
+          horaIngreso:
+            nuevaHoraIngreso,
+
           fechaEgreso:
             nuevaFechaEgreso,
+
+          horaEgreso:
+            nuevaHoraEgreso,
 
           cantidadHuespedes:
             nuevaCantidadHuespedes,
@@ -2003,8 +2046,16 @@ class ReservaService {
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          reserva.horaIngreso ||
+          "00:00",
+
         fechaEgreso:
           reserva.fechaEgreso,
+
+        horaEgreso:
+          reserva.horaEgreso ||
+          "00:00",
 
         cantidadHuespedes:
           Number(
@@ -2021,8 +2072,14 @@ class ReservaService {
         fechaIngreso:
           nuevaFechaIngreso,
 
+        horaIngreso:
+          nuevaHoraIngreso,
+
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         cantidadHuespedes:
           nuevaCantidadHuespedes,
@@ -2126,8 +2183,18 @@ class ReservaService {
         fechaIngreso:
           cambios.fechaIngreso,
 
+        horaIngreso:
+          cambios.horaIngreso ||
+          reserva.horaIngreso ||
+          "00:00",
+
         fechaEgreso:
           cambios.fechaEgreso,
+
+        horaEgreso:
+          cambios.horaEgreso ||
+          reserva.horaEgreso ||
+          "00:00",
 
         cantidadHuespedes:
           cambios.cantidadHuespedes,
@@ -2176,8 +2243,16 @@ class ReservaService {
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          reserva.horaIngreso ||
+          "00:00",
+
         fechaEgreso:
           reserva.fechaEgreso,
+
+        horaEgreso:
+          reserva.horaEgreso ||
+          "00:00",
 
         cantidadHuespedes:
           Number(
@@ -2194,8 +2269,18 @@ class ReservaService {
         fechaIngreso:
           cambios.fechaIngreso,
 
+        horaIngreso:
+          cambios.horaIngreso ||
+          reserva.horaIngreso ||
+          "00:00",
+
         fechaEgreso:
           cambios.fechaEgreso,
+
+        horaEgreso:
+          cambios.horaEgreso ||
+          reserva.horaEgreso ||
+          "00:00",
 
         cantidadHuespedes:
           Number(
@@ -2418,6 +2503,18 @@ class ReservaService {
   const nuevaFechaEgreso =
     datos.fechaEgreso;
 
+  const nuevaHoraEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : String(
+          reserva.horaEgreso ||
+            "00:00"
+        ).trim();
+
   const nuevoMonto =
     Number(datos.montoEstimado);
 
@@ -2433,6 +2530,16 @@ class ReservaService {
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
+    );
+  }
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraEgreso
+    )
+  ) {
+    throw new Error(
+      "La nueva hora de check-out no es válida."
     );
   }
 
@@ -2467,6 +2574,9 @@ class ReservaService {
         {
           fechaEgreso:
             nuevaFechaEgreso,
+
+          horaEgreso:
+            nuevaHoraEgreso,
 
           montoEstimado:
             nuevoMonto,
@@ -2506,6 +2616,10 @@ class ReservaService {
         fechaEgreso:
           reserva.fechaEgreso,
 
+        horaEgreso:
+          reserva.horaEgreso ||
+          "00:00",
+
         montoEstimado:
           Number(
             reserva.montoEstimado
@@ -2515,6 +2629,9 @@ class ReservaService {
       solicitado: {
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         montoEstimado:
           nuevoMonto,
@@ -2699,8 +2816,18 @@ async procesarSincronizacionBooking(
           fechaIngreso:
             reserva.fechaIngreso,
 
+          horaIngreso:
+            cambios.horaIngreso ||
+            reserva.horaIngreso ||
+            "00:00",
+
           fechaEgreso:
             cambios.fechaEgreso,
+
+          horaEgreso:
+            cambios.horaEgreso ||
+            reserva.horaEgreso ||
+            "00:00",
 
           cantidadHuespedes:
             reserva.cantidadHuespedes,
@@ -2733,8 +2860,16 @@ async procesarSincronizacionBooking(
           fechaIngreso:
             reserva.fechaIngreso,
 
+          horaIngreso:
+            reserva.horaIngreso ||
+            "00:00",
+
           fechaEgreso:
             reserva.fechaEgreso,
+
+          horaEgreso:
+            reserva.horaEgreso ||
+            "00:00",
 
           montoEstimado:
             Number(
@@ -2746,8 +2881,18 @@ async procesarSincronizacionBooking(
           fechaIngreso:
             reserva.fechaIngreso,
 
+          horaIngreso:
+            cambios.horaIngreso ||
+            reserva.horaIngreso ||
+            "00:00",
+
           fechaEgreso:
             cambios.fechaEgreso,
+
+          horaEgreso:
+            cambios.horaEgreso ||
+            reserva.horaEgreso ||
+            "00:00",
 
           montoEstimado:
             Number(

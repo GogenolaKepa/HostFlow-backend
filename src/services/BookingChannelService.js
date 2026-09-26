@@ -1,3 +1,6 @@
+const FORMATO_HORA_RESERVA =
+  /^([01]\d|2[0-3]):[0-5]\d$/;
+
 class BookingChannelService {
   constructor() {
     /*
@@ -39,12 +42,38 @@ class BookingChannelService {
     const nuevaFechaEgreso =
       datos.fechaEgreso;
 
+    const nuevaHoraEgreso =
+      String(
+        datos.horaEgreso ||
+        reserva.horaEgreso ||
+        "00:00"
+      ).trim();
+
+    const horaIngresoActual =
+      String(
+        reserva.horaIngreso ||
+        "00:00"
+      ).trim();
+
     const nuevoMonto =
       Number(datos.montoEstimado);
 
     if (!nuevaFechaEgreso) {
       throw new Error(
         "Debe indicar la nueva fecha de egreso."
+      );
+    }
+
+    if (
+      !FORMATO_HORA_RESERVA.test(
+        nuevaHoraEgreso
+      ) ||
+      !FORMATO_HORA_RESERVA.test(
+        horaIngresoActual
+      )
+    ) {
+      throw new Error(
+        "Los horarios de la estadía no son válidos."
       );
     }
 
@@ -57,6 +86,9 @@ class BookingChannelService {
      *
      * Desde HostFlow conservamos el check-in actual
      * y permitimos modificar checkout + precio.
+     *
+     * La disponibilidad sigue evaluándose por día;
+     * las horas se conservan como información operativa.
      */
     if (
       new Date(nuevaFechaEgreso) <=
@@ -105,8 +137,17 @@ class BookingChannelService {
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          horaIngresoActual,
+
         fechaEgreso:
           reserva.fechaEgreso,
+
+        horaEgreso:
+          String(
+            reserva.horaEgreso ||
+            "00:00"
+          ).trim(),
 
         montoEstimado:
           reserva.montoEstimado,
@@ -116,8 +157,14 @@ class BookingChannelService {
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          horaIngresoActual,
+
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         montoEstimado:
           nuevoMonto,

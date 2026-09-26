@@ -31,7 +31,10 @@ class AirbnbInboundService {
   simularCancelacionReserva(datos) {
     return this.crearEvento(
       "RESERVA_CANCELADA",
-      datos
+      {
+        ...datos,
+        estadoReserva: "Cancelada",
+      }
     );
   }
 
