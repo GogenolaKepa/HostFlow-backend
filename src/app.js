@@ -34,6 +34,10 @@ const alertaRoutes = require(
   "./routes/alertaRoutes"
 );
 
+const limpiezaRoutes = require(
+  "./routes/limpiezaRoutes"
+);
+
 const bookingInboundRoutes = require(
   "./routes/bookingInboundRoutes"
 );
@@ -144,6 +148,11 @@ app.use(
 app.use(
   "/api/alertas",
   alertaRoutes
+);
+
+app.use(
+  "/api/limpiezas",
+  limpiezaRoutes
 );
 
 // =========================================================
