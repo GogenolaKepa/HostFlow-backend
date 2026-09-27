@@ -5,7 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test:inbound": "node scripts/testInbound.js",
+    "test:channels": "node scripts/testChannelOperations.js",
+    "test:properties": "node scripts/testProperties.js"
   },
   "keywords": [],
   "author": "Kepa Gogenola",

@@ -75,8 +75,14 @@ class AirbnbInboundService {
         fechaIngreso:
           datos.fechaIngreso,
 
+        horaIngreso:
+          datos.horaIngreso,
+
         fechaEgreso:
           datos.fechaEgreso,
+
+        horaEgreso:
+          datos.horaEgreso,
 
         cantidadHuespedes:
           datos.cantidadHuespedes,

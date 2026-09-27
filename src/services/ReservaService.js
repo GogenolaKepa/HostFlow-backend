@@ -3215,6 +3215,37 @@ async procesarNuevaReservaBooking(
     );
   }
 
+  const horaIngreso =
+    datos.horaIngreso !== undefined &&
+    datos.horaIngreso !== null &&
+    datos.horaIngreso !== ""
+      ? String(
+          datos.horaIngreso
+        ).trim()
+      : "00:00";
+
+  const horaEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : "00:00";
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      horaIngreso
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      horaEgreso
+    )
+  ) {
+    throw new Error(
+      "Booking envió horarios de check-in o check-out inválidos."
+    );
+  }
+
   // =========================================================
   // VALIDAR CANTIDAD DE HUÉSPEDES
   // =========================================================
@@ -3324,8 +3355,12 @@ async procesarNuevaReservaBooking(
         fechaIngreso:
           datos.fechaIngreso,
 
+        horaIngreso,
+
         fechaEgreso:
           datos.fechaEgreso,
+
+        horaEgreso,
 
         cantidadHuespedes,
 
@@ -3378,8 +3413,12 @@ async procesarNuevaReservaBooking(
       fechaIngreso:
         datos.fechaIngreso,
 
+      horaIngreso,
+
       fechaEgreso:
         datos.fechaEgreso,
+
+      horaEgreso,
 
       cantidadHuespedes,
 
@@ -3467,6 +3506,56 @@ async procesarModificacionReservaBooking(
     );
   }
 
+  // =========================================================
+  // EVENTO FUERA DE ORDEN
+  // =========================================================
+  //
+  // Puede ocurrir que una modificación haya quedado pendiente
+  // y que, antes de procesarla, Booking informe una cancelación
+  // o un no-show.
+  //
+  // En ese caso no debemos permitir que una modificación vieja
+  // vuelva a alterar una reserva que ya alcanzó un estado final.
+  //
+  // El evento se consume para que no permanezca pendiente,
+  // pero la reserva NO se modifica.
+  // =========================================================
+
+  if (
+    reserva.estado === "Cancelada" ||
+    reserva.estado === "Finalizada" ||
+    reserva.estado === "No show"
+  ) {
+    const reservaActual =
+      await this.obtenerReservaPorId(
+        reserva.idReserva
+      );
+
+    const eventoProcesado =
+      BookingInboundService
+        .marcarEventoProcesado(
+          evento.idEvento
+        );
+
+    return {
+      evento:
+        eventoProcesado,
+
+      reserva:
+        reservaActual,
+
+      ignorado: true,
+
+      motivo:
+        `La reserva ya se encuentra en estado ${reserva.estado}. La modificación de Booking no fue aplicada.`,
+
+      conflictoDetectado: false,
+
+      advertencia:
+        `Se ignoró una modificación de Booking porque la reserva ya estaba ${reserva.estado}.`,
+    };
+  }
+
   const datos =
     evento.datos;
 
@@ -3483,6 +3572,30 @@ async procesarModificacionReservaBooking(
   const nuevaFechaEgreso =
     datos.fechaEgreso ||
     reserva.fechaEgreso;
+
+  const nuevaHoraIngreso =
+    datos.horaIngreso !== undefined &&
+    datos.horaIngreso !== null &&
+    datos.horaIngreso !== ""
+      ? String(
+          datos.horaIngreso
+        ).trim()
+      : String(
+          reserva.horaIngreso ||
+            "00:00"
+        ).trim();
+
+  const nuevaHoraEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : String(
+          reserva.horaEgreso ||
+            "00:00"
+        ).trim();
 
   const nuevaCantidadHuespedes =
     datos.cantidadHuespedes !==
@@ -3510,6 +3623,19 @@ async procesarModificacionReservaBooking(
   ) {
     throw new Error(
       "Booking envió una modificación con fechas inválidas."
+    );
+  }
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraIngreso
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraEgreso
+    )
+  ) {
+    throw new Error(
+      "Booking envió horarios de check-in o check-out inválidos."
     );
   }
 
@@ -3545,8 +3671,14 @@ async procesarModificacionReservaBooking(
         fechaIngreso:
           nuevaFechaIngreso,
 
+        horaIngreso:
+          nuevaHoraIngreso,
+
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         cantidadHuespedes:
           nuevaCantidadHuespedes,
@@ -3572,11 +3704,35 @@ async procesarModificacionReservaBooking(
   }
 
   if (
+    String(
+      reserva.horaIngreso ||
+        "00:00"
+    ) !==
+    nuevaHoraIngreso
+  ) {
+    camposModificados.push(
+      "horaIngreso"
+    );
+  }
+
+  if (
     reserva.fechaEgreso !==
     nuevaFechaEgreso
   ) {
     camposModificados.push(
       "fechaEgreso"
+    );
+  }
+
+  if (
+    String(
+      reserva.horaEgreso ||
+        "00:00"
+    ) !==
+    nuevaHoraEgreso
+  ) {
+    camposModificados.push(
+      "horaEgreso"
     );
   }
 
@@ -3609,7 +3765,7 @@ async procesarModificacionReservaBooking(
   if (
     datos.estadoReserva &&
     reserva.estado !==
-      datos.estadoReserva
+    datos.estadoReserva
   ) {
     camposModificados.push(
       "estado"
@@ -3650,8 +3806,16 @@ async procesarModificacionReservaBooking(
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          reserva.horaIngreso ||
+          "00:00",
+
         fechaEgreso:
           reserva.fechaEgreso,
+
+        horaEgreso:
+          reserva.horaEgreso ||
+          "00:00",
 
         cantidadHuespedes:
           Number(
@@ -3671,8 +3835,14 @@ async procesarModificacionReservaBooking(
         fechaIngreso:
           nuevaFechaIngreso,
 
+        horaIngreso:
+          nuevaHoraIngreso,
+
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         cantidadHuespedes:
           nuevaCantidadHuespedes,
@@ -3687,7 +3857,7 @@ async procesarModificacionReservaBooking(
     },
   });
 
-if (conflictoDetectado) {
+  if (conflictoDetectado) {
     await this.registrarConflictoReserva({
       idReserva:
         reserva.idReserva,
@@ -4009,6 +4179,37 @@ async procesarNuevaReservaAirbnb(
     );
   }
 
+  const horaIngreso =
+    datos.horaIngreso !== undefined &&
+    datos.horaIngreso !== null &&
+    datos.horaIngreso !== ""
+      ? String(
+          datos.horaIngreso
+        ).trim()
+      : "00:00";
+
+  const horaEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : "00:00";
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      horaIngreso
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      horaEgreso
+    )
+  ) {
+    throw new Error(
+      "Airbnb envió horarios de check-in o check-out inválidos."
+    );
+  }
+
   // =========================================================
   // VALIDAR HUÉSPEDES
   // =========================================================
@@ -4121,8 +4322,12 @@ async procesarNuevaReservaAirbnb(
         fechaIngreso:
           datos.fechaIngreso,
 
+        horaIngreso,
+
         fechaEgreso:
           datos.fechaEgreso,
+
+        horaEgreso,
 
         cantidadHuespedes,
 
@@ -4174,8 +4379,12 @@ async procesarNuevaReservaAirbnb(
       fechaIngreso:
         datos.fechaIngreso,
 
+      horaIngreso,
+
       fechaEgreso:
         datos.fechaEgreso,
+
+      horaEgreso,
 
       cantidadHuespedes,
 
@@ -4258,6 +4467,51 @@ async procesarModificacionReservaAirbnb(
     );
   }
 
+  // =========================================================
+  // EVENTO FUERA DE ORDEN
+  // =========================================================
+  //
+  // Si una modificación pendiente llega a procesarse después
+  // de que Airbnb ya canceló la reserva, HostFlow no debe
+  // permitir que ese evento anterior vuelva a modificarla.
+  //
+  // El evento se consume, pero la reserva permanece intacta.
+  // =========================================================
+
+  if (
+    reserva.estado === "Cancelada" ||
+    reserva.estado === "Finalizada"
+  ) {
+    const reservaActual =
+      await this.obtenerReservaPorId(
+        reserva.idReserva
+      );
+
+    const eventoProcesado =
+      AirbnbInboundService
+        .marcarEventoProcesado(
+          evento.idEvento
+        );
+
+    return {
+      evento:
+        eventoProcesado,
+
+      reserva:
+        reservaActual,
+
+      ignorado: true,
+
+      motivo:
+        `La reserva ya se encuentra en estado ${reserva.estado}. La modificación de Airbnb no fue aplicada.`,
+
+      conflictoDetectado: false,
+
+      advertencia:
+        `Se ignoró una modificación de Airbnb porque la reserva ya estaba ${reserva.estado}.`,
+    };
+  }
+
   const datos =
     evento.datos;
 
@@ -4274,6 +4528,30 @@ async procesarModificacionReservaAirbnb(
   const nuevaFechaEgreso =
     datos.fechaEgreso ||
     reserva.fechaEgreso;
+
+  const nuevaHoraIngreso =
+    datos.horaIngreso !== undefined &&
+    datos.horaIngreso !== null &&
+    datos.horaIngreso !== ""
+      ? String(
+          datos.horaIngreso
+        ).trim()
+      : String(
+          reserva.horaIngreso ||
+            "00:00"
+        ).trim();
+
+  const nuevaHoraEgreso =
+    datos.horaEgreso !== undefined &&
+    datos.horaEgreso !== null &&
+    datos.horaEgreso !== ""
+      ? String(
+          datos.horaEgreso
+        ).trim()
+      : String(
+          reserva.horaEgreso ||
+            "00:00"
+        ).trim();
 
   const nuevaCantidadHuespedes =
     datos.cantidadHuespedes !==
@@ -4301,6 +4579,19 @@ async procesarModificacionReservaAirbnb(
   ) {
     throw new Error(
       "Airbnb envió una modificación con fechas inválidas."
+    );
+  }
+
+  if (
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraIngreso
+    ) ||
+    !FORMATO_HORA_RESERVA.test(
+      nuevaHoraEgreso
+    )
+  ) {
+    throw new Error(
+      "Airbnb envió horarios de check-in o check-out inválidos."
     );
   }
 
@@ -4336,8 +4627,14 @@ async procesarModificacionReservaAirbnb(
         fechaIngreso:
           nuevaFechaIngreso,
 
+        horaIngreso:
+          nuevaHoraIngreso,
+
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         cantidadHuespedes:
           nuevaCantidadHuespedes,
@@ -4363,11 +4660,35 @@ async procesarModificacionReservaAirbnb(
   }
 
   if (
+    String(
+      reserva.horaIngreso ||
+        "00:00"
+    ) !==
+    nuevaHoraIngreso
+  ) {
+    camposModificados.push(
+      "horaIngreso"
+    );
+  }
+
+  if (
     reserva.fechaEgreso !==
     nuevaFechaEgreso
   ) {
     camposModificados.push(
       "fechaEgreso"
+    );
+  }
+
+  if (
+    String(
+      reserva.horaEgreso ||
+        "00:00"
+    ) !==
+    nuevaHoraEgreso
+  ) {
+    camposModificados.push(
+      "horaEgreso"
     );
   }
 
@@ -4400,7 +4721,7 @@ async procesarModificacionReservaAirbnb(
   if (
     datos.estadoReserva &&
     reserva.estado !==
-      datos.estadoReserva
+    datos.estadoReserva
   ) {
     camposModificados.push(
       "estado"
@@ -4441,8 +4762,16 @@ async procesarModificacionReservaAirbnb(
         fechaIngreso:
           reserva.fechaIngreso,
 
+        horaIngreso:
+          reserva.horaIngreso ||
+          "00:00",
+
         fechaEgreso:
           reserva.fechaEgreso,
+
+        horaEgreso:
+          reserva.horaEgreso ||
+          "00:00",
 
         cantidadHuespedes:
           Number(
@@ -4462,8 +4791,14 @@ async procesarModificacionReservaAirbnb(
         fechaIngreso:
           nuevaFechaIngreso,
 
+        horaIngreso:
+          nuevaHoraIngreso,
+
         fechaEgreso:
           nuevaFechaEgreso,
+
+        horaEgreso:
+          nuevaHoraEgreso,
 
         cantidadHuespedes:
           nuevaCantidadHuespedes,
@@ -4478,7 +4813,7 @@ async procesarModificacionReservaAirbnb(
     },
   });
 
-if (conflictoDetectado) {
+  if (conflictoDetectado) {
     await this.registrarConflictoReserva({
       idReserva:
         reserva.idReserva,

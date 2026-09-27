@@ -27,14 +27,14 @@ class BookingInboundService {
   }
 
   simularCancelacionReserva(datos) {
-  return this.crearEvento(
-    "RESERVA_CANCELADA",
-    {
-      ...datos,
-      estadoReserva: "Cancelada",
-    }
-  );
-}
+    return this.crearEvento(
+      "RESERVA_CANCELADA",
+      {
+        ...datos,
+        estadoReserva: "Cancelada",
+      }
+    );
+  }
 
   // =========================================================
   // CREACIÓN DEL EVENTO
@@ -73,8 +73,14 @@ class BookingInboundService {
         fechaIngreso:
           datos.fechaIngreso,
 
+        horaIngreso:
+          datos.horaIngreso,
+
         fechaEgreso:
           datos.fechaEgreso,
+
+        horaEgreso:
+          datos.horaEgreso,
 
         cantidadHuespedes:
           datos.cantidadHuespedes,
