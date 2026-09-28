@@ -38,6 +38,10 @@ const limpiezaRoutes = require(
   "./routes/limpiezaRoutes"
 );
 
+const recomendacionRoutes = require(
+  "./routes/recomendacionRoutes"
+);
+
 const bookingInboundRoutes = require(
   "./routes/bookingInboundRoutes"
 );
@@ -66,7 +70,9 @@ const calendarioRoutes = require(
   "./routes/calendarioRoutes"
 );
 
+
 const app = express();
+
 
 // =========================================================
 // MIDDLEWARES
@@ -85,6 +91,7 @@ app.use(
   calendarioRoutes
 );
 
+
 // =========================================================
 // ARCHIVOS ESTÁTICOS - IMÁGENES SUBIDAS
 // =========================================================
@@ -98,6 +105,7 @@ app.use(
     )
   )
 );
+
 
 // =========================================================
 // RUTA BASE
@@ -115,6 +123,7 @@ app.get(
     });
   }
 );
+
 
 // =========================================================
 // RUTAS PRINCIPALES
@@ -155,6 +164,12 @@ app.use(
   limpiezaRoutes
 );
 
+app.use(
+  "/api/recomendaciones",
+  recomendacionRoutes
+);
+
+
 // =========================================================
 // INTEGRACIÓN BOOKING - RESERVAS
 // =========================================================
@@ -163,6 +178,7 @@ app.use(
   "/api/integraciones/booking",
   bookingInboundRoutes
 );
+
 
 // =========================================================
 // INTEGRACIÓN BOOKING - PROPIEDADES
@@ -173,6 +189,7 @@ app.use(
   bookingPropertyInboundRoutes
 );
 
+
 // =========================================================
 // INTEGRACIÓN BOOKING - IMÁGENES DE PROPIEDADES
 // =========================================================
@@ -181,6 +198,7 @@ app.use(
   "/api/integraciones/booking",
   bookingPropertyImageInboundRoutes
 );
+
 
 // =========================================================
 // INTEGRACIÓN AIRBNB - RESERVAS
@@ -191,6 +209,7 @@ app.use(
   airbnbInboundRoutes
 );
 
+
 // =========================================================
 // INTEGRACIÓN AIRBNB - PROPIEDADES
 // =========================================================
@@ -200,6 +219,7 @@ app.use(
   airbnbPropertyInboundRoutes
 );
 
+
 // =========================================================
 // INTEGRACIÓN AIRBNB - IMÁGENES DE PROPIEDADES
 // =========================================================
@@ -208,6 +228,7 @@ app.use(
   "/api/integraciones/airbnb",
   airbnbPropertyImageInboundRoutes
 );
+
 
 module.exports =
   app;
