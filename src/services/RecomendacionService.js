@@ -11,6 +11,11 @@ const DashboardService = require(
 );
 
 
+const IaService = require(
+  "./IaService"
+);
+
+
 class RecomendacionService {
   constructor() {
     this.horizonteConflictosDias =
@@ -493,10 +498,96 @@ class RecomendacionService {
 
 
   // =========================================================
+  // CAPA GENERATIVA
+  // =========================================================
+
+  aplicarContenidoIA(
+    recomendaciones,
+    resultadoIA
+  ) {
+    if (
+      !resultadoIA
+        ?.aplicada ||
+      !Array.isArray(
+        resultadoIA
+          .recomendaciones
+      )
+    ) {
+      return recomendaciones;
+    }
+
+    const porId =
+      new Map(
+        resultadoIA
+          .recomendaciones
+          .map(
+            (item) => [
+              item.id,
+              item,
+            ]
+          )
+      );
+
+    return recomendaciones.map(
+      (recomendacion) => {
+        const enriquecida =
+          porId.get(
+            recomendacion.id
+          );
+
+        if (!enriquecida) {
+          return recomendacion;
+        }
+
+        return {
+          ...recomendacion,
+
+          titulo:
+            enriquecida.titulo ||
+            recomendacion.titulo,
+
+          descripcion:
+            enriquecida.descripcion ||
+            recomendacion.descripcion,
+
+          accion:
+            enriquecida.accion ||
+            recomendacion.accion,
+
+          fundamentoIA:
+            enriquecida.fundamento ||
+            null,
+
+          baseDeterministica: {
+            titulo:
+              recomendacion.titulo,
+
+            descripcion:
+              recomendacion.descripcion,
+
+            accion:
+              recomendacion.accion,
+          },
+
+          origen:
+            "Motor de reglas HostFlow + IA generativa",
+        };
+      }
+    );
+  }
+
+
+  // =========================================================
   // OBTENER RECOMENDACIONES
   // =========================================================
 
-  async obtenerRecomendaciones() {
+  async obtenerRecomendaciones(
+    opciones = {}
+  ) {
+    const usarIA =
+      opciones.usarIA !==
+      false;
+
     const fechaNegocio =
       DashboardService
         .obtenerFechaActualArgentina();
@@ -529,7 +620,7 @@ class RecomendacionService {
           ),
       ]);
 
-    const recomendaciones = [
+    const recomendacionesBase = [
       ...this.generarPorLimpiezas(
         limpiezas
       ),
@@ -577,6 +668,69 @@ class RecomendacionService {
         this.maximoRecomendaciones
       );
 
+    let resultadoIA = {
+      aplicada:
+        false,
+
+      modelo:
+        IaService
+          .obtenerEstado()
+          .modelo,
+
+      motivo:
+        usarIA
+          ? "La capa generativa no se ejecutó."
+          : "La capa generativa fue desactivada mediante el parámetro ia=false.",
+
+      recomendaciones:
+        [],
+    };
+
+    if (
+      usarIA &&
+      recomendacionesBase
+        .length >
+        0
+    ) {
+      try {
+        resultadoIA =
+          await IaService
+            .enriquecerRecomendaciones({
+              fechaNegocio,
+
+              recomendaciones:
+                recomendacionesBase,
+            });
+      } catch (error) {
+        console.error(
+          "No se pudo aplicar la capa generativa de IA. Se utilizará el fallback determinístico:",
+          error.message
+        );
+
+        resultadoIA = {
+          aplicada:
+            false,
+
+          modelo:
+            IaService
+              .obtenerEstado()
+              .modelo,
+
+          motivo:
+            error.message,
+
+          recomendaciones:
+            [],
+        };
+      }
+    }
+
+    const recomendaciones =
+      this.aplicarContenidoIA(
+        recomendacionesBase,
+        resultadoIA
+      );
+
     const resumen = {
       total:
         recomendaciones.length,
@@ -605,11 +759,13 @@ class RecomendacionService {
 
     return {
       fechaNegocio,
+
       generadoEn:
         new Date()
           .toISOString(),
 
       resumen,
+
       recomendaciones,
 
       contexto: {
@@ -622,8 +778,45 @@ class RecomendacionService {
         motor:
           "Reglas determinísticas V1",
 
-        iaGenerativa:
-          false,
+        iaGenerativa: {
+          solicitada:
+            usarIA,
+
+          configurada:
+            IaService
+              .estaConfigurada(),
+
+          aplicada:
+            Boolean(
+              resultadoIA
+                .aplicada
+            ),
+
+          proveedor:
+            "Google Gemini",
+
+          modelo:
+            resultadoIA
+              .modelo ||
+            IaService
+              .obtenerEstado()
+              .modelo,
+
+          motivoFallback:
+            resultadoIA
+              .aplicada
+              ? null
+              : (
+                  resultadoIA
+                    .motivo ||
+                  null
+                ),
+
+          uso:
+            resultadoIA
+              .uso ||
+            null,
+        },
       },
     };
   }

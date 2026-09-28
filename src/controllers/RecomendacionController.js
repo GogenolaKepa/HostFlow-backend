@@ -9,9 +9,24 @@ class RecomendacionController {
     res
   ) {
     try {
+      /*
+       * Por defecto intentamos aplicar la capa generativa.
+       *
+       * Para comparar con el motor determinístico:
+       * GET /api/recomendaciones?ia=false
+       */
+      const usarIA =
+        String(
+          req.query.ia ||
+          "true"
+        ).toLowerCase() !==
+        "false";
+
       const resultado =
         await RecomendacionService
-          .obtenerRecomendaciones();
+          .obtenerRecomendaciones({
+            usarIA,
+          });
 
       return res
         .status(200)
