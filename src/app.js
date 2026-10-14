@@ -14,6 +14,8 @@ const authRoutes = require(
   "./routes/authRoutes"
 );
 
+const autenticacion = require("./middlewares/autenticacion");
+
 const dashboardRoutes = require(
   "./routes/dashboardRoutes"
 );
@@ -82,6 +84,14 @@ app.use(
   cors()
 );
 
+// CORS responde a OPTIONS antes de exigir autenticación.
+// Login es público; /auth/me verifica la sesión dentro de authRoutes.
+app.use("/api/auth", authRoutes);
+
+// Todas las rutas API restantes (presentes y futuras) requieren JWT.
+// Se verifica antes de parsear cuerpos o ejecutar procesos de negocio.
+app.use("/api", autenticacion);
+
 app.use(
   express.json()
 );
@@ -95,6 +105,9 @@ app.use(
 // =========================================================
 // ARCHIVOS ESTÁTICOS - IMÁGENES SUBIDAS
 // =========================================================
+
+// Las imágenes de publicaciones son públicas para <img> y canales.
+// Su subida y administración se realiza por la API autenticada.
 
 app.use(
   "/uploads",
@@ -128,11 +141,6 @@ app.get(
 // =========================================================
 // RUTAS PRINCIPALES
 // =========================================================
-
-app.use(
-  "/api/auth",
-  authRoutes
-);
 
 app.use(
   "/api/dashboard",

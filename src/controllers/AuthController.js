@@ -2,10 +2,17 @@ const AuthService = require("../services/AuthService");
 
 class AuthController {
   login(req, res) {
-    try {
-      const { email, password } = req.body;
+    res.set("Cache-Control", "no-store");
+    if (!process.env.JWT_SECRET?.trim()) {
+      return res.status(503).json({
+        mensaje: "La autenticación no está disponible.",
+      });
+    }
 
-      if (!email || !password) {
+    try {
+      const { email, password } = req.body || {};
+
+      if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
         return res.status(400).json({
           mensaje: "Debe ingresar email y contraseña."
         });
@@ -22,6 +29,14 @@ class AuthController {
         mensaje: error.message
       });
     }
+  }
+
+  obtenerSesion(req, res) {
+    res.set("Cache-Control", "no-store");
+    return res.status(200).json({
+      usuario: req.usuario,
+      expiraEn: req.expiraEn,
+    });
   }
 }
 

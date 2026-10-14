@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "test:inbound": "node scripts/testInbound.js",
     "test:channels": "node scripts/testChannelOperations.js",
-    "test:properties": "node scripts/testProperties.js"
+    "test:properties": "node scripts/testProperties.js",
+    "test:auth": "node --test tests/auth.test.js"
   },
   "keywords": [],
   "author": "Kepa Gogenola",

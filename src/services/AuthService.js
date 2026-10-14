@@ -3,6 +3,21 @@ const jwt = require("jsonwebtoken");
 const { usuarios } = require("../data/mockData");
 
 class AuthService {
+  obtenerUsuarioSesion(idUsuario) {
+    const usuario = usuarios.find((u) =>
+      u.idUsuario === idUsuario && u.estado === "Activo"
+    );
+
+    if (!usuario) return null;
+
+    return {
+      idUsuario: usuario.idUsuario,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol.nombre,
+    };
+  }
+
   login(email, password) {
     const usuario = usuarios.find((u) => u.email === email);
 
@@ -27,7 +42,7 @@ class AuthService {
         rol: usuario.rol.nombre
       },
       process.env.JWT_SECRET,
-      { expiresIn: "2h" }
+      { expiresIn: "2h", algorithm: "HS256" }
     );
 
     return {
