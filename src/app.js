@@ -15,6 +15,9 @@ const authRoutes = require(
 );
 
 const autenticacion = require("./middlewares/autenticacion");
+const cambioPasswordObligatorio = require("./middlewares/cambioPasswordObligatorio");
+const usuarioRoutes = require("./routes/usuarioRoutes");
+const rolRoutes = require("./routes/rolRoutes");
 const { autorizarAccion, autorizarCampos } = require("./middlewares/autorizacion");
 
 const dashboardRoutes = require(
@@ -92,6 +95,7 @@ app.use("/api/auth", authRoutes);
 // Todas las rutas API restantes (presentes y futuras) requieren JWT.
 // Se verifica antes de parsear cuerpos o ejecutar procesos de negocio.
 app.use("/api", autenticacion);
+app.use("/api", cambioPasswordObligatorio);
 app.use("/api", autorizarAccion);
 
 app.use(
@@ -99,6 +103,8 @@ app.use(
 );
 
 app.use("/api", autorizarCampos);
+app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/roles", rolRoutes);
 
 app.use(
   "/api/calendario",
@@ -241,6 +247,14 @@ app.use(
   airbnbPropertyImageInboundRoutes
 );
 
+
+// No devolver cuerpos malformados que puedan contener contraseñas.
+app.use((error, _req, res, next) => {
+  if (error.type === "entity.parse.failed" || error.type === "entity.too.large") {
+    return res.status(error.status).json({ mensaje: "El cuerpo de la solicitud no es válido." });
+  }
+  return next(error);
+});
 
 module.exports =
   app;

@@ -199,7 +199,7 @@ test("login público y restauración de sesión usan JWT HS256 y un perfil segur
   assert.equal(sesionResponse.status, 200);
   assert.equal(sesionResponse.headers.get("cache-control"), "no-store");
   const sesion = await sesionResponse.json();
-  assert.deepEqual(Object.keys(sesion.usuario).sort(), ["email", "idUsuario", "nombre", "permisos", "rol"]);
+  assert.deepEqual(Object.keys(sesion.usuario).sort(), ["debeCambiarPassword", "email", "gestionCuentasDisponible", "idUsuario", "nombre", "origenAutenticacion", "permisos", "rol"]);
   assert.ok(sesion.usuario.permisos.includes("reservas.cancelar"));
   assert.equal(sesion.usuario.idUsuario, usuarioPrueba.idUsuario);
   assert.equal(sesion.expiraEn, payload.exp);

@@ -14,6 +14,12 @@ function agregar(prefijo, permiso, metodos) {
 }
 
 agregar("/dashboard", "dashboard.ver", { GET: ["/resumen", "/historico"] });
+agregar("/usuarios", "usuarios.ver", { GET: ["/", "/:id"] });
+agregar("/usuarios", "usuarios.crear", { POST: ["/"] });
+agregar("/usuarios", "usuarios.modificar", { PUT: ["/:id"] });
+agregar("/usuarios", "usuarios.estado", { PATCH: ["/:id/estado"] });
+agregar("/usuarios", "usuarios.restablecer", { POST: ["/:id/restablecer-password"] });
+agregar("/roles", "roles.ver", { GET: ["/"] });
 agregar("/dashboard", "reportes.ver", { GET: ["/reportes", "/reportes/opciones"] });
 agregar("/propiedades", "propiedades.ver", { GET: ["/", "/:id"] });
 agregar("/propiedades", "propiedades.gestionar", { POST: ["/"], PUT: ["/:id"], PATCH: ["/:id/estado"] });

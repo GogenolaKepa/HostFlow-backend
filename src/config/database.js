@@ -32,13 +32,10 @@ const poolPromise = new sql.ConnectionPool(dbConfig)
 
     return pool;
   })
-  .catch((error) => {
-    console.error(
-      "❌ Error al conectar con Azure SQL:",
-      error.message
-    );
-
-    throw error;
+  .catch(() => {
+    // El driver puede incluir datos de la conexion en sus errores.
+    console.error("No se pudo establecer la conexión SQL.");
+    throw new Error("La conexión SQL no está disponible.");
   });
 
 module.exports = {

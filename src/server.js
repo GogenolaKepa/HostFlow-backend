@@ -18,7 +18,12 @@ const HOST =
   process.env.HOST ||
   "0.0.0.0";
 
-app.listen(
+const AuthService = require("./services/AuthService");
+
+async function iniciar() {
+  // SQL nunca se habilita si faltan esquema, permisos, roles o primer Admin.
+  await AuthService.comprobarPreparacionSQL();
+  return app.listen(
   PORT,
   HOST,
   () => {
@@ -31,3 +36,10 @@ app.listen(
     );
   }
 );
+}
+
+iniciar().catch(async () => {
+  console.error("No se inició HostFlow: revisar la preparación de autenticación SQL.");
+  try { (await poolPromise).close(); } catch { /* Sin detalles de conexión. */ }
+  process.exitCode = 1;
+});

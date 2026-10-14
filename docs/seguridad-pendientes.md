@@ -1,11 +1,11 @@
 # Seguridad antes del despliegue
 
-- Sustituir cuentas y credenciales mock por usuarios persistentes y retirar credenciales precargadas/de demostración de Login.
+- Activar persistencia SQL despues de las autorizaciones y retirar cuentas/codigo mock de la version definitiva. Login ya no precarga ni muestra credenciales demo.
 - Restringir CORS a los orígenes autorizados por entorno.
 - Proteger login frente a intentos abusivos: límites de intentos y respuestas sin enumeración de cuentas.
 - Revisar almacenamiento de sesión; sustituir localStorage si el diseño definitivo requiere cookies HttpOnly/Secure y protección CSRF.
 - Incorporar autoría persistente por IdUsuario en observaciones. AutorNombre no demuestra propiedad; no autorizar ediciones/eliminaciones del Operador por coincidencia de nombres.
-- Incorporar revocación persistente de sesiones, cambio de contraseña y gestión de cuentas en las etapas posteriores.
+- Validar en SQL real la revocacion por VersionSesion, cambio de password y gestion de cuentas implementados localmente en etapas 3/4; todavia no estan activados contra Azure.
 
 ## Etapa 2
 

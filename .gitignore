@@ -1,2 +1,7 @@
 node_modules/
 .env
+.env.*
+!.env.example
+
+# Reporte de metadatos real: conservar local, fuera de las propuestas publicadas.
+docs/metadatos-seguridad-azure.json
