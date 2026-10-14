@@ -1,8 +1,17 @@
 # Activacion de Seguridad SQL: etapas 3 y 4
 
-Estado: implementacion local completada. Autenticacion actual MOCK por defecto.
+Estado: implementación y validación de cuentas SQL completadas en desarrollo;
+ver `cierre-seguridad.md`. Mock sigue siendo el valor por defecto del código,
+pero el proceso local autorizado usa SQL mediante una variable temporal.
+No repetir migración ni bootstrap. Los pasos de puesta en marcha se conservan
+como referencia para una intervención futura, con autorización separada.
+SQL local validado: 17 pruebas reales aprobadas en dos ejecuciones finales;
+ver tanda-sql-resultados.md. Siguiente paso: activacion-azure-controlada.md,
+con siete autorizaciones separadas. Azure sigue sin conexion ni modificaciones.
 Actualizacion de estabilizacion: ver `estabilizacion-seguridad.md` y
 `checklist-seguridad-manual.md`. No se autorizaron ejecuciones en Azure.
+La preparacion SQL LOCAL actual usa Windows/Shared Memory; ver
+`preparacion-sql-local.md`. Crear/marcar/probar esa base requiere autorizacion separada.
 No hubo operaciones en Azure, migracion, cuentas reales ni deploy. El contenido
 exacto de `01_modelo_roles_usuarios.sql` y su ejecucion necesitan revision y
 autorizacion separada. Aprobar codigo/modelo NO autoriza pasos de escritura.
@@ -54,8 +63,9 @@ como parte automatica de ninguna de estas herramientas.
    `npm.cmd run test:sql` esta omitido por defecto; habilitarlo exige base SQL
    LOCAL vacia/marcada y autorizacion independiente. No usar HostFlow/Azure.
 
-2. Revisar el SQL exacto y probar migracion/persistencia/concurrencia primero en
-   una base de pruebas autorizada. No instalar ni usar automaticamente un motor
+2. Migracion/persistencia/concurrencia ya probadas en la base LOCAL autorizada.
+   Revisar el SQL exacto para Azure segun activacion-azure-controlada.md.
+   No instalar ni usar automaticamente un motor
    conectado a produccion. La migracion permanece en proposals, con flags de
    modelo SQL y escritura en cero. No se ejecuta desde npm ni desde server.js.
 

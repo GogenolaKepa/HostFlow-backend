@@ -105,13 +105,30 @@ function sesionInvalida() {
   return new ErrorSeguridad(401, "SESION_INVALIDA", "La sesión no es válida o venció. Inicie sesión nuevamente.");
 }
 
+function numerosErrorSQL(error) {
+  // node-mssql puede entregar 3621 (sentencia terminada) como error principal.
+  // Inspeccionar solo codigos, nunca mensajes/parametros del driver.
+  const pendientes = [error], vistos = new Set(), numeros = new Set();
+  while (pendientes.length && vistos.size < 32) {
+    const actual = pendientes.shift();
+    if (!actual || typeof actual !== "object" || vistos.has(actual)) continue;
+    vistos.add(actual);
+    for (const numero of [actual.number, actual.info?.number]) {
+      if (Number.isInteger(numero)) numeros.add(numero);
+    }
+    pendientes.push(actual.originalError);
+    if (Array.isArray(actual.precedingErrors)) pendientes.push(...actual.precedingErrors.slice(0,32));
+  }
+  return [...numeros];
+}
+
 function errorPersistencia(error) {
   if (error instanceof ErrorSeguridad) return error;
-  const numero = error?.number ?? error?.originalError?.info?.number;
-  if ([2601, 2627].includes(numero)) {
+  const numeros = numerosErrorSQL(error);
+  if (numeros.some(n => [2601, 2627].includes(n))) {
     return new ErrorSeguridad(409, "EMAIL_DUPLICADO", "Ya existe una cuenta con ese correo.");
   }
-  if ([1205, 1222].includes(numero)) {
+  if (numeros.some(n => [1205, 1222].includes(n))) {
     return new ErrorSeguridad(409, "OPERACION_CONCURRENTE", "Otra operación está en curso. Reintente.");
   }
   return new ErrorSeguridad(503, "SEGURIDAD_NO_DISPONIBLE", "La gestión de cuentas no está disponible. Reintente más tarde.");
@@ -131,4 +148,4 @@ async function comprobarPassword(password, hash) {
 module.exports = { ROLES_ASIGNABLES, RECURSO_BLOQUEO, ErrorSeguridad, validarCampos, texto,
   normalizarEmail, validarRol, validarPassword, validarRevision, revisionDe, verificarRevision,
   esUsuarioHabilitado, perfilSeguro, credencialesInvalidas, sesionInvalida,
-  errorPersistencia, responderError, comprobarPassword };
+  errorPersistencia, numerosErrorSQL, responderError, comprobarPassword };

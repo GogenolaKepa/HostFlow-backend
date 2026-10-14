@@ -14,7 +14,8 @@
     "test:security": "node --test tests/security-*.test.js",
     "test": "node --test tests/*.test.js",
     "admin:bootstrap": "node scripts/bootstrapAdministrador.js",
-    "test:sql": "node --test tests/integration/sql-seguridad.test.js"
+    "test:sql": "node --test tests/integration/sql-seguridad.test.js",
+    "test:sql:check": "node scripts/comprobarSQLLocal.js --read-only"
   },
   "keywords": [],
   "author": "Kepa Gogenola",
@@ -26,10 +27,11 @@
     "express": "^4.22.2",
     "jsonwebtoken": "^9.0.3",
     "msql": "^1.0.3",
-    "mssql": "^12.7.2",
+    "mssql": "12.7.5",
     "multer": "^2.4.0"
   },
   "devDependencies": {
+    "msnodesqlv8": "5.6.0",
     "nodemon": "^3.1.9"
   }
 }

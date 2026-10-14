@@ -12,7 +12,7 @@ function driverLocal({ lock = 0, falloQuery = false, falloCommit = false } = {})
   }
   class Request {
     constructor(transaction) { this.transaction = transaction; this.valores = new Map(); }
-    input(nombre, tipo, valor) { this.valores.set(nombre, { tipo, valor }); return this; }
+    input(nombre, tipo, valor) { if (!tipo?.local) throw new Error("Driver de parametro mezclado"); this.valores.set(nombre, { tipo, valor }); return this; }
     async query(query) {
       llamadas.push({ tipo: "query", query, valores: this.valores, transaction: this.transaction });
       if (query.includes("sp_getapplock")) return { recordset: [{ resultado: lock }] };
@@ -24,9 +24,10 @@ function driverLocal({ lock = 0, falloQuery = false, falloCommit = false } = {})
       return { recordset: [{ idUsuario: 1, nombre: "Prueba", rol: "Administrador", estado: "Activo", versionRegistro: Buffer.alloc(8) }] };
     }
   }
-  const driver = { Transaction, Request, ISOLATION_LEVEL: { READ_COMMITTED: 2 } };
+  const tipos = {}; for(const name of ["NVarChar","VarChar","Binary"]) tipos[name] = (length) => ({ local: true, name, length }); tipos.Int = { local: true, name: "Int" }; tipos.Bit = { local: true, name: "Bit" };
+  const driver = { ...tipos, Transaction, Request, ISOLATION_LEVEL: { READ_COMMITTED: 2 } };
   const repo = new UsuarioRepository({ driver, getPool: async () => ({}), request: async () => new Request() });
-  return { llamadas, repo };
+  return { llamadas, repo, driver };
 }
 
 test("repositorio parametriza entradas y comparte transaccion/bloqueo antes del INSERT", async () => {
@@ -90,4 +91,28 @@ test("listado no selecciona hash y parametriza/preserva busquedas con comodines"
   assert.equal(query.query.includes("PasswordHash"), false);
   assert.equal(query.valores.get("Desde").valor, 25);
   assert.equal(query.valores.get("Busqueda").valor, "%x~%~_~['%");
+});
+
+test("Usuarios y Roles usan tipos y Request del driver inyectado; produccion conserva Tedious", async () => {
+  const { repo, driver } = driverLocal();
+  assert.throws(() => new driver.Request().input("Mixto", require("mssql").Int, 1), /mezclado/);
+  await repo.roles.listarAsignables();
+  await repo.buscarPorEmail("prueba@example.invalid");
+  await repo.transaccionSeguridad(tx => tx.actualizar(1, "0123456789abcdef", {
+    nombre: "Nombre", email: "prueba@example.invalid", idRol: 73, estado: "Activo",
+    passwordHash: randomBytes(30).toString("hex"), debeCambiarPassword: true,
+  }, 1, true));
+  assert.equal(new UsuarioRepository().driver, require("mssql"));
+});
+
+test("errores SQL precedentes conservan duplicados/concurrencia sin exponer detalles", () => {
+  const { numerosErrorSQL, errorPersistencia } = require("../src/security/seguridadUsuarios");
+  const sqlError = {number:3621,message:"detalle privado",precedingErrors:[{originalError:{info:{number:2627}}}]};
+  assert.deepEqual(numerosErrorSQL(sqlError),[3621,2627]);
+  assert.equal(errorPersistencia(sqlError).codigo,"EMAIL_DUPLICADO");
+  assert.equal(errorPersistencia({number:3621,precedingErrors:[{number:1205}]}).codigo,"OPERACION_CONCURRENTE");
+  assert.equal(errorPersistencia({number:3621}).status,503);
+  assert.equal(errorPersistencia(sqlError).message.includes("privado"),false);
+  const ciclo={number:547}; ciclo.originalError=ciclo;
+  assert.deepEqual(numerosErrorSQL(ciclo),[547]);
 });

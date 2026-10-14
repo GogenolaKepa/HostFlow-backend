@@ -1,0 +1,65 @@
+{
+  "backend": {
+    "modified": [
+      "docs/estabilizacion-seguridad.md",
+      "docs/puesta-en-marcha-seguridad.md",
+      "package-lock.json",
+      "package.json",
+      "sql/proposals/seguridad_etapas_3_4/05_permisos_puesta_en_marcha_solo_lectura.sql",
+      "src/repositories/RolRepository.js",
+      "src/repositories/UsuarioRepository.js",
+      "src/security/erroresSeguros.js",
+      "src/security/seguridadUsuarios.js",
+      "src/services/AlertaService.js",
+      "src/services/DashboardService.js",
+      "tests/integration/00_marcar_base_aislada.sql",
+      "tests/integration/sql-seguridad.test.js",
+      "tests/integration/sqlAislado.js",
+      "tests/security-hardening.test.js",
+      "tests/security-repositories.test.js",
+      "tests/security-sql-proposal.test.js"
+    ],
+    "added": [
+      "docs/activacion-azure-controlada.md",
+      "docs/archivos-preparacion-sql.json",
+      "docs/cierre-seguridad.md",
+      "docs/comprobacion-azure-administrativa.md",
+      "docs/inspeccion-azure-resultados.md",
+      "docs/preparacion-sql-local.md",
+      "docs/publicacion-seguridad-propuesta.md",
+      "docs/tanda-sql-resultados.md",
+      "scripts/comprobarSQLLocal.js",
+      "scripts/inspeccionarAzureSoloLectura.js",
+      "scripts/prepararSQLLocal.js",
+      "sql/proposals/seguridad_etapas_3_4/06_destino_azure_solo_lectura.sql",
+      "sql/proposals/seguridad_etapas_3_4/07_permisos_migracion_solo_lectura.sql",
+      "sql/proposals/seguridad_etapas_3_4/08_respaldos_azure_solo_lectura.sql",
+      "tests/dashboard-readonly.test.js",
+      "tests/integration/01_crear_base_local.sql",
+      "tests/integration/02_inspeccion_solo_lectura.sql",
+      "tests/integration/03_limpieza_manual_revisable.sql",
+      "tests/security-azure-inspection.test.js",
+      "tests/security-sql-isolation.test.js"
+    ]
+  },
+  "frontend": {
+    "modified": [
+      "src/App.css",
+      "src/pages/Dashboard.jsx",
+      "src/pages/MiCuenta.jsx",
+      "src/pages/Usuarios.jsx",
+      "tests/browser/hostflow-browser.test.js",
+      "tests/cuentas-ui.test.js"
+    ],
+    "added": [
+      "docs/activacion-local-cuentas.md",
+      "docs/pulido-visual-seguridad.md",
+      "src/components/security/SecurityUI.jsx",
+      "tests/fixtures/permisos.json",
+      "tests/manual/roles-reales.html",
+      "tests/manual/roles-reales.js",
+      "tests/permisos-contract.test.js",
+      "tests/roles-manual.test.js"
+    ]
+  }
+}

@@ -133,3 +133,25 @@ test("ultimo manejador devuelve JSON generico sin stack, tokens o hashes", () =>
   assert.deepEqual(Object.keys(respuesta).sort(), ["codigo", "mensaje"]);
   assert.equal(JSON.stringify(respuesta).includes(secreto), false);
 });
+
+test("codigo 503 permitido no permite extras sensibles ni mensaje arbitrario", () => {
+  const secreto = randomBytes(24).toString("hex"); let salida;
+  const res = { statusCode: 503, set() {}, json(data) { salida = data; } };
+  respuestasSeguras({}, res, () => {});
+  res.json({ codigo: "AUTH_NO_DISPONIBLE", mensaje: secreto, detalles: { privado: secreto } });
+  assert.deepEqual(salida, { codigo: "AUTH_NO_DISPONIBLE", mensaje: "La autenticación no está disponible." });
+  assert.equal(JSON.stringify(salida).includes(secreto), false);
+  assert.equal(protegerError(new Error(`https://usuario:${secreto}@example.invalid`)).message.includes(secreto), false);
+});
+
+test("IP compartida cuenta logins exitosos y instancias tienen limites independientes", () => {
+  const limiteA = limitarLogin({ maximo: 2, ventanaMs: 1000, ahora: () => 0 });
+  const limiteB = limitarLogin({ maximo: 2, ventanaMs: 1000, ahora: () => 0 });
+  let exitosas = 0, rechazo;
+  const res = { set() {}, status(s) { rechazo = s; return this; }, json() {} };
+  const req = { ip: "127.0.0.1" };
+  limiteA(req, res, () => exitosas++); limiteA(req, res, () => exitosas++);
+  limiteA(req, res, () => exitosas++);
+  assert.equal(exitosas, 2); assert.equal(rechazo, 429);
+  limiteB(req, res, () => exitosas++); assert.equal(exitosas, 3);
+});

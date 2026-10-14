@@ -113,7 +113,7 @@ class DashboardService {
   async obtenerAlertas() {
     const alertas =
       await AlertaService
-        .obtenerAlertas();
+        .obtenerAlertasPersistidas();
 
     /*
      * En Inicio mostramos solamente alertas

@@ -12,13 +12,13 @@ class UsuarioRepository {
   constructor({ getPool, request, driver = sql } = {}) {
     this.driver = driver;
     this.getPool = getPool || (() => require("../config/database").poolPromise);
-    this.request = request || (async () => (await this.getPool()).request());
-    this.roles = new RolRepository({ request: this.request });
+    this.request = request || (async () => new this.driver.Request(await this.getPool()));
+    this.roles = new RolRepository({ request: this.request, driver: this.driver });
   }
 
   async buscarPorEmail(email) {
     const req = await this.request();
-    req.input("Email", sql.NVarChar(254), email);
+    req.input("Email", this.driver.NVarChar(254), email);
     const { recordset } = await req.query(`SELECT ${COLUMNAS}, u.PasswordHash AS passwordHash
       FROM dbo.Usuarios u JOIN dbo.Roles r ON r.IdRol = u.IdRol
       WHERE u.EmailNormalizado = LOWER(LTRIM(RTRIM(@Email)));`);
@@ -27,7 +27,7 @@ class UsuarioRepository {
 
   async obtener(id, { credenciales = false } = {}) {
     const req = await this.request();
-    req.input("IdUsuario", sql.Int, id);
+    req.input("IdUsuario", this.driver.Int, id);
     const { recordset } = await req.query(`SELECT ${COLUMNAS}${credenciales ? ", u.PasswordHash AS passwordHash" : ""}
       FROM dbo.Usuarios u JOIN dbo.Roles r ON r.IdRol = u.IdRol WHERE u.IdUsuario = @IdUsuario;`);
     return recordset[0] || null;
@@ -36,10 +36,10 @@ class UsuarioRepository {
   async listar({ busqueda = "", estado = "", pagina = 1, limite = 25 } = {}) {
     const req = await this.request();
     const patron = `%${busqueda.replace(/[~%_\[]/g, (c) => `~${c}`)}%`;
-    req.input("Busqueda", sql.NVarChar(512), patron);
-    req.input("Estado", sql.NVarChar(10), estado);
-    req.input("Desde", sql.Int, (pagina - 1) * limite);
-    req.input("Limite", sql.Int, limite);
+    req.input("Busqueda", this.driver.NVarChar(512), patron);
+    req.input("Estado", this.driver.NVarChar(10), estado);
+    req.input("Desde", this.driver.Int, (pagina - 1) * limite);
+    req.input("Limite", this.driver.Int, limite);
     const filtro = `(@Estado = N'' OR u.Estado = @Estado)
       AND (u.Nombre LIKE @Busqueda ESCAPE '~' OR u.Email LIKE @Busqueda ESCAPE '~')`;
     const { recordsets } = await req.query(`
@@ -67,11 +67,11 @@ class UsuarioRepository {
 
   async crear({ nombre, email, passwordHash, idRol, actor = null }) {
     const req = await this.request();
-    req.input("Nombre", sql.NVarChar(120), nombre);
-    req.input("Email", sql.NVarChar(254), email);
-    req.input("Hash", sql.VarChar(255), passwordHash);
-    req.input("IdRol", sql.Int, idRol);
-    req.input("Actor", sql.Int, actor);
+    req.input("Nombre", this.driver.NVarChar(120), nombre);
+    req.input("Email", this.driver.NVarChar(254), email);
+    req.input("Hash", this.driver.VarChar(255), passwordHash);
+    req.input("IdRol", this.driver.Int, idRol);
+    req.input("Actor", this.driver.Int, actor);
     const { recordset } = await req.query(`
       INSERT INTO dbo.Usuarios (Nombre, Email, PasswordHash, IdRol, IdUsuarioCreacion, IdUsuarioActualizacion)
       OUTPUT INSERTED.IdUsuario AS idUsuario
@@ -81,13 +81,13 @@ class UsuarioRepository {
 
   async actualizar(id, revision, cambios, actor, revocar = false) {
     // La lista de columnas esta cerrada en el repositorio; ningun nombre llega del cliente.
-    const tipos = { nombre: ["Nombre", sql.NVarChar(120)], email: ["Email", sql.NVarChar(254)],
-      idRol: ["IdRol", sql.Int], estado: ["Estado", sql.NVarChar(10)],
-      passwordHash: ["PasswordHash", sql.VarChar(255)], debeCambiarPassword: ["DebeCambiarPassword", sql.Bit] };
+    const tipos = { nombre: ["Nombre", this.driver.NVarChar(120)], email: ["Email", this.driver.NVarChar(254)],
+      idRol: ["IdRol", this.driver.Int], estado: ["Estado", this.driver.NVarChar(10)],
+      passwordHash: ["PasswordHash", this.driver.VarChar(255)], debeCambiarPassword: ["DebeCambiarPassword", this.driver.Bit] };
     const req = await this.request();
-    req.input("IdUsuario", sql.Int, id);
-    req.input("Revision", sql.Binary(8), Buffer.from(revision, "hex"));
-    req.input("Actor", sql.Int, actor);
+    req.input("IdUsuario", this.driver.Int, id);
+    req.input("Revision", this.driver.Binary(8), Buffer.from(revision, "hex"));
+    req.input("Actor", this.driver.Int, actor);
     const asignaciones = [];
     for (const [campo, valor] of Object.entries(cambios)) {
       if (!Object.hasOwn(tipos, campo)) throw new Error("Campo interno no admitido.");
@@ -115,7 +115,7 @@ class UsuarioRepository {
       iniciada = true;
       const request = () => Promise.resolve(new this.driver.Request(transaction));
       const lock = await request();
-      lock.input("Recurso", sql.NVarChar(255), RECURSO_BLOQUEO);
+      lock.input("Recurso", this.driver.NVarChar(255), RECURSO_BLOQUEO);
       const { recordset } = await lock.query(`DECLARE @Resultado int;
         EXEC @Resultado = sys.sp_getapplock @Resource = @Recurso, @LockMode = 'Exclusive',
           @LockOwner = 'Transaction', @LockTimeout = 10000, @DbPrincipal = 'public';

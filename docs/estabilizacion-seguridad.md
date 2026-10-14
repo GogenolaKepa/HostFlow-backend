@@ -109,29 +109,12 @@ memoria de la migracion y fixture Roles; intenta limpiar solo sus tablas creadas
 revalidando destino/marca. Si limpieza falla, revisar la base aislada; nunca DROP
 de HostFlow ni de una base. Mantener el entorno de prueba de uso exclusivo.
 
-## Como habilitar las pruebas SQL, solo tras autorizacion
+## Preparacion SQL local actualizada
 
-1. Acordar una base SQL Server LOCAL vacia, de uso exclusivo, con nombre como
-   HostFlow_Test_Seguridad. Autorizar por separado su provision y escrituras.
-   Usar una identidad local existente apropiada; no cambiar permisos de Azure.
-2. En esa base autorizada revisar tests/integration/00_marcar_base_aislada.sql;
-   solo tras autorizar la marca habilitar su flag y ejecutarlo. No crea la base.
-3. Cargar en un proceso privado variables HOSTFLOW_SQL_TEST_SERVER (localhost),
-   HOSTFLOW_SQL_TEST_DATABASE, HOSTFLOW_SQL_TEST_USER y HOSTFLOW_SQL_TEST_PASSWORD.
-   Nunca passwords literales en argumentos, historial, capturas o el repositorio.
-4. En ese proceso, y con autorizacion explicita de DDL/DML/limpieza de fixtures:
-
-   ```powershell
-   $env:HOSTFLOW_SQL_TEST_ENABLED = '1'
-   $env:HOSTFLOW_SQL_TEST_WRITE_APPROVED = 'YES_LOCAL_DISPOSABLE'
-   npm.cmd run test:sql
-   ```
-
-5. Comprueba migracion, indice/unicidad incluso inactivos, bootstrap concurrente,
-   password/revocacion, rowversion, ultimo Admin concurrente y FKs. No sustituye
-   pruebas de permisos con una cuenta limitada ni valida Azure por extrapolacion.
-   El certificado autofirmado solo se acepta en este runner loopback; conexiones
-   de app/bootstrap a Azure conservan validacion TLS.
+El procedimiento de credenciales SQL anterior fue sustituido por Windows integrado
+y Shared Memory para la instancia local confirmada. Ver preparacion-sql-local.md.
+No habilitar flags ni ejecutar DDL/DML hasta la autorizacion independiente. La
+prueba nativa actual demuestra solo lectura de metadatos; no valida fixtures SQL.
 
 ## Verificaciones realizadas y limites
 

@@ -2,14 +2,15 @@ const sql = require("mssql");
 const { ROLES_ASIGNABLES } = require("../security/seguridadUsuarios");
 
 class RolRepository {
-  constructor({ request } = {}) {
-    this.request = request || (async () => (await require("../config/database").poolPromise).request());
+  constructor({ request, driver = sql } = {}) {
+    this.driver = driver;
+    this.request = request || (async () => new this.driver.Request(await require("../config/database").poolPromise));
   }
 
   async listarAsignables() {
     const req = await this.request();
-    req.input("Administrador", sql.NVarChar(50), ROLES_ASIGNABLES[0]);
-    req.input("Operador", sql.NVarChar(50), ROLES_ASIGNABLES[1]);
+    req.input("Administrador", this.driver.NVarChar(50), ROLES_ASIGNABLES[0]);
+    req.input("Operador", this.driver.NVarChar(50), ROLES_ASIGNABLES[1]);
     const { recordset } = await req.query(`
       SELECT Nombre AS nombre FROM dbo.Roles
       WHERE Activo = 1 AND Nombre COLLATE Latin1_General_100_BIN2 IN (@Administrador, @Operador)
@@ -21,7 +22,7 @@ class RolRepository {
   async resolverActivo(nombre) {
     if (!ROLES_ASIGNABLES.includes(nombre)) return null;
     const req = await this.request();
-    req.input("NombreRol", sql.NVarChar(50), nombre);
+    req.input("NombreRol", this.driver.NVarChar(50), nombre);
     const { recordset } = await req.query(`
       SELECT IdRol AS idRol, Nombre AS nombre FROM dbo.Roles WITH (HOLDLOCK)
       WHERE Nombre COLLATE Latin1_General_100_BIN2 = @NombreRol

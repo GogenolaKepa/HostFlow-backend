@@ -521,6 +521,12 @@ class AlertaService {
     await this
       .sincronizarAlertasOperativas();
 
+    return this.obtenerAlertasPersistidas(filtros);
+  }
+
+  // Lectura sin sincronizacion: permite montar/refrescar Inicio sin DML.
+  // Las consultas y acciones del Centro de alertas mantienen la sincronizacion.
+  async obtenerAlertasPersistidas(filtros = {}) {
     return AlertaRepository
       .obtenerTodas(
         filtros
