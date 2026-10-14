@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const RecomendacionRepository = require(
   "../repositories/RecomendacionRepository"
 );
@@ -707,7 +708,8 @@ class RecomendacionService {
                 recomendacionesBase,
             });
       } catch (error) {
-        console.error(
+        error = protegerError(error);
+        registrarErrorSeguro(
           "No se pudo aplicar la capa generativa de IA. Se utilizará el fallback determinístico:",
           error.message
         );

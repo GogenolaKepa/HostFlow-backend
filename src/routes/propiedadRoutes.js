@@ -1,3 +1,4 @@
+const { registrarErrorSeguro } = require("../security/erroresSeguros");
 const express = require(
   "express"
 );
@@ -190,7 +191,7 @@ router.post(
       res,
       (error) => {
         if (error) {
-          console.error(
+          registrarErrorSeguro(
             "Error de Multer al subir imágenes:",
             error
           );

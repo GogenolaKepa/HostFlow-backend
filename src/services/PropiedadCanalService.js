@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const PropiedadRepository = require(
   "../repositories/PropiedadRepository"
 );
@@ -152,6 +153,7 @@ class PropiedadCanalService {
         vinculacion,
       };
     } catch (error) {
+      error = protegerError(error);
       await PropiedadCanalRepository
         .marcarError(
           idPropiedad,
@@ -259,6 +261,7 @@ async sincronizarPropiedadEnCanal(
         vinculacionSincronizada,
     };
   } catch (error) {
+    error = protegerError(error);
     /*
      * Si falla el proveedor, la copia local
      * de HostFlow no se revierte.
@@ -279,7 +282,8 @@ async sincronizarPropiedadEnCanal(
     } catch (
       errorPersistencia
     ) {
-      console.error(
+      errorPersistencia = protegerError(errorPersistencia);
+      registrarErrorSeguro(
         `No se pudo registrar el error de sincronización manual de ${canal}:`,
         errorPersistencia
       );
@@ -408,6 +412,7 @@ async sincronizarCambiosPropiedad(
           vinculacionSincronizada,
       });
     } catch (error) {
+      error = protegerError(error);
       /*
        * El cambio local ya existe en HostFlow.
        *
@@ -430,7 +435,8 @@ async sincronizarCambiosPropiedad(
       } catch (
         errorPersistencia
       ) {
-        console.error(
+        errorPersistencia = protegerError(errorPersistencia);
+        registrarErrorSeguro(
           `No se pudo registrar el error de sincronización de ${canal}:`,
           errorPersistencia
         );

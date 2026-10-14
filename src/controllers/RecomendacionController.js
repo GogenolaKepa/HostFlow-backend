@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const RecomendacionService = require(
   "../services/RecomendacionService"
 );
@@ -39,7 +40,8 @@ class RecomendacionController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener recomendaciones:",
         error
       );

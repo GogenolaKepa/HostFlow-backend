@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const PropiedadImagenService = require(
   "../services/PropiedadImagenService"
 );
@@ -30,7 +31,8 @@ class PropiedadImagenController {
           imagenes,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener imágenes de propiedad:",
         error
       );
@@ -80,7 +82,8 @@ class PropiedadImagenController {
           imagenes,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener todas las imágenes:",
         error
       );
@@ -122,7 +125,8 @@ class PropiedadImagenController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al agregar imagen:",
         error
       );
@@ -290,7 +294,8 @@ class PropiedadImagenController {
             resultados,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al subir imágenes desde dispositivo:",
         error
       );
@@ -336,7 +341,8 @@ class PropiedadImagenController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al modificar imagen:",
         error
       );
@@ -381,7 +387,8 @@ class PropiedadImagenController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al establecer imagen principal:",
         error
       );
@@ -443,7 +450,8 @@ class PropiedadImagenController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al cambiar orden de imagen:",
         error
       );
@@ -504,7 +512,8 @@ class PropiedadImagenController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al eliminar imagen:",
         error
       );
@@ -549,7 +558,8 @@ class PropiedadImagenController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al restaurar imagen:",
         error
       );

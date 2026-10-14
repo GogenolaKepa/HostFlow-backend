@@ -52,7 +52,8 @@ BEGIN TRY
     @LockTimeout = 10000,
     @DbPrincipal = 'public';
 
-  IF @ResultadoBloqueo < 0
+  -- Solo 0 (inmediato) y 1 (tras espera) acreditan concesion documentada.
+  IF @ResultadoBloqueo IS NULL OR @ResultadoBloqueo NOT IN (0, 1)
     THROW 51105, 'No se obtuvo el bloqueo para el alta inicial.', 1;
 
   -- Tambien bloquea el rango vacio: no se reemplaza ninguna cuenta existente.

@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const ChannelService = require("./ChannelService");
 const AirbnbChannelService = require("./AirbnbChannelService");
 const BookingChannelService = require("./BookingChannelService");
@@ -36,7 +37,8 @@ class ReservaService {
       return await ReservaEventoRepository
         .crearEvento(datosEvento);
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "[HostFlow] No se pudo registrar el evento de la reserva:",
         error
       );

@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const AirbnbPropertyImageInboundService = require(
   "../services/AirbnbPropertyImageInboundService"
 );
@@ -30,7 +31,8 @@ class AirbnbPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular creación de imagen Airbnb:",
         error
       );
@@ -67,7 +69,8 @@ class AirbnbPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular actualización de imagen Airbnb:",
         error
       );
@@ -104,7 +107,8 @@ class AirbnbPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular eliminación de imagen Airbnb:",
         error
       );
@@ -141,7 +145,8 @@ class AirbnbPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular imagen principal Airbnb:",
         error
       );
@@ -176,7 +181,8 @@ class AirbnbPropertyImageInboundController {
           eventos,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener eventos pendientes de imágenes Airbnb:",
         error
       );
@@ -221,7 +227,8 @@ class AirbnbPropertyImageInboundController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al procesar evento de imagen Airbnb:",
         error
       );

@@ -3,11 +3,12 @@ const AuthController = require("../controllers/AuthController");
 const autenticacion = require("../middlewares/autenticacion");
 const cambioPasswordObligatorio = require("../middlewares/cambioPasswordObligatorio");
 const { tienePermiso } = require("../config/permisos");
+const limitarLogin = require("../middlewares/limitarLogin");
 
 const router = express.Router();
 
 // Única operación pública de autenticación.
-router.post("/login", express.json(), (req, res) => AuthController.login(req, res));
+router.post("/login", limitarLogin(), express.json({ limit: "8kb" }), (req, res) => AuthController.login(req, res));
 router.use(autenticacion);
 router.use((_req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
 function permiso(accion) {

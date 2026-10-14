@@ -289,7 +289,7 @@ test("sin secreto la autenticación falla de forma cerrada y sin detalles intern
     ]) {
       const response = await pedir(ruta, options);
       assert.equal(response.status, 503);
-      assert.deepEqual(await response.json(), { mensaje: "La autenticación no está disponible." });
+      assert.deepEqual(await response.json(), { mensaje: "La autenticación no está disponible.", codigo: "AUTH_NO_DISPONIBLE" });
     }
   } finally {
     process.env.JWT_SECRET = secretPrueba;

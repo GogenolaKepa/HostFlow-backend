@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const PropiedadService = require(
   "../services/PropiedadService"
 );
@@ -21,7 +22,8 @@ class PropiedadController {
         propiedades,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener propiedades:",
         error
       );
@@ -56,6 +58,7 @@ class PropiedadController {
         propiedad,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(404).json({
         mensaje: error.message,
       });
@@ -82,7 +85,8 @@ class PropiedadController {
         propiedad: nuevaPropiedad,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al crear propiedad:",
         error
       );
@@ -117,7 +121,8 @@ class PropiedadController {
           propiedadActualizada,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al modificar propiedad:",
         error
       );
@@ -153,7 +158,8 @@ class PropiedadController {
           propiedadActualizada,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al cambiar estado de propiedad:",
         error
       );

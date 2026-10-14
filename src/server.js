@@ -1,4 +1,10 @@
 require("dotenv").config();
+// Validar configuracion antes de abrir cualquier conexion.
+require("./config/autenticacion").origenAutenticacion();
+require("./config/httpSeguridad").configuracionHttp();
+if (process.env.NODE_ENV === "production" && !require("./config/autenticacion").secretoJWTValido(process.env.JWT_SECRET)) {
+  throw new Error("Producción requiere un secreto JWT privado de al menos 32 bytes.");
+}
 
 const {
   poolPromise,

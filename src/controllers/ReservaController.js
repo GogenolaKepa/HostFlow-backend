@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const ReservaService = require("../services/ReservaService");
 
 class ReservaController {
@@ -14,7 +15,8 @@ class ReservaController {
         reservas,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener reservas:",
         error
       );
@@ -40,7 +42,8 @@ class ReservaController {
         reserva,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener reserva:",
         error
       );
@@ -65,7 +68,8 @@ class ReservaController {
         eventos,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener eventos de la reserva:",
         error
       );
@@ -101,7 +105,8 @@ class ReservaController {
         mensajes,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener mensajes de la reserva:",
         error
       );
@@ -136,7 +141,8 @@ class ReservaController {
           mensaje,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al registrar mensaje de la reserva:",
         error
       );
@@ -173,7 +179,8 @@ class ReservaController {
         incidencias,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener incidencias de la reserva:",
         error
       );
@@ -207,7 +214,8 @@ class ReservaController {
         incidencia,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al registrar incidencia de la reserva:",
         error
       );
@@ -244,7 +252,8 @@ class ReservaController {
         incidencia,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al actualizar incidencia de la reserva:",
         error
       );
@@ -281,7 +290,8 @@ class ReservaController {
         incidencia,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al resolver incidencia de la reserva:",
         error
       );
@@ -318,7 +328,8 @@ class ReservaController {
         observaciones,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener observaciones de la reserva:",
         error
       );
@@ -352,7 +363,8 @@ class ReservaController {
         observacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al registrar observación de la reserva:",
         error
       );
@@ -389,7 +401,8 @@ class ReservaController {
         observacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al actualizar observación de la reserva:",
         error
       );
@@ -428,7 +441,8 @@ class ReservaController {
         observacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al cambiar el estado fijado de la observación:",
         error
       );
@@ -464,7 +478,8 @@ class ReservaController {
         observacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al eliminar observación de la reserva:",
         error
       );
@@ -493,7 +508,8 @@ class ReservaController {
         reserva,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al crear reserva:",
         error
       );
@@ -520,7 +536,8 @@ class ReservaController {
         reserva,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al modificar reserva:",
         error
       );
@@ -546,7 +563,8 @@ class ReservaController {
         reserva,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al cancelar reserva:",
         error
       );
@@ -578,7 +596,8 @@ class ReservaController {
         solicitud,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al proponer cambio Airbnb:",
         error
       );
@@ -607,7 +626,8 @@ class ReservaController {
         resultado
       );
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al procesar aceptación Airbnb:",
         error
       );
@@ -636,7 +656,8 @@ class ReservaController {
         resultado
       );
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al procesar rechazo Airbnb:",
         error
       );
@@ -671,7 +692,8 @@ class ReservaController {
         operacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al cambiar estadía Booking:",
         error
       );
@@ -699,6 +721,7 @@ class ReservaController {
         operacion,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(400).json({
         mensaje: error.message,
       });
@@ -723,7 +746,8 @@ class ReservaController {
         resultado
       );
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al sincronizar operación Booking:",
         error
       );

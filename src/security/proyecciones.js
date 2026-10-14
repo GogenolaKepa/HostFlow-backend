@@ -47,6 +47,7 @@ function flowiaOperativo(datos) {
       ...seleccionar(contexto, ["horizonteConflictosDias", "horizonteOcupacionDias", "motor"]),
       iaGenerativa: {
         ...seleccionar(ia, ["solicitada", "configurada", "aplicada", "proveedor", "modelo", "motivoFallback"]),
+        ...(ia.motivoFallback ? { motivoFallback: "Se muestran recomendaciones operativas sin asistencia generativa." } : {}),
         ...(ia.uso ? { uso: seleccionar(ia.uso, ["inputTokens", "outputTokens", "totalTokens"]) } : {}),
       },
     },

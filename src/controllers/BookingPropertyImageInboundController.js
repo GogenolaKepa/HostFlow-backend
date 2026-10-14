@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const BookingPropertyImageInboundService = require(
   "../services/BookingPropertyImageInboundService"
 );
@@ -30,7 +31,8 @@ class BookingPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular creación de imagen Booking:",
         error
       );
@@ -67,7 +69,8 @@ class BookingPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular actualización de imagen Booking:",
         error
       );
@@ -104,7 +107,8 @@ class BookingPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular eliminación de imagen Booking:",
         error
       );
@@ -141,7 +145,8 @@ class BookingPropertyImageInboundController {
           evento,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al simular imagen principal Booking:",
         error
       );
@@ -176,7 +181,8 @@ class BookingPropertyImageInboundController {
           eventos,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener eventos pendientes de imágenes Booking:",
         error
       );
@@ -221,7 +227,8 @@ class BookingPropertyImageInboundController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al procesar evento de imagen Booking:",
         error
       );

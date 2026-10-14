@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const PropiedadRepository = require(
   "../repositories/PropiedadRepository"
 );
@@ -524,6 +525,7 @@ class PropiedadImagenCanalService {
             vinculacionFinal,
         });
       } catch (error) {
+        error = protegerError(error);
         let vinculacionError =
           null;
 
@@ -538,7 +540,8 @@ class PropiedadImagenCanalService {
         } catch (
           errorPersistencia
         ) {
-          console.error(
+          errorPersistencia = protegerError(errorPersistencia);
+          registrarErrorSeguro(
             `No se pudo registrar el error de imagen en ${canal}:`,
             errorPersistencia
           );
@@ -713,6 +716,7 @@ class PropiedadImagenCanalService {
             vinculacionFinal,
         });
       } catch (error) {
+        error = protegerError(error);
         let vinculacionError =
           null;
 
@@ -727,7 +731,8 @@ class PropiedadImagenCanalService {
         } catch (
           errorPersistencia
         ) {
-          console.error(
+          errorPersistencia = protegerError(errorPersistencia);
+          registrarErrorSeguro(
             `No se pudo registrar el error de actualización de imagen en ${canal}:`,
             errorPersistencia
           );
@@ -941,6 +946,7 @@ class PropiedadImagenCanalService {
           respuestaProveedor,
         });
       } catch (error) {
+        error = protegerError(error);
         let vinculacionError =
           null;
 
@@ -955,7 +961,8 @@ class PropiedadImagenCanalService {
         } catch (
           errorPersistencia
         ) {
-          console.error(
+          errorPersistencia = protegerError(errorPersistencia);
+          registrarErrorSeguro(
             `No se pudo registrar el error al eliminar la imagen en ${canal}:`,
             errorPersistencia
           );

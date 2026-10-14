@@ -21,7 +21,7 @@ class UsuarioRepository {
     req.input("Email", sql.NVarChar(254), email);
     const { recordset } = await req.query(`SELECT ${COLUMNAS}, u.PasswordHash AS passwordHash
       FROM dbo.Usuarios u JOIN dbo.Roles r ON r.IdRol = u.IdRol
-      WHERE u.EmailNormalizado = @Email;`);
+      WHERE u.EmailNormalizado = LOWER(LTRIM(RTRIM(@Email)));`);
     return recordset[0] || null;
   }
 
@@ -120,7 +120,7 @@ class UsuarioRepository {
         EXEC @Resultado = sys.sp_getapplock @Resource = @Recurso, @LockMode = 'Exclusive',
           @LockOwner = 'Transaction', @LockTimeout = 10000, @DbPrincipal = 'public';
         SELECT @Resultado AS resultado;`);
-      if (recordset[0].resultado < 0) throw new ErrorSeguridad(409, "OPERACION_CONCURRENTE", "Otra operación está en curso. Reintente.");
+      if (![0, 1].includes(recordset?.[0]?.resultado)) throw new ErrorSeguridad(409, "OPERACION_CONCURRENTE", "No se obtuvo el bloqueo. Reintente.");
       const scoped = new UsuarioRepository({ getPool: this.getPool, request, driver: this.driver });
       const resultado = await operacion(scoped);
       await transaction.commit();

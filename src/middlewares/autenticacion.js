@@ -1,12 +1,13 @@
 const jwt = require("jsonwebtoken");
 const AuthService = require("../services/AuthService");
 const { responderError, sesionInvalida } = require("../security/seguridadUsuarios");
+const { secretoJWTValido } = require("../config/autenticacion");
 
 async function autenticacion(req, res, next) {
   const coincidencia = /^Bearer\s+([^\s]+)$/i.exec(req.get("Authorization") || "");
   if (!coincidencia) return res.status(401).json({ mensaje: "Debe iniciar sesión." });
   const secret = process.env.JWT_SECRET;
-  if (!secret?.trim()) return res.status(503).json({ mensaje: "La autenticación no está disponible." });
+  if (!secretoJWTValido(secret)) return res.status(503).json({ mensaje: "La autenticación no está disponible.", codigo: "AUTH_NO_DISPONIBLE" });
 
   let payload;
   try {

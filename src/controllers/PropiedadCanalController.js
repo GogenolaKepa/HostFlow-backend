@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const PropiedadCanalService = require(
   "../services/PropiedadCanalService"
 );
@@ -25,7 +26,8 @@ class PropiedadCanalController {
         canales,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener canales de propiedad:",
         error
       );
@@ -75,7 +77,8 @@ class PropiedadCanalController {
           resultado.vinculacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al publicar propiedad:",
         error
       );
@@ -126,7 +129,8 @@ class PropiedadCanalController {
           resultado.vinculacion,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al sincronizar propiedad manualmente:",
         error
       );

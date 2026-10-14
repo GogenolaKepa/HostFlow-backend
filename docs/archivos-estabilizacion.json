@@ -1,0 +1,78 @@
+{
+  "backend": {
+    "modified": [
+      "docs/puesta-en-marcha-seguridad.md",
+      "docs/seguridad-pendientes.md",
+      "package.json",
+      "scripts/bootstrapAdministrador.js",
+      "sql/proposals/seguridad_etapas_3_4/04_bootstrap_administrador_parametrizado.sql",
+      "src/app.js",
+      "src/config/autenticacion.js",
+      "src/controllers/AirbnbInboundController.js",
+      "src/controllers/AirbnbPropertyImageInboundController.js",
+      "src/controllers/AirbnbPropertyInboundController.js",
+      "src/controllers/AlertaController.js",
+      "src/controllers/AuthController.js",
+      "src/controllers/BookingInboundController.js",
+      "src/controllers/BookingPropertyImageInboundController.js",
+      "src/controllers/BookingPropertyInboundController.js",
+      "src/controllers/CalendarioController.js",
+      "src/controllers/DashboardController.js",
+      "src/controllers/HuespedController.js",
+      "src/controllers/LimpiezaController.js",
+      "src/controllers/PropiedadCanalController.js",
+      "src/controllers/PropiedadController.js",
+      "src/controllers/PropiedadImagenController.js",
+      "src/controllers/RecomendacionController.js",
+      "src/controllers/ReservaController.js",
+      "src/middlewares/autenticacion.js",
+      "src/repositories/UsuarioRepository.js",
+      "src/routes/authRoutes.js",
+      "src/routes/propiedadRoutes.js",
+      "src/security/proyecciones.js",
+      "src/security/seguridadUsuarios.js",
+      "src/server.js",
+      "src/services/AuthService.js",
+      "src/services/PropiedadCanalService.js",
+      "src/services/PropiedadImagenCanalService.js",
+      "src/services/RecomendacionService.js",
+      "src/services/ReservaService.js",
+      "tests/auth.test.js",
+      "tests/security-cuentas.test.js",
+      "tests/security-repositories.test.js"
+    ],
+    "added": [
+      "docs/archivos-estabilizacion.json",
+      "docs/checklist-seguridad-manual.md",
+      "docs/estabilizacion-seguridad.md",
+      "docs/sesion-localstorage-cookies.md",
+      "src/config/httpSeguridad.js",
+      "src/middlewares/corsSeguro.js",
+      "src/middlewares/limitarLogin.js",
+      "src/security/erroresSeguros.js",
+      "tests/integration/00_marcar_base_aislada.sql",
+      "tests/integration/sql-seguridad.test.js",
+      "tests/integration/sqlAislado.js",
+      "tests/security-hardening.test.js",
+      "tests/security-sql-proposal.test.js"
+    ]
+  },
+  "frontend": {
+    "modified": [
+      "package.json",
+      "src/pages/Dashboard.jsx",
+      "src/pages/FlowIA.jsx",
+      "src/pages/Huespedes.jsx",
+      "src/pages/Login.jsx",
+      "src/pages/Propiedades.jsx",
+      "src/pages/Reservas.jsx",
+      "src/services/cuentas.js",
+      "src/services/session.js",
+      "tests/cuentas.test.js",
+      "tests/session.test.js"
+    ],
+    "added": [
+      "tests/browser/hostflow-browser.test.js"
+    ]
+  }
+}

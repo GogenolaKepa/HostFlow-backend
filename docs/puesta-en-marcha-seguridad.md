@@ -1,6 +1,8 @@
 # Activacion de Seguridad SQL: etapas 3 y 4
 
 Estado: implementacion local completada. Autenticacion actual MOCK por defecto.
+Actualizacion de estabilizacion: ver `estabilizacion-seguridad.md` y
+`checklist-seguridad-manual.md`. No se autorizaron ejecuciones en Azure.
 No hubo operaciones en Azure, migracion, cuentas reales ni deploy. El contenido
 exacto de `01_modelo_roles_usuarios.sql` y su ejecucion necesitan revision y
 autorizacion separada. Aprobar codigo/modelo NO autoriza pasos de escritura.
@@ -48,6 +50,9 @@ como parte automatica de ninguna de estas herramientas.
 
    Backend: `npm.cmd test`.
    Frontend: `npm.cmd test`, `npm.cmd run build`, `npm.cmd run lint`.
+   Opcional con Edge/Chromium instalado: `npm.cmd run test:browser`, API simulada.
+   `npm.cmd run test:sql` esta omitido por defecto; habilitarlo exige base SQL
+   LOCAL vacia/marcada y autorizacion independiente. No usar HostFlow/Azure.
 
 2. Revisar el SQL exacto y probar migracion/persistencia/concurrencia primero en
    una base de pruebas autorizada. No instalar ni usar automaticamente un motor
@@ -106,6 +111,10 @@ como parte automatica de ninguna de estas herramientas.
    cambio obligatorio permanece activo.
 
 8. Preparar backend y frontend nuevos juntos y aprobar el corte operativo.
+   En PRODUCCION configurar previamente NODE_ENV=production,
+   HOSTFLOW_CORS_ORIGINS con origenes HTTPS exactos y JWT_SECRET privado aleatorio
+   de al menos 32 bytes, mediante entorno/gestor de secretos. No poner valores
+   secretos literales en comandos. Produccion ahora rechaza mock por omision.
    En la terminal backend (configuracion solo de ese proceso):
 
    ```powershell
@@ -148,9 +157,10 @@ SQL indisponible responde 503 y no existe rollback automatico a cuentas demo.
 Un fallo requiere recuperar el servicio SQL o una decision explicita de
 recuperacion; no borrar Usuarios/Roles ni restaurar mocks silenciosamente.
 
-Pendientes antes de deploy: retirar credenciales/codigo mock y exigir SQL como
-configuracion de produccion; endurecer CORS; proteger login frente a abuso;
-reevaluar localStorage; medir bcrypt en el destino. Logout SQL revoca TODAS las
+Pendientes antes de deploy: retirar credenciales/codigo mock del paquete definitivo,
+configurar y verificar CORS/limite login/proxy reales; reevaluar localStorage;
+medir bcrypt en el destino. Ya hay guardas de produccion SQL, CORS configurable
+y limite login local en memoria. Logout SQL revoca TODAS las
 sesiones y la UI lo confirma; sin conexion solo se confirma cierre local.
 Observaciones conservan la restriccion temporal aprobada. No hay recuperacion por
 email, MFA, sesiones por dispositivo ni auditoria historica en este bloque.

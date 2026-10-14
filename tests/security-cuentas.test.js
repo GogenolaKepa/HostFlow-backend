@@ -31,6 +31,17 @@ test("login SQL usa bcrypt, normaliza email y emite version sin exponer hash", a
   assert.equal(Object.hasOwn(sesion.usuario, "versionSesion"), false);
 });
 
+test("login SQL desconocido e incorrecto son indistinguibles por codigo/mensaje", async () => {
+  const { auth, admin } = await entorno();
+  const fallos = [];
+  for (const [email, password] of [["desconocido@example.invalid", nueva()], [admin.usuario.email, nueva()]]) {
+    try { await auth.login(email, password); assert.fail("El login debe rechazarse"); }
+    catch (error) { fallos.push({ status: error.status, codigo: error.codigo, mensaje: error.message }); }
+  }
+  assert.deepEqual(fallos[0], fallos[1]);
+  assert.equal(fallos[0].status, 401);
+});
+
 test("Propietario, cuenta/rol inactivos y password incorrecta no se autentican", async () => {
   const { auth, repo, admin } = await entorno();
   await assert.rejects(auth.login(admin.usuario.email, nueva()), es(401));
@@ -178,6 +189,7 @@ test("bootstrap exige autorizacion, no reemplaza cuentas y serializa dos altas",
 });
 
 test("politica de password cuenta caracteres y bytes, evita truncamiento bcrypt", async () => {
+  assert.throws(() => validarPassword("a".repeat(12) + "\n"), es(400));
   assert.throws(() => validarPassword("a".repeat(11)), es(400));
   assert.throws(() => validarPassword("😀".repeat(19)), es(400));
   assert.equal(validarPassword("😀".repeat(18)).length, 36);

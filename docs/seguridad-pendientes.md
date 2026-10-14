@@ -1,8 +1,8 @@
 # Seguridad antes del despliegue
 
 - Activar persistencia SQL despues de las autorizaciones y retirar cuentas/codigo mock de la version definitiva. Login ya no precarga ni muestra credenciales demo.
-- Restringir CORS a los orígenes autorizados por entorno.
-- Proteger login frente a intentos abusivos: límites de intentos y respuestas sin enumeración de cuentas.
+- Configurar/verificar la lista CORS implementada para los origenes HTTPS de produccion.
+- Validar limite login implementado (IP, memoria), proxy real y necesidad de limite compartido antes de escalar; errores SQL de login ya son genericos.
 - Revisar almacenamiento de sesión; sustituir localStorage si el diseño definitivo requiere cookies HttpOnly/Secure y protección CSRF.
 - Incorporar autoría persistente por IdUsuario en observaciones. AutorNombre no demuestra propiedad; no autorizar ediciones/eliminaciones del Operador por coincidencia de nombres.
 - Validar en SQL real la revocacion por VersionSesion, cambio de password y gestion de cuentas implementados localmente en etapas 3/4; todavia no estan activados contra Azure.

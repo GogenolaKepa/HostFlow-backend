@@ -2,9 +2,8 @@ const express = require(
   "express"
 );
 
-const cors = require(
-  "cors"
-);
+const corsSeguro = require("./middlewares/corsSeguro");
+const { respuestasSeguras, manejarErrorSeguro } = require("./security/erroresSeguros");
 
 const path = require(
   "path"
@@ -84,9 +83,8 @@ const app = express();
 // MIDDLEWARES
 // =========================================================
 
-app.use(
-  cors()
-);
+app.use(respuestasSeguras);
+app.use(corsSeguro());
 
 // CORS responde a OPTIONS antes de exigir autenticación.
 // Login es público; /auth/me verifica la sesión dentro de authRoutes.
@@ -253,7 +251,7 @@ app.use((error, _req, res, next) => {
   if (error.type === "entity.parse.failed" || error.type === "entity.too.large") {
     return res.status(error.status).json({ mensaje: "El cuerpo de la solicitud no es válido." });
   }
-  return next(error);
+  return manejarErrorSeguro(error, _req, res, next);
 });
 
 module.exports =

@@ -32,11 +32,13 @@ function terminalOculta(input, output) {
   const rl = readline.createInterface({ input, output: sink, terminal: true, historySize: 0 });
   return {
     preguntar: (pregunta, secreto = false) => new Promise((resolve, reject) => {
+      oculto = false;
       const alCerrar = () => reject(new Error("Entrada cancelada."));
       rl.once("close", alCerrar);
       rl.question(pregunta, (respuesta) => {
         rl.removeListener("close", alCerrar);
-        oculto = false;
+        // Mantener oculto hasta la siguiente pregunta: un pegado con varias
+        // lineas no debe hacer eco del resto de la contraseña.
         if (secreto) output.write("\n");
         resolve(respuesta);
       });

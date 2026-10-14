@@ -1,8 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { randomUUID } = require("node:crypto");
-const { usuarios } = require("../data/mockData");
-const { origenAutenticacion } = require("../config/autenticacion");
+const { randomUUID, randomBytes } = require("node:crypto");
+const { origenAutenticacion, secretoJWTValido } = require("../config/autenticacion");
 const UsuarioRepository = require("../repositories/UsuarioRepository");
 const UsuarioService = require("./UsuarioService");
 const { esUsuarioHabilitado, normalizarEmail, perfilSeguro, comprobarPassword,
@@ -10,20 +9,21 @@ const { esUsuarioHabilitado, normalizarEmail, perfilSeguro, comprobarPassword,
 
 class AuthService {
   constructor({ origen = origenAutenticacion(), repository = new UsuarioRepository(), cuentas,
-    mockUsuarios = usuarios, secret = () => process.env.JWT_SECRET } = {}) {
+    mockUsuarios, secret = () => process.env.JWT_SECRET } = {}) {
     if (!["mock", "sql"].includes(origen)) throw new Error("Origen de autenticación no válido.");
     this.origen = origen;
     this.repository = repository;
     this.cuentas = cuentas || new UsuarioService(repository);
-    this.mockUsuarios = mockUsuarios;
+    this.mockUsuarios = origen === "mock" ? (mockUsuarios || require("../data/mockData").usuarios) : [];
     this.secret = secret;
+    this.hashDesconocido = null;
   }
 
   perfil(usuario) { return perfilSeguro(usuario, this.origen); }
 
   emitirSesion(usuario) {
     const secret = this.secret();
-    if (!secret?.trim()) throw new ErrorSeguridad(503, "AUTH_NO_DISPONIBLE", "La autenticación no está disponible.");
+    if (!secretoJWTValido(secret)) throw new ErrorSeguridad(503, "AUTH_NO_DISPONIBLE", "La autenticación no está disponible.");
     const token = jwt.sign({ idUsuario: usuario.idUsuario, email: usuario.email,
       origen: this.origen, ...(this.origen === "sql" ? { versionSesion: usuario.versionSesion } : {}) },
     secret, { algorithm: "HS256", expiresIn: "2h", jwtid: randomUUID() });
@@ -56,7 +56,10 @@ class AuthService {
     }
     try {
       const usuario = await this.repository.buscarPorEmail(emailNormalizado);
-      const valida = await comprobarPassword(password, usuario?.passwordHash);
+      if (!usuario) {
+        this.hashDesconocido ||= bcrypt.hash(randomBytes(32).toString("hex"), 12);
+      }
+      const valida = await comprobarPassword(password, usuario?.passwordHash || await this.hashDesconocido);
       if (!valida || !esUsuarioHabilitado(usuario)) throw credencialesInvalidas();
       return this.emitirSesion(usuario);
     } catch (error) { throw errorPersistencia(error); }

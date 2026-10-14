@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const CalendarioService = require(
   "../services/CalendarioService"
 );
@@ -44,7 +45,8 @@ class CalendarioController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener calendario:",
         error
       );

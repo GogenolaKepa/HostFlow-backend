@@ -56,6 +56,14 @@ test("bloqueo negativo hace rollback sin ejecutar la operacion", async () => {
   assert.equal(llamadas.at(-1).tipo, "rollback");
 });
 
+test("resultado de bloqueo ausente/no numerico tampoco permite escrituras", async () => {
+  for (const lock of [null, "0", NaN, 2]) {
+    const { repo } = driverLocal({ lock }); let ejecutada = false;
+    await assert.rejects(repo.transaccionSeguridad(async () => { ejecutada = true; }), (e) => e.status === 409);
+    assert.equal(ejecutada, false);
+  }
+});
+
 test("error o commit fallido revierten y no filtran mensajes SQL", async () => {
   for (const opciones of [{ falloQuery: true }, { falloCommit: true }]) {
     const { repo, llamadas } = driverLocal(opciones);

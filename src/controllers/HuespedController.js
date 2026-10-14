@@ -1,3 +1,4 @@
+const { protegerError } = require("../security/erroresSeguros");
 const HuespedService =
   require("../services/HuespedService");
 
@@ -19,6 +20,7 @@ class HuespedController {
           huespedes,
         });
     } catch (error) {
+      error = protegerError(error);
       return res
         .status(500)
         .json({
@@ -52,6 +54,7 @@ class HuespedController {
           huesped,
         });
     } catch (error) {
+      error = protegerError(error);
       return res
         .status(404)
         .json({
@@ -81,6 +84,7 @@ class HuespedController {
             nuevoHuesped,
         });
     } catch (error) {
+      error = protegerError(error);
       return res
         .status(400)
         .json({
@@ -114,6 +118,7 @@ class HuespedController {
             huespedActualizado,
         });
     } catch (error) {
+      error = protegerError(error);
       return res
         .status(400)
         .json({

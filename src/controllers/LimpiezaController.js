@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const LimpiezaService = require(
   "../services/LimpiezaService"
 );
@@ -30,7 +31,8 @@ class LimpiezaController {
           limpiezas,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener limpiezas:",
         error
       );
@@ -60,7 +62,8 @@ class LimpiezaController {
           resumen,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener resumen de limpiezas:",
         error
       );
@@ -93,7 +96,8 @@ class LimpiezaController {
           resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al sincronizar limpiezas:",
         error
       );
@@ -129,7 +133,8 @@ class LimpiezaController {
           tarea,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al cambiar estado de limpieza:",
         error
       );

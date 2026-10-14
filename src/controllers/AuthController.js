@@ -1,10 +1,11 @@
 const AuthService = require("../services/AuthService");
 const { responderError } = require("../security/seguridadUsuarios");
+const { secretoJWTValido } = require("../config/autenticacion");
 
 class AuthController {
   async login(req, res) {
     res.set("Cache-Control", "no-store");
-    if (!process.env.JWT_SECRET?.trim()) return res.status(503).json({ mensaje: "La autenticación no está disponible." });
+    if (!secretoJWTValido(process.env.JWT_SECRET)) return res.status(503).json({ mensaje: "La autenticación no está disponible.", codigo: "AUTH_NO_DISPONIBLE" });
     const { email, password } = req.body || {};
     if (typeof email !== "string" || typeof password !== "string" || !email || !password || email.length > 254 || password.length > 1024) {
       return res.status(400).json({ mensaje: "Debe ingresar email y contraseña." });

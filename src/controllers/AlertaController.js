@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const AlertaService = require(
   "../services/AlertaService"
 );
@@ -32,7 +33,8 @@ class AlertaController {
         alertas,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener alertas:",
         error
       );
@@ -67,7 +69,8 @@ class AlertaController {
         resumen,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener resumen de alertas:",
         error
       );
@@ -102,7 +105,8 @@ class AlertaController {
         resultado,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al sincronizar alertas:",
         error
       );
@@ -139,6 +143,7 @@ class AlertaController {
         alerta,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(404).json({
         mensaje:
           error.message,
@@ -168,6 +173,7 @@ class AlertaController {
         alerta,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(404).json({
         mensaje:
           error.message,

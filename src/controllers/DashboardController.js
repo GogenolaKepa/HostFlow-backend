@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const DashboardService = require(
   "../services/DashboardService"
 );
@@ -36,7 +37,8 @@ class DashboardController {
         alertas,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener dashboard:",
         error
       );
@@ -74,7 +76,8 @@ class DashboardController {
         historico,
       });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener histórico mensual:",
         error
       );
@@ -108,7 +111,8 @@ class DashboardController {
           opciones,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener opciones de reportes:",
         error
       );
@@ -164,7 +168,8 @@ class DashboardController {
           reportes,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al obtener reportes:",
         error
       );

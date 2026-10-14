@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const BookingInboundService = require("../services/BookingInboundService");
 const ReservaService = require("../services/ReservaService");
 
@@ -19,6 +20,7 @@ class BookingInboundController {
         evento,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(400).json({
         mensaje: error.message,
       });
@@ -42,6 +44,7 @@ class BookingInboundController {
         evento,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(400).json({
         mensaje: error.message,
       });
@@ -65,6 +68,7 @@ class BookingInboundController {
         evento,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(400).json({
         mensaje: error.message,
       });
@@ -86,6 +90,7 @@ class BookingInboundController {
         eventos,
       });
     } catch (error) {
+      error = protegerError(error);
       return res.status(500).json({
         mensaje:
           "No se pudieron obtener los eventos pendientes.",
@@ -116,7 +121,8 @@ class BookingInboundController {
       resultado
     );
   } catch (error) {
-    console.error(
+    error = protegerError(error);
+    registrarErrorSeguro(
       "Error al procesar evento Booking:",
       error
     );

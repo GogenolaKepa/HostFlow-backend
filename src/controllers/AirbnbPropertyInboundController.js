@@ -1,3 +1,4 @@
+const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const AirbnbPropertyInboundService = require(
   "../services/AirbnbPropertyInboundService"
 );
@@ -30,6 +31,7 @@ class AirbnbPropertyInboundController {
           evento,
         });
     } catch (error) {
+      error = protegerError(error);
       return res
         .status(400)
         .json({
@@ -60,6 +62,7 @@ class AirbnbPropertyInboundController {
           eventos,
         });
     } catch (error) {
+      error = protegerError(error);
       return res
         .status(500)
         .json({
@@ -97,7 +100,8 @@ class AirbnbPropertyInboundController {
           ...resultado,
         });
     } catch (error) {
-      console.error(
+      error = protegerError(error);
+      registrarErrorSeguro(
         "Error al procesar evento de propiedad Airbnb:",
         error
       );
