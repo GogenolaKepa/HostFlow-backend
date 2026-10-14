@@ -9,7 +9,8 @@
     "test:inbound": "node scripts/testInbound.js",
     "test:channels": "node scripts/testChannelOperations.js",
     "test:properties": "node scripts/testProperties.js",
-    "test:auth": "node --test tests/auth.test.js"
+    "test:auth": "node --test tests/auth.test.js",
+    "test:permissions": "node --test tests/authorization.test.js tests/flowia-permissions.test.js"
   },
   "keywords": [],
   "author": "Kepa Gogenola",

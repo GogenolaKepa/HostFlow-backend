@@ -1,6 +1,7 @@
 const RecomendacionService = require(
   "../services/RecomendacionService"
 );
+const { tienePermiso } = require("../config/permisos");
 
 
 class RecomendacionController {
@@ -26,6 +27,7 @@ class RecomendacionController {
         await RecomendacionService
           .obtenerRecomendaciones({
             usarIA,
+            incluirComerciales: tienePermiso(req.usuario, "flowia.comercial"),
           });
 
       return res

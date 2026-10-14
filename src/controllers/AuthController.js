@@ -1,4 +1,5 @@
 const AuthService = require("../services/AuthService");
+const { permisosDelRol } = require("../config/permisos");
 
 class AuthController {
   login(req, res) {
@@ -34,7 +35,7 @@ class AuthController {
   obtenerSesion(req, res) {
     res.set("Cache-Control", "no-store");
     return res.status(200).json({
-      usuario: req.usuario,
+      usuario: { ...req.usuario, permisos: permisosDelRol(req.usuario.rol) },
       expiraEn: req.expiraEn,
     });
   }

@@ -14,6 +14,7 @@ const DashboardService = require(
 const IaService = require(
   "./IaService"
 );
+const { recomendacionOperativa } = require("../security/proyecciones");
 
 
 class RecomendacionService {
@@ -588,6 +589,8 @@ class RecomendacionService {
       opciones.usarIA !==
       false;
 
+    const incluirComerciales = opciones.incluirComerciales !== false;
+
     const fechaNegocio =
       DashboardService
         .obtenerFechaActualArgentina();
@@ -608,16 +611,16 @@ class RecomendacionService {
             this.horizonteConflictosDias
           ),
 
-        RecomendacionRepository
+        incluirComerciales ? RecomendacionRepository
           .obtenerOcupacionProxima(
             fechaNegocio,
             this.horizonteOcupacionDias
-          ),
+          ) : Promise.resolve([]),
 
-        DashboardService
+        incluirComerciales ? DashboardService
           .obtenerHistoricoMensual(
             3
-          ),
+          ) : Promise.resolve([]),
       ]);
 
     const recomendacionesBase = [
@@ -637,6 +640,8 @@ class RecomendacionService {
         historico
       ),
     ]
+      .map((item) => incluirComerciales ? item : recomendacionOperativa(item))
+      .filter(Boolean)
       .sort(
         (
           a,
@@ -729,7 +734,7 @@ class RecomendacionService {
       this.aplicarContenidoIA(
         recomendacionesBase,
         resultadoIA
-      );
+      ).map((item) => incluirComerciales ? item : recomendacionOperativa(item)).filter(Boolean);
 
     const resumen = {
       total:

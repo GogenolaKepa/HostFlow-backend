@@ -15,6 +15,7 @@ const authRoutes = require(
 );
 
 const autenticacion = require("./middlewares/autenticacion");
+const { autorizarAccion, autorizarCampos } = require("./middlewares/autorizacion");
 
 const dashboardRoutes = require(
   "./routes/dashboardRoutes"
@@ -91,10 +92,13 @@ app.use("/api/auth", authRoutes);
 // Todas las rutas API restantes (presentes y futuras) requieren JWT.
 // Se verifica antes de parsear cuerpos o ejecutar procesos de negocio.
 app.use("/api", autenticacion);
+app.use("/api", autorizarAccion);
 
 app.use(
   express.json()
 );
+
+app.use("/api", autorizarCampos);
 
 app.use(
   "/api/calendario",
