@@ -1,0 +1,4353 @@
+{
+  "version": 1,
+  "estado": "Propuesta OFFLINE, ningún cambio de permisos ejecutado",
+  "principalPropuesto": "hostflow_app",
+  "configuracionAzure": "C y D completadas por el usuario; IdEmpresa=1. Función NO activada por el agente.",
+  "alcance": "Una organización por instalación. Permisos SQL del proceso, distintos de roles de usuarios de HostFlow.",
+  "matriz": [
+    {
+      "esquema": "dbo",
+      "tabla": "Roles",
+      "operaciones": [
+        "SELECT"
+      ],
+      "motivo": "Autenticación y roles: consulta de nombres/estado; nunca administrar el catálogo SQL desde la aplicación."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Usuarios",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Login/perfil, alta, edición, estado, contraseña, revocación y último Administrador; sin borrado físico."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "CanalesReserva",
+      "operaciones": [
+        "SELECT"
+      ],
+      "motivo": "Catálogo para joins y resolución de Manual/Airbnb/Booking."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "EstadosReserva",
+      "operaciones": [
+        "SELECT"
+      ],
+      "motivo": "Catálogo para resolver y mostrar estados; las transiciones actualizan Reservas."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "EstadosPropiedad",
+      "operaciones": [
+        "SELECT"
+      ],
+      "motivo": "Catálogo de estados; no se modifica desde el backend."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Propiedades",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Alta/edición/estado e inbound de propiedades; baja por estado."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Huespedes",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Alta manual y desde canales, edición y consulta de huéspedes."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Reservas",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Alta/edición/cancelación/estado/canales y finalización automática en GET."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaEventos",
+      "operaciones": [
+        "SELECT",
+        "INSERT"
+      ],
+      "motivo": "Timeline y auditoría de operaciones/finalización; registros anexados, nunca modificados."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaMensajes",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Mensajes y cambios de su estado; no se borran."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaIncidencias",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Alta, edición y resolución de incidencias."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaObservaciones",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "motivo": "Notas internas: DELETE físico autorizado por la API para Administrador."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "TareasLimpieza",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Sincronización automática y cambios de estado, incluidos GET de Limpiezas y FlowIA."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Alertas",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Upsert, lectura y resolución automática/manual; GET puede sincronizar."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadCanales",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Vinculación/publicación, estados de sincronización e inbound."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenes",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "motivo": "Alta, edición, principal, orden, baja lógica/restauración e inbound; DELETE de API usa UPDATE."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenCanales",
+      "operaciones": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "motivo": "Vínculos de imágenes con canales; eliminarVinculacion realiza DELETE físico."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Empresas",
+      "operaciones": [
+        "SELECT",
+        "UPDATE"
+      ],
+      "motivo": "Leer y editar la empresa vinculada; INSERT inicial exclusivamente administrativo."
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasOperativas",
+      "operaciones": [
+        "SELECT",
+        "UPDATE"
+      ],
+      "motivo": "Leer/editar horarios; GET predeterminados solo lee; INSERT inicial administrativo."
+    }
+  ],
+  "auditoria": {
+    "fuentes": [
+      {
+        "archivo": "src/app.js",
+        "sha256": "22341a26656cf00cc92ae560d76d014246ec8f9924143851bdac6ff9decce1fe"
+      },
+      {
+        "archivo": "src/config/autenticacion.js",
+        "sha256": "d13b867517bedb32a8002387a8bd5b6641dee37fb2c0aef7d311b25c1b17ed71"
+      },
+      {
+        "archivo": "src/config/configuracionEmpresa.js",
+        "sha256": "ea1e71f337b52d9d7af5afb32e2383766ddb3f5998c6f2147277394bdee637b5"
+      },
+      {
+        "archivo": "src/config/database.js",
+        "sha256": "c7e1b806653db06cb1296b1f4ce520c6c0ab08ce4721341b331c4b71d47e1b5b"
+      },
+      {
+        "archivo": "src/config/httpSeguridad.js",
+        "sha256": "fd30183c915828016dff6b1ff63bd5c03770c71ae6d21397d2c889c7a4fb814f"
+      },
+      {
+        "archivo": "src/config/permisos.js",
+        "sha256": "a23aa3c9f0087f0707a23a8a7916e7426c6d9405866a4bd057e309da82519a6e"
+      },
+      {
+        "archivo": "src/config/politicasRutas.js",
+        "sha256": "cbb07fb1e8bede3b41bd1be91b0eb4c56d1a184b9133a56e9fc4de2f6ca2555f"
+      },
+      {
+        "archivo": "src/controllers/AirbnbInboundController.js",
+        "sha256": "b342faecc6975247dca36e77966dec87523d96b706d8401dfc4bd875bd3fa8f7"
+      },
+      {
+        "archivo": "src/controllers/AirbnbPropertyImageInboundController.js",
+        "sha256": "48c64fa0464c094a9f710a9a52c5d8a8fe9591b0ee389c731d1eda460150a2ec"
+      },
+      {
+        "archivo": "src/controllers/AirbnbPropertyInboundController.js",
+        "sha256": "2e94c51574478ea2b60d2affa0921101d5d3dfcf902eaae0fe92cbaff14ee281"
+      },
+      {
+        "archivo": "src/controllers/AlertaController.js",
+        "sha256": "a6c4a95c471f513d20f277f764e75781009966db132c3f83796349ad72df5441"
+      },
+      {
+        "archivo": "src/controllers/AuthController.js",
+        "sha256": "89fac2a548ac41dc6d384b74a0b74fec6163f8223494ff489dad974d97ecb0d2"
+      },
+      {
+        "archivo": "src/controllers/BookingInboundController.js",
+        "sha256": "c4dfd5287f6aac93b6c81109841571ad19fbc7b1c45cce484b0862fbebd39c50"
+      },
+      {
+        "archivo": "src/controllers/BookingPropertyImageInboundController.js",
+        "sha256": "7ec682f1dc498c237235f86185a03d988171beffc163a02d6f0ec9a3f0034a4e"
+      },
+      {
+        "archivo": "src/controllers/BookingPropertyInboundController.js",
+        "sha256": "ee75a7d10fa1a41fcb5812a046e27daf66f62c0b08a554aa161c557bbddee06a"
+      },
+      {
+        "archivo": "src/controllers/CalendarioController.js",
+        "sha256": "5bda36185d79266dd0ad151ca79916f00d38354802484f8523da4034bb30cff7"
+      },
+      {
+        "archivo": "src/controllers/ConfiguracionController.js",
+        "sha256": "a9b568e0426230de137dec6a79fc8260874f1a0713babc81e61af642de757bb8"
+      },
+      {
+        "archivo": "src/controllers/DashboardController.js",
+        "sha256": "67780c1ff331c6185e4fd9a62876f41c5a256b1fbde88834947189b42cb179f7"
+      },
+      {
+        "archivo": "src/controllers/HuespedController.js",
+        "sha256": "923442e6e4bd7e80ba7dce0754c87b10b8ff11b236534d2f370215e20666915c"
+      },
+      {
+        "archivo": "src/controllers/LimpiezaController.js",
+        "sha256": "0b7cec58e2eba03ffb7dd7970f7007e543a362bb80f32661318b716ee5d0f051"
+      },
+      {
+        "archivo": "src/controllers/PropiedadCanalController.js",
+        "sha256": "c3c257a146479df12d016d023b579444d9021661604717377f7babf09ff6e830"
+      },
+      {
+        "archivo": "src/controllers/PropiedadController.js",
+        "sha256": "44846a5495be729141271b9eeb95ee15e601011ea2aef136d81e8b26915496d6"
+      },
+      {
+        "archivo": "src/controllers/PropiedadImagenController.js",
+        "sha256": "42de7a94287171a81d70c911a83dcf8082a870055616fe2fe75fa9699b9148e1"
+      },
+      {
+        "archivo": "src/controllers/RecomendacionController.js",
+        "sha256": "d53f3a4e7fb3d68b81b5a4de56620309087ddd77734b7373de2ef148475af51d"
+      },
+      {
+        "archivo": "src/controllers/ReservaController.js",
+        "sha256": "980772f06cda1ca1f63c479a5fcb34f836e46dd9771e0c5eda409b3096eba001"
+      },
+      {
+        "archivo": "src/controllers/UsuarioController.js",
+        "sha256": "ad2fdfd6e392db2decdd73b859a81fc9d378a5f009fa7f8b289ff415f2344c0d"
+      },
+      {
+        "archivo": "src/data/mockData.js",
+        "sha256": "7cc27c919a9e7d227f096f2cd83003c4b31919c2761cabc45bd0eb6de558b670"
+      },
+      {
+        "archivo": "src/middlewares/autenticacion.js",
+        "sha256": "769e76c1a0aad55adbb6e539016eaec4d6b7a6473521152278b36e135244f83f"
+      },
+      {
+        "archivo": "src/middlewares/autorizacion.js",
+        "sha256": "5725f7c3d4e0cdf7c55662f46495d61500e488e767b4b215993552a98543ad0f"
+      },
+      {
+        "archivo": "src/middlewares/cambioPasswordObligatorio.js",
+        "sha256": "264d8f3525ede3fde26e32d02d8f0c6985f82ba658412712deaf9c0bc3b3542d"
+      },
+      {
+        "archivo": "src/middlewares/corsSeguro.js",
+        "sha256": "08f759de9395264d54f06cdae3c73530fcda30e9c2656f47c00f3be7724ba27a"
+      },
+      {
+        "archivo": "src/middlewares/limitarLogin.js",
+        "sha256": "f606d996184c52325b60d10560d5166bf57f36ab92725bf6795de7ca6359779b"
+      },
+      {
+        "archivo": "src/middlewares/propiedadImagenUpload.js",
+        "sha256": "01dbf57c68378f5502e506b95daab7413a87e0f017f103453994f233a4ae425d"
+      },
+      {
+        "archivo": "src/models/Alerta.js",
+        "sha256": "0e32cb15b358fe2fd3072dafec4ef157c90bfd50d4da6fc5973c128f62740c54"
+      },
+      {
+        "archivo": "src/models/DashboardResumen.js",
+        "sha256": "5e33d0b1067a031f1afe97caf9dcf01748ae8009e812ff19e4b48b9747d45b06"
+      },
+      {
+        "archivo": "src/models/Huesped.js",
+        "sha256": "08f1e596882dec2edc098bd8f83b2d8ab44dcab367c9ffc86792a14f473a9657"
+      },
+      {
+        "archivo": "src/models/Propiedad.js",
+        "sha256": "db5673d2ce6a7714744ff13f62d771989ad568fc8b4f74a749ac4c855e9e8929"
+      },
+      {
+        "archivo": "src/models/Reserva.js",
+        "sha256": "2e7ec8b8411426f98ab5f2b96168721ad05ac0db26eb4e72f14f8a628adb6a6d"
+      },
+      {
+        "archivo": "src/models/Rol.js",
+        "sha256": "1b7e46868e9b38ab5fad4c53fa58ab7f783416fb871712f6738e655795afa369"
+      },
+      {
+        "archivo": "src/models/Usuario.js",
+        "sha256": "43d109f63d9e6cea937bc787267a50e69f405d61d35a843fe2bfc8ac2767288f"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "sha256": "49ac061246aa7d36818318cf41210a161416ce9c62673060c0936a0c045b20a9"
+      },
+      {
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "sha256": "984957851e747643b23895ad45f30c180f78fbcd6047f97b4f046e7b9a905345"
+      },
+      {
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "sha256": "2f7acc3d9fe0c33cc567515f7db7e6960016a0e869983f82987668f46013e98b"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "sha256": "dc75fb847e92bf55b7282f73eb3905ec8fc2331c8dabdddad0a0be0dadbb4d4d"
+      },
+      {
+        "archivo": "src/repositories/HuespedRepository.js",
+        "sha256": "7802c3b7f47852eee046ffb4009f0ca08992d1602335b4f1550255295add13a7"
+      },
+      {
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "sha256": "192604582aaca91c1deee62c047ecdefabb4c30f56e38de7c47253078866e211"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "sha256": "72e1b6466db45b141a57fe5ab094314c9f447c941782e4ab48051afbfbf73c7d"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "sha256": "1e342bb62d83f2f9a8d8cc3a1f3463c041eeeb6dfeb93dc0511a345c94d93406"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "sha256": "7ad16e51e003a607dae412375d83d953a0ef3c79307504ce4f1ec54abf2379d2"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "sha256": "84be7599d0a28a124956d1eade596f62a041f51ee97b84aa106a255b339b7872"
+      },
+      {
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "sha256": "e25357b83ed9a729597a68b260a3cc3c21772065e64118b0ddaf2074b23280ac"
+      },
+      {
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "sha256": "6c3b91fbc2a83947e98407be52efd33623509e14babc59555294155965965e92"
+      },
+      {
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "sha256": "ad6aa439fa3a66e6579b36869fe016691388dbdd7d69117808eaf535cfbffad5"
+      },
+      {
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "sha256": "a3fa141c2eb4adfc04322a7cd3fee7eb2d0f510fec1944e7b62a0b69df7e9e94"
+      },
+      {
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "sha256": "5fcb87986b1ae9706108811d99af02563692e138dd55ef9cf2a28fb5ef973fd6"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "sha256": "78b1835725fd0597df599f5ae444aa14f34bcebd9343a32353a31e3337fd7ab4"
+      },
+      {
+        "archivo": "src/repositories/RolRepository.js",
+        "sha256": "ed611968a5d3ba3b65ba70bf106733db1a3a80b7ff2c508e331b34a680baab51"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "sha256": "4bf8183f9e207764e035ab1b6abb2f816a8bd2effa88be28ede3b86bde038c5c"
+      },
+      {
+        "archivo": "src/routes/airbnbInboundRoutes.js",
+        "sha256": "31f5e5e4b9cdaaf59e62d54f06f935500c7778ad127d953e70218b6e8137e209"
+      },
+      {
+        "archivo": "src/routes/airbnbPropertyImageInboundRoutes.js",
+        "sha256": "6f9cf5d4eec92f376f1200f4bd3bd9cdcbca757d170860ddf91442c9dc6dc9ae"
+      },
+      {
+        "archivo": "src/routes/airbnbPropertyInboundRoutes.js",
+        "sha256": "433f6fca0fc8ee59c7e53dc5479c37a3b5e4d1df4d045f51cb70a0ad08da59b2"
+      },
+      {
+        "archivo": "src/routes/alertaRoutes.js",
+        "sha256": "57dd621068a6059e591cf33400b61aad1be944cc667c909e638fe3531689f91b"
+      },
+      {
+        "archivo": "src/routes/authRoutes.js",
+        "sha256": "14324cd58d8310115b760e53882a0dd65c0339493bbabeb902f93b36f6f086ac"
+      },
+      {
+        "archivo": "src/routes/bookingInboundRoutes.js",
+        "sha256": "93f3de5e0b3d23fdb7fa3e9144532979ba1f6a9db9c0cd74d8a54f185c6c3f80"
+      },
+      {
+        "archivo": "src/routes/bookingPropertyImageInboundRoutes.js",
+        "sha256": "1ef1230642fb48a2a0df8698123d6c884de0992de50453b5c81e0800c039807f"
+      },
+      {
+        "archivo": "src/routes/bookingPropertyInboundRoutes.js",
+        "sha256": "9d8aa6a01cc9b34933cd6cf097a8757467526121c6ed32e13e7bfd67d173c4cc"
+      },
+      {
+        "archivo": "src/routes/calendarioRoutes.js",
+        "sha256": "c5379b9ca330a10932c8a8891dfb3b3912c6919ed6cb42f7a3d613f48189c029"
+      },
+      {
+        "archivo": "src/routes/configuracionRoutes.js",
+        "sha256": "24b29198774144fe28bddd9b965e95882f24050c43b4452f00257fab68554e90"
+      },
+      {
+        "archivo": "src/routes/dashboardRoutes.js",
+        "sha256": "f0f50ccb05ba9d03c5608edd0834a88831c48249874b95232f30233adcdc27a1"
+      },
+      {
+        "archivo": "src/routes/huespedRoutes.js",
+        "sha256": "b2afd91754e2f1451c2f0b2722f65e0f169be79c4f6c1ff7f631deb7593bef62"
+      },
+      {
+        "archivo": "src/routes/limpiezaRoutes.js",
+        "sha256": "749c68dbfa9bd3b23b8e9ac47d65694e57ee65f736cfd1b209ca531f490baecc"
+      },
+      {
+        "archivo": "src/routes/propiedadRoutes.js",
+        "sha256": "97052321a1000ba77d7244373d23ddb60fae2ca2c643a300a38f37b9bc3498bd"
+      },
+      {
+        "archivo": "src/routes/recomendacionRoutes.js",
+        "sha256": "ec711a3e51cd9a91eb5035c51c37c9533bda81d72468065932cf7a1540b6e04d"
+      },
+      {
+        "archivo": "src/routes/reservaRoutes.js",
+        "sha256": "48d95a7493a3dd4740e72b630d06b8b3fb2acdaa199ed6ead76fcf0a10a31ed4"
+      },
+      {
+        "archivo": "src/routes/rolRoutes.js",
+        "sha256": "bc991ac29ca1c2a608df74fa3f0ba4defa8e1de5536ff17362ea27ecb4a31de0"
+      },
+      {
+        "archivo": "src/routes/usuarioRoutes.js",
+        "sha256": "4764958643d71764e97333a351fdaa4fecd3f265665d793b8599115b5d49781e"
+      },
+      {
+        "archivo": "src/security/erroresSeguros.js",
+        "sha256": "2f400999544965d2a2a55b362f1f86c44d5cc2797a83940a9e0bd382f6f3eab8"
+      },
+      {
+        "archivo": "src/security/proyecciones.js",
+        "sha256": "9ce94098b9ca99512e13d7d8cca15c42f694aa5e7eac33e122dba0ca0cf26150"
+      },
+      {
+        "archivo": "src/security/seguridadUsuarios.js",
+        "sha256": "d92576be55fe9c71a3524ecd7a6095f4fa86feefb6ecb7a662c216c4b2976bdb"
+      },
+      {
+        "archivo": "src/security/validacionConfiguracion.js",
+        "sha256": "dba0db3ac5f804120f404a50e4b6b42e44d79050255275c0df4ded30ba0de313"
+      },
+      {
+        "archivo": "src/security/validacionReserva.js",
+        "sha256": "c2913bde826542f73310cda7dd4b7d87d1ee7ec1434e0bdebe9aedd02e140992"
+      },
+      {
+        "archivo": "src/server.js",
+        "sha256": "4f91d103f6bcf3899686554aa3facb72db678b76ef544ea48a73e0f03e3fd35b"
+      },
+      {
+        "archivo": "src/services/AirbnbChannelService.js",
+        "sha256": "b10cb77317f8e4e7ad4c490bb1896d002aa540eeb767a6a7cf83fb87c763f74d"
+      },
+      {
+        "archivo": "src/services/AirbnbInboundService.js",
+        "sha256": "c049d58734214fcef0cdb6d2345b1974060fc0b528b80ba606ac2ac02ee67248"
+      },
+      {
+        "archivo": "src/services/AirbnbPropertyImageInboundProcessorService.js",
+        "sha256": "bfd20068db9b54c04a6eb2a5f4abb20c29e94f2f8eae1ed30e305050838ac186"
+      },
+      {
+        "archivo": "src/services/AirbnbPropertyImageInboundService.js",
+        "sha256": "80cbda7a606f33471e53e0811ab8f7e29adb661e1107d5575645d4d8ab82dc25"
+      },
+      {
+        "archivo": "src/services/AirbnbPropertyImageService.js",
+        "sha256": "6f16294e5a7e6a6fa87be0989285f3841c78de45f59dff5feb1b541f464fc43b"
+      },
+      {
+        "archivo": "src/services/AirbnbPropertyInboundService.js",
+        "sha256": "ace6b4858d8e48487983840df32bdfce400818ad16684bf2ac732698e5fae461"
+      },
+      {
+        "archivo": "src/services/AirbnbPropertyService.js",
+        "sha256": "5f6bdd10a20b9d96eeefa0da6dd6bc30c8236926a074b25a6dd38b8f0bacb413"
+      },
+      {
+        "archivo": "src/services/AlertaService.js",
+        "sha256": "ee07d752367a75be43f8038fdd6adc556a9c5e535d95a2407f3c1f62f086be28"
+      },
+      {
+        "archivo": "src/services/AuthService.js",
+        "sha256": "3c34721ac68579a5830536964b4298dae8b647cf4f81bdd4a19ae680193114fb"
+      },
+      {
+        "archivo": "src/services/BookingChannelService.js",
+        "sha256": "0bf412034354f8c177f7d19440d1fcdd7490e29e1ef7ecd696989e70242de111"
+      },
+      {
+        "archivo": "src/services/BookingInboundService.js",
+        "sha256": "7a29ae0f5f9766c82cfa3dd6afd32d119f8eefb021e14815f4c6c094e3027e79"
+      },
+      {
+        "archivo": "src/services/BookingPropertyImageInboundProcessorService.js",
+        "sha256": "f25829f1f2bd2cdd420e07174b244a20d3d7dae54e124b1a8de3ed7815aac7af"
+      },
+      {
+        "archivo": "src/services/BookingPropertyImageInboundService.js",
+        "sha256": "d3a457b065a32d32e2c8e75a42c1ca1257d8070e90be138568e9364ed0a1fee4"
+      },
+      {
+        "archivo": "src/services/BookingPropertyImageService.js",
+        "sha256": "efc14f046008d25c6a0b561cb7ebfc7e93d1cbc10a8a72d17a0c63f6314c4216"
+      },
+      {
+        "archivo": "src/services/BookingPropertyInboundService.js",
+        "sha256": "186b6d4fc67e2a97e367178fcba01f7f6ce673ed1c328ece506c9f65d47a4f90"
+      },
+      {
+        "archivo": "src/services/BookingPropertyService.js",
+        "sha256": "d3fbb8971bdc9f98b471cb3399bcd0381ebd0ddad0833dbe4886929884726731"
+      },
+      {
+        "archivo": "src/services/CalendarioService.js",
+        "sha256": "8f74e661ce05fe0e00b99445f8e66b40bba2507bfd9313c29c3d8b4072e6ee6e"
+      },
+      {
+        "archivo": "src/services/ChannelService.js",
+        "sha256": "c1152382cc957726d54f78eee8cf28221b08c3b79d33503be264fc45d0d877f3"
+      },
+      {
+        "archivo": "src/services/ConfiguracionService.js",
+        "sha256": "ec60d3b112af9053998608c05c218eabaffb50cf398919def144537ac606c737"
+      },
+      {
+        "archivo": "src/services/DashboardService.js",
+        "sha256": "3573d5fb53c3e8f5a982e1ce43baecb34054f279e730020a5e0313b98d86a39b"
+      },
+      {
+        "archivo": "src/services/HuespedService.js",
+        "sha256": "e2e39a641379699123e7425ea90ce07ea50c0ace3d0d4504d2d69f8201898e53"
+      },
+      {
+        "archivo": "src/services/IaService.js",
+        "sha256": "71e2000a36212b3637f4fefabb81e7960676f9f79edcd00a239557ba169f8aed"
+      },
+      {
+        "archivo": "src/services/LimpiezaService.js",
+        "sha256": "dd574e05a17f7a9bc82dce3d5b628d9b157af88c8348da91c233a4d674092315"
+      },
+      {
+        "archivo": "src/services/PropiedadCanalService.js",
+        "sha256": "cdb9e09f5713594d5e892a43b1e1c00dfa7626d5c829280e2e68940e8642e9bc"
+      },
+      {
+        "archivo": "src/services/PropiedadImagenCanalService.js",
+        "sha256": "d0d018d996c3f3e699991d95fd615a1b9b8bc82fc099ba1929576c1a9fc3e163"
+      },
+      {
+        "archivo": "src/services/PropiedadImagenService.js",
+        "sha256": "092fd5614dff56e82348e778cd7359c906e4035ce3929507307e9a524eeba3d8"
+      },
+      {
+        "archivo": "src/services/PropiedadService.js",
+        "sha256": "4518dc0c79cb7fb8fc1a066b5c747f6b15f71ffcd0f7376749f45c1e1d385c78"
+      },
+      {
+        "archivo": "src/services/RecomendacionService.js",
+        "sha256": "352ab17191cfe0d94eaf234bf18f9da9764db7800ff0d80ec2a63118fdea71f4"
+      },
+      {
+        "archivo": "src/services/ReservaService.js",
+        "sha256": "fb45a34c5db104c018d02f4e259e0ea167ff195f3f6efdc98b5a25016fc0175c"
+      },
+      {
+        "archivo": "src/services/UsuarioService.js",
+        "sha256": "d5b3f3b07b8cac429ccc3f5dbd3b012ecfa5a28992aa138ede2e3ccab70c7927"
+      }
+    ],
+    "referencias": [
+      {
+        "tabla": "ReservaIncidencias",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 51,
+        "metodo": "obtenerIncidenciasAlertables",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 53,
+        "metodo": "obtenerIncidenciasAlertables",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 57,
+        "metodo": "obtenerIncidenciasAlertables",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 61,
+        "metodo": "obtenerIncidenciasAlertables",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 109,
+        "metodo": "obtenerSincronizacionesConError",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 111,
+        "metodo": "obtenerSincronizacionesConError",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 115,
+        "metodo": "obtenerSincronizacionesConError",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 182,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 184,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 188,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 192,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 196,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 283,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 285,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 298,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 302,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 306,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 310,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 314,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 318,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 322,
+        "metodo": "obtenerConflictosActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 442,
+        "metodo": "crearOActualizarPorClave",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 578,
+        "metodo": "crearOActualizarPorClave",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 699,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 701,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 788,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 811,
+        "metodo": "obtenerGeneradasActivas",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 884,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 447,
+        "metodo": "crearOActualizarPorClave",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 515,
+        "metodo": "crearOActualizarPorClave",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 941,
+        "metodo": "marcarLeida",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 986,
+        "metodo": "resolver",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 71,
+        "metodo": "obtenerPropiedades",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 73,
+        "metodo": "obtenerPropiedades",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 216,
+        "metodo": "obtenerReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 218,
+        "metodo": "obtenerReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 222,
+        "metodo": "obtenerReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 226,
+        "metodo": "obtenerReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 230,
+        "metodo": "obtenerReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 395,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 397,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 410,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 414,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 418,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 422,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 426,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 430,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 434,
+        "metodo": "obtenerConflictos",
+        "nota": ""
+      },
+      {
+        "tabla": "Empresas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 34,
+        "metodo": "leer",
+        "nota": ""
+      },
+      {
+        "tabla": "PreferenciasOperativas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 37,
+        "metodo": "leer",
+        "nota": ""
+      },
+      {
+        "tabla": "Empresas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 37,
+        "metodo": "leer",
+        "nota": ""
+      },
+      {
+        "tabla": "Empresas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 57,
+        "metodo": "actualizar",
+        "nota": ""
+      },
+      {
+        "tabla": "Empresas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 62,
+        "metodo": "actualizar",
+        "nota": "Tabla elegida por rama interna cerrada, no por el cliente."
+      },
+      {
+        "tabla": "PreferenciasOperativas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 62,
+        "metodo": "actualizar",
+        "nota": "Tabla elegida por rama interna cerrada, no por el cliente."
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 59,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 61,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 81,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 83,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 103,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 123,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 125,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 192,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 194,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 198,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 202,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 393,
+        "metodo": "obtenerProximasReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 395,
+        "metodo": "obtenerProximasReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 399,
+        "metodo": "obtenerProximasReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 403,
+        "metodo": "obtenerProximasReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 407,
+        "metodo": "obtenerProximasReservas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 565,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 567,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 588,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 590,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 666,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 673,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 714,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 725,
+        "metodo": "obtenerHistoricoMensual",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 882,
+        "metodo": "obtenerOpcionesReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 887,
+        "metodo": "obtenerOpcionesReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 899,
+        "metodo": "obtenerOpcionesReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1038,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1040,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1044,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1082,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1084,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1088,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1134,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1136,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1140,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1230,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1232,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1242,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1246,
+        "metodo": "obtenerReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1534,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1536,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1560,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1562,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1623,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1630,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1634,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1682,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1684,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1688,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1727,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1729,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1733,
+        "metodo": "obtenerHistoricoReportes",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 64,
+        "metodo": "obtenerTodos",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 66,
+        "metodo": "obtenerTodos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 70,
+        "metodo": "obtenerTodos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 120,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 158,
+        "metodo": "obtenerPorEmail",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 216,
+        "metodo": "crear",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 299,
+        "metodo": "actualizar",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 51,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 53,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 61,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 63,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 127,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 165,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 181,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 183,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 187,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 446,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 448,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 452,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 456,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 460,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 464,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 468,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 472,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 613,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 735,
+        "metodo": "obtenerResumen",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 139,
+        "metodo": "sincronizar",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 648,
+        "metodo": "cambiarEstado",
+        "nota": ""
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 103,
+        "metodo": "sincronizar",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "TareasLimpieza",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 173,
+        "metodo": "sincronizar",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 65,
+        "metodo": "obtenerPorPropiedad",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 67,
+        "metodo": "obtenerPorPropiedad",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 142,
+        "metodo": "obtenerPorPropiedadYCanal",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 144,
+        "metodo": "obtenerPorPropiedadYCanal",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 218,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 220,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 224,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 271,
+        "metodo": "iniciarPublicacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 285,
+        "metodo": "iniciarPublicacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 382,
+        "metodo": "confirmarPublicacion",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 384,
+        "metodo": "confirmarPublicacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 437,
+        "metodo": "marcarPendiente",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 439,
+        "metodo": "marcarPendiente",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 494,
+        "metodo": "marcarSincronizada",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 496,
+        "metodo": "marcarSincronizada",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 557,
+        "metodo": "marcarError",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 559,
+        "metodo": "marcarError",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 618,
+        "metodo": "despublicar",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 620,
+        "metodo": "despublicar",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 298,
+        "metodo": "iniciarPublicacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 362,
+        "metodo": "confirmarPublicacion",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 426,
+        "metodo": "marcarPendiente",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 480,
+        "metodo": "marcarSincronizada",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 546,
+        "metodo": "marcarError",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 601,
+        "metodo": "despublicar",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 57,
+        "metodo": "obtenerPorImagen",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 59,
+        "metodo": "obtenerPorImagen",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 130,
+        "metodo": "obtenerPorImagenYCanal",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 132,
+        "metodo": "obtenerPorImagenYCanal",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 213,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 215,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 271,
+        "metodo": "iniciarSincronizacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 374,
+        "metodo": "confirmarSincronizacion",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 376,
+        "metodo": "confirmarSincronizacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 430,
+        "metodo": "marcarPendiente",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 432,
+        "metodo": "marcarPendiente",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 489,
+        "metodo": "marcarSincronizada",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 491,
+        "metodo": "marcarSincronizada",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 551,
+        "metodo": "marcarError",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 553,
+        "metodo": "marcarError",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 607,
+        "metodo": "marcarPendienteEliminacion",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 609,
+        "metodo": "marcarPendienteEliminacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 672,
+        "metodo": "eliminarVinculacion",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 674,
+        "metodo": "eliminarVinculacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 302,
+        "metodo": "iniciarSincronizacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 356,
+        "metodo": "confirmarSincronizacion",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 418,
+        "metodo": "marcarPendiente",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 474,
+        "metodo": "marcarSincronizada",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 539,
+        "metodo": "marcarError",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 595,
+        "metodo": "marcarPendienteEliminacion",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenCanales",
+        "operacion": "DELETE",
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 670,
+        "metodo": "eliminarVinculacion",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 57,
+        "metodo": "obtenerPorPropiedad",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 124,
+        "metodo": "obtenerTodasPorPropiedad",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 187,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 244,
+        "metodo": "crear",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 312,
+        "metodo": "actualizar",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 372,
+        "metodo": "establecerPrincipal",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 410,
+        "metodo": "establecerPrincipal",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 480,
+        "metodo": "cambiarOrden",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 520,
+        "metodo": "marcarPendienteEliminacion",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 563,
+        "metodo": "marcarEliminada",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 608,
+        "metodo": "restaurar",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 96,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 98,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 110,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 112,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 116,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 149,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 151,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 155,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 183,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 301,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 303,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 315,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 317,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 321,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 354,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 356,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 360,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "PropiedadImagenes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 388,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 441,
+        "metodo": "obtenerEstadoPorNombre",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 512,
+        "metodo": "crear",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 617,
+        "metodo": "actualizar",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 666,
+        "metodo": "cambiarEstado",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 128,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 130,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 160,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 164,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 168,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 172,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 176,
+        "metodo": "obtenerConflictosProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 335,
+        "metodo": "obtenerOcupacionProxima",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 337,
+        "metodo": "obtenerOcupacionProxima",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 361,
+        "metodo": "obtenerOcupacionProxima",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 363,
+        "metodo": "obtenerOcupacionProxima",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaEventos",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "linea": 288,
+        "metodo": "obtenerPorReserva",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaEventos",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "linea": 368,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaEventos",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "linea": 164,
+        "metodo": "crearEvento",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaIncidencias",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 415,
+        "metodo": "obtenerPorReserva",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaIncidencias",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 519,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaIncidencias",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 257,
+        "metodo": "crearIncidencia",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaIncidencias",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 741,
+        "metodo": "actualizarIncidencia",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaMensajes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 355,
+        "metodo": "obtenerPorReserva",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaMensajes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 444,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaMensajes",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 211,
+        "metodo": "crearMensaje",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaMensajes",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 518,
+        "metodo": "actualizarEstado",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaObservaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 213,
+        "metodo": "obtenerPorReserva",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaObservaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 293,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaObservaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 529,
+        "metodo": "eliminarObservacion",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaObservaciones",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 106,
+        "metodo": "crearObservacion",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaObservaciones",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 419,
+        "metodo": "actualizarObservacion",
+        "nota": ""
+      },
+      {
+        "tabla": "ReservaObservaciones",
+        "operacion": "DELETE",
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 529,
+        "metodo": "eliminarObservacion",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 69,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 73,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 79,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 85,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 91,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 185,
+        "metodo": "finalizarReservasVencidas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 197,
+        "metodo": "finalizarReservasVencidas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 395,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 399,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 407,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 415,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 423,
+        "metodo": "obtenerPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 477,
+        "metodo": "obtenerPropiedadPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 481,
+        "metodo": "obtenerPropiedadPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 537,
+        "metodo": "obtenerHuespedPorId",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 609,
+        "metodo": "obtenerHuespedPorNombreYApellido",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 727,
+        "metodo": "existeConflictoFechas",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 731,
+        "metodo": "existeConflictoFechas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1051,
+        "metodo": "crearReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1063,
+        "metodo": "crearReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1249,
+        "metodo": "actualizarReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1341,
+        "metodo": "cancelarReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1629,
+        "metodo": "sincronizarReservaExterna",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1827,
+        "metodo": "sincronizarEstadoExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2005,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2009,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2017,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2025,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2033,
+        "metodo": "obtenerPorCanalEIdExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2199,
+        "metodo": "crearReservaExterna",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2225,
+        "metodo": "crearReservaExterna",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2437,
+        "metodo": "obtenerPorHuesped",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2441,
+        "metodo": "obtenerPorHuesped",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2449,
+        "metodo": "obtenerPorHuesped",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2457,
+        "metodo": "obtenerPorHuesped",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 231,
+        "metodo": "finalizarReservasVencidas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 863,
+        "metodo": "crearHuespedExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1069,
+        "metodo": "crearReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1269,
+        "metodo": "actualizarReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1361,
+        "metodo": "cancelarReservaManual",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1479,
+        "metodo": "sincronizarCambioExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1651,
+        "metodo": "sincronizarReservaExterna",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1757,
+        "metodo": "actualizarEstadoSincronizacion",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1847,
+        "metodo": "sincronizarEstadoExterno",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2245,
+        "metodo": "crearReservaExterna",
+        "nota": ""
+      },
+      {
+        "tabla": "Roles",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RolRepository.js",
+        "linea": 15,
+        "metodo": "listarAsignables",
+        "nota": ""
+      },
+      {
+        "tabla": "Roles",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/RolRepository.js",
+        "linea": 27,
+        "metodo": "resolverActivo",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 23,
+        "metodo": "buscarPorEmail",
+        "nota": ""
+      },
+      {
+        "tabla": "Roles",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 23,
+        "metodo": "buscarPorEmail",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 32,
+        "metodo": "obtener",
+        "nota": ""
+      },
+      {
+        "tabla": "Roles",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 32,
+        "metodo": "obtener",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 46,
+        "metodo": "listar",
+        "nota": ""
+      },
+      {
+        "tabla": "Roles",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 46,
+        "metodo": "listar",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 48,
+        "metodo": "listar",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 55,
+        "metodo": "contarAdministradoresActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Roles",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 55,
+        "metodo": "contarAdministradoresActivos",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 64,
+        "metodo": "estaVacia",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 76,
+        "metodo": "crear",
+        "nota": ""
+      },
+      {
+        "tabla": "Usuarios",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 101,
+        "metodo": "actualizar",
+        "nota": ""
+      }
+    ],
+    "llamadasSQL": [
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 16,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 83,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 150,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 235,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 439,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 637,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 764,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 805,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 833,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 940,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 985,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 48,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 154,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/CalendarioRepository.js",
+        "linea": 311,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 21,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 39,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 62,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ConfiguracionRepository.js",
+        "linea": 79,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 43,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 358,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 470,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 878,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 995,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/DashboardRepository.js",
+        "linea": 1434,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 18,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 110,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 148,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 215,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/HuespedRepository.js",
+        "linea": 298,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 27,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 287,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 546,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 647,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 673,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 25,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 107,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 186,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 265,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 361,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 425,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 479,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 545,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadCanalRepository.js",
+        "linea": 600,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 25,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 98,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 181,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 266,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 301,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 355,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 417,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 473,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 538,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 594,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenCanalRepository.js",
+        "linea": 669,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 25,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 92,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 155,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 243,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 311,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 371,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 409,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 479,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 519,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 562,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadImagenRepository.js",
+        "linea": 607,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 16,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 221,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 430,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 511,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 616,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 665,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 41,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/RecomendacionRepository.js",
+        "linea": 296,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "linea": 163,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "linea": 259,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaEventoRepository.js",
+        "linea": 339,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 256,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 371,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 475,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaIncidenciaRepository.js",
+        "linea": 740,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 210,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 317,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 406,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaMensajeRepository.js",
+        "linea": 517,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 105,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 187,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 267,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 418,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaObservacionRepository.js",
+        "linea": 528,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 19,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 171,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 317,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 463,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 521,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 589,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 721,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 861,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1035,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1237,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1329,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1477,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1615,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1755,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1815,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 1921,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2185,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2359,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/RolRepository.js",
+        "linea": 14,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/RolRepository.js",
+        "linea": 26,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 22,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 31,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 45,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 54,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 64,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 75,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 101,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/UsuarioRepository.js",
+        "linea": 119,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/services/AuthService.js",
+        "linea": 76,
+        "tipo": "query"
+      }
+    ]
+  },
+  "rutas": [
+    {
+      "metodo": "GET",
+      "path": "/dashboard/resumen",
+      "permiso": "dashboard.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/dashboard/historico",
+      "permiso": "dashboard.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/configuracion/empresa",
+      "permiso": "configuracion.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/configuracion/operativas",
+      "permiso": "configuracion.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "PUT",
+      "path": "/configuracion/empresa",
+      "permiso": "configuracion.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PUT",
+      "path": "/configuracion/operativas",
+      "permiso": "configuracion.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/configuracion/predeterminados-reserva",
+      "permiso": "reservas.crear",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/usuarios",
+      "permiso": "usuarios.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/usuarios/:id",
+      "permiso": "usuarios.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/usuarios",
+      "permiso": "usuarios.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PUT",
+      "path": "/usuarios/:id",
+      "permiso": "usuarios.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/usuarios/:id/estado",
+      "permiso": "usuarios.estado",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/usuarios/:id/restablecer-password",
+      "permiso": "usuarios.restablecer",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/roles",
+      "permiso": "roles.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/dashboard/reportes",
+      "permiso": "reportes.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/dashboard/reportes/opciones",
+      "permiso": "reportes.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/propiedades",
+      "permiso": "propiedades.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/propiedades/:id",
+      "permiso": "propiedades.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/propiedades",
+      "permiso": "propiedades.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PUT",
+      "path": "/propiedades/:id",
+      "permiso": "propiedades.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/propiedades/:id/estado",
+      "permiso": "propiedades.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/propiedades/:id/canales",
+      "permiso": "canales.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/propiedades/:id/canales/publicar",
+      "permiso": "canales.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/propiedades/:id/canales/sincronizar",
+      "permiso": "canales.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/propiedades/:id/imagenes",
+      "permiso": "imagenes.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/propiedades/:id/imagenes/todas",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/propiedades/:id/imagenes",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/propiedades/:id/imagenes/upload",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PUT",
+      "path": "/propiedades/:id/imagenes/:idImagen",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "DELETE",
+      "path": "/propiedades/:id/imagenes/:idImagen",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/propiedades/:id/imagenes/:idImagen/principal",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/propiedades/:id/imagenes/:idImagen/orden",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/propiedades/:id/imagenes/:idImagen/restaurar",
+      "permiso": "imagenes.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/reservas",
+      "permiso": "reservas.ver",
+      "escriturasGET": "UPDATE Reservas; INSERT ReservaEventos si se finaliza alguna reserva vencida."
+    },
+    {
+      "metodo": "GET",
+      "path": "/reservas/:id",
+      "permiso": "reservas.ver",
+      "escriturasGET": "UPDATE Reservas; INSERT ReservaEventos si se finaliza alguna reserva vencida (puede afectar otras reservas, no solo el ID)."
+    },
+    {
+      "metodo": "GET",
+      "path": "/reservas/:id/eventos",
+      "permiso": "reservas.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas",
+      "permiso": "reservas.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PUT",
+      "path": "/reservas/:id",
+      "permiso": "reservas.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/reservas/:id/cancelar",
+      "permiso": "reservas.cancelar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/airbnb/propuesta",
+      "permiso": "reservas.canales",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/booking/estadia",
+      "permiso": "reservas.canales",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/booking/no-show",
+      "permiso": "reservas.canales",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/airbnb/solicitudes/:idSolicitud/aceptar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/airbnb/solicitudes/:idSolicitud/rechazar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/booking/operaciones/:idOperacion/sincronizar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/reservas/:id/mensajes",
+      "permiso": "mensajes.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/mensajes",
+      "permiso": "mensajes.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/reservas/:id/incidencias",
+      "permiso": "incidencias.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/incidencias",
+      "permiso": "incidencias.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/reservas/:id/incidencias/:idIncidencia",
+      "permiso": "incidencias.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/incidencias/:idIncidencia/resolver",
+      "permiso": "incidencias.resolver",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/reservas/:id/observaciones",
+      "permiso": "observaciones.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/:id/observaciones",
+      "permiso": "observaciones.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/reservas/:id/observaciones/:idObservacion",
+      "permiso": "observaciones.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/reservas/:id/observaciones/:idObservacion/fijar",
+      "permiso": "observaciones.fijar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "DELETE",
+      "path": "/reservas/:id/observaciones/:idObservacion",
+      "permiso": "observaciones.eliminar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/huespedes",
+      "permiso": "huespedes.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/huespedes/:id",
+      "permiso": "huespedes.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/huespedes",
+      "permiso": "huespedes.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PUT",
+      "path": "/huespedes/:id",
+      "permiso": "huespedes.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/calendario",
+      "permiso": "calendario.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/limpiezas",
+      "permiso": "limpiezas.ver",
+      "escriturasGET": "SELECT fuentes; INSERT/UPDATE TareasLimpieza durante sincronización."
+    },
+    {
+      "metodo": "GET",
+      "path": "/limpiezas/resumen",
+      "permiso": "limpiezas.ver",
+      "escriturasGET": "SELECT fuentes; INSERT/UPDATE TareasLimpieza durante sincronización."
+    },
+    {
+      "metodo": "POST",
+      "path": "/limpiezas/sincronizar",
+      "permiso": "limpiezas.sincronizar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/limpiezas/:id/estado",
+      "permiso": "limpiezas.estado",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/alertas",
+      "permiso": "alertas.ver",
+      "escriturasGET": "SELECT fuentes; INSERT/UPDATE Alertas, incluida resolución automática."
+    },
+    {
+      "metodo": "GET",
+      "path": "/alertas/resumen",
+      "permiso": "alertas.ver",
+      "escriturasGET": "SELECT fuentes; INSERT/UPDATE Alertas durante sincronización."
+    },
+    {
+      "metodo": "POST",
+      "path": "/alertas/sincronizar",
+      "permiso": "alertas.sincronizar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/alertas/:id/leida",
+      "permiso": "alertas.leer",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/alertas/:id/resolver",
+      "permiso": "alertas.resolver",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/recomendaciones",
+      "permiso": "flowia.ver",
+      "escriturasGET": "Consulta LimpiezaService.obtenerLimpiezas: INSERT/UPDATE TareasLimpieza; el resto consulta SQL/IA."
+    },
+    {
+      "metodo": "GET",
+      "path": "/integraciones/airbnb/eventos",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/integraciones/airbnb/propiedades/eventos",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/integraciones/airbnb/propiedades/imagenes/eventos",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/simulacion/nueva-reserva",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/simulacion/modificacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/simulacion/cancelacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/eventos/:idEvento/procesar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/modificacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/eventos/:idEvento/procesar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/imagenes/creacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/imagenes/modificacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/imagenes/eliminacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/imagenes/principal",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/airbnb/propiedades/imagenes/eventos/:idEvento/procesar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/integraciones/booking/eventos",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/integraciones/booking/propiedades/eventos",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/integraciones/booking/propiedades/imagenes/eventos",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/simulacion/nueva-reserva",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/simulacion/modificacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/simulacion/cancelacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/eventos/:idEvento/procesar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/modificacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/eventos/:idEvento/procesar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/imagenes/creacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/imagenes/modificacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/imagenes/eliminacion",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/imagenes/principal",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/integraciones/booking/propiedades/imagenes/eventos/:idEvento/procesar",
+      "permiso": "integraciones.gestionar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/auth/login",
+      "permiso": "Público con limitación de intentos",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/auth/me",
+      "permiso": "JWT",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "PATCH",
+      "path": "/auth/me",
+      "permiso": "cuenta.modificar",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/auth/cambiar-password",
+      "permiso": "cuenta.password",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/auth/logout",
+      "permiso": "JWT",
+      "escriturasGET": null
+    }
+  ],
+  "pruebasSQLReales": "Pendientes: prohibido ejecutar GRANT/ALTER ROLE en esta tanda, incluso en local.",
+  "scripts": [
+    {
+      "archivo": "sql/proposals/permisos_minimos/00_inspeccion_administrativa_solo_lectura.sql",
+      "sha256": "67551f7e0a09a50e55e297e9aef85c9e993bc3f550208bb0c1c958b3ab062d87"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/01_conceder_minimos_bloqueado.sql",
+      "sha256": "b49596d641a491e8dcd82078efd74977fb6e6a2eeb78fd8318b8235e8e3f49ec"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/02_verificar_concesiones_solo_lectura.sql",
+      "sha256": "7121ca48d0e75f23c0b206a4175f018a98fbd84206eb3c4298706e2e7ad4b19b"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/03_retirar_roles_bloqueado.sql",
+      "sha256": "7ecd21e3c4a0a605a36ce321cea03b48daab1cc0bbc9fd5e4962105c4889183f"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/04_recuperacion_roles_bloqueada.sql",
+      "sha256": "076f19074a1d9d4d5c335216550a1c722c2303f280e0a28e1fd6a5fb85685bc3"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/05_verificacion_conexion_backend_solo_lectura.sql",
+      "sha256": "d736e8ec0dd4cca572e3ec917ec8ab31fbfe37b2ae60a06bb27504ca3234d57f"
+    }
+  ]
+}

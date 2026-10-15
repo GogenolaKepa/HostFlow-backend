@@ -1,0 +1,314 @@
+{
+  "repositorio": "backend",
+  "rama": "main",
+  "head": "ba1bd0ea8c2b30ddbe76e39bbbcdd863739b6557",
+  "archivosPendientes": 51,
+  "alcance": "Incluye pendientes anteriores y de esta tanda. El propio índice no se auto-hashea.",
+  "resumen": {
+    "previo_preservado": 34,
+    "previo_ampliado": 9,
+    "cambio_nuevo_en_tanda": 7
+  },
+  "archivos": [
+    {
+      "archivo": "docs/activacion-configuracion-empresa.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "1a1ecbec8b826e0ba59ff1e9ccf8ad7e399b2b6978e9afef9e36f95bfcc68dfb"
+    },
+    {
+      "archivo": "docs/archivos-configuracion-empresa.json",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "004b081b020e7379a529233300042be63d7c54783db9b919eff8de54283ddc53"
+    },
+    {
+      "archivo": "docs/auditoria-permisos-sql.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "07939d097c4fa847c2ab5b7b7d56d24d135756ba0ad36619ceeb92f1caae3ef7"
+    },
+    {
+      "archivo": "docs/configuracion-empresa.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "9c9174b671f6a5c068322df2d3bf5373b5fe4d2a5c3d56aff01f9c5158fe7326"
+    },
+    {
+      "archivo": "docs/estabilizacion-configuracion.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "2c51356f3f372e45825fa39dc912d6a614345cf7fbe9709c2bafcaa04316e485"
+    },
+    {
+      "archivo": "docs/matriz-permisos-backend.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "bd2f0d60c8efd6ab7b33d7629bbf52abdad1c309b74fd89d5c0ea6cb48bceb29"
+    },
+    {
+      "archivo": "docs/plan-pruebas-permisos-sql.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "0240b2975382b8f38e15fac5c8799de8a40b8f35a5886d59cbd8a6580b06ae78"
+    },
+    {
+      "archivo": "docs/propuesta-notificaciones.md",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "8e2f5701c110ccf2165cee4d931a74148484f171fd6cc0bab5a5b419bb9a1d3d"
+    },
+    {
+      "archivo": "docs/revision-transicion-permisos.md",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "1bf3f5a578ff1544629034981eb5d37bb1f6683b6f72dec52c19baf771fa3601"
+    },
+    {
+      "archivo": "docs/tanda-integral-resultados.md",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "34cf5183008abc398222d16ec52da2951ea9dabad317aa02c007fb17bf3e404a"
+    },
+    {
+      "archivo": "package.json",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "863bac6377e45c4ed6abd5892e99465928c5d236f2e10abd851cfce70c7a28d3"
+    },
+    {
+      "archivo": "scripts/lib/permisosMinimos.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "f24bc564348b3223d58ea20578a3e6371938cb061b3936ad19fb7a4bee644ed2"
+    },
+    {
+      "archivo": "scripts/prepararPermisosMinimos.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "59fc8fc3217640b474a5e7885d25fb151484d9ebd2788c6eba6a08c95d9f648b"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/00_metadatos_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "7dd77dfacda744e9a594455bdd02f0c1a3ae8faf755e8170fad5c99211663def"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/01_modelo_empresa_preferencias.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "c726c083b1840fe9887d261af52a758e0e9d48451991c6a1d92d05e3e901fef8"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/02_vinculacion_inicial_pendiente.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "cb8117c2c5e50ee8623c496e3c92a204dea88deef5e081cee06f9a04b5d50ded"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/03_verificacion_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "a878885992800ede3d85d92c6a8e036e2b08ec6e2d69ce8b905e8c106071c5cb"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/04_permisos_propuestos_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "d89bb7f10a1d2e396fee7ff7d733fe52378d9fa3fac9be932881352566114d87"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa_activacion/00_comprobacion_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "718361292cdd065e3b276144efdc42453e3cd162bec2f7b99f98778cf8800049"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/00_inspeccion_administrativa_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "67551f7e0a09a50e55e297e9aef85c9e993bc3f550208bb0c1c958b3ab062d87"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/01_conceder_minimos_bloqueado.sql",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "b49596d641a491e8dcd82078efd74977fb6e6a2eeb78fd8318b8235e8e3f49ec"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/02_verificar_concesiones_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "7121ca48d0e75f23c0b206a4175f018a98fbd84206eb3c4298706e2e7ad4b19b"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/03_retirar_roles_bloqueado.sql",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "7ecd21e3c4a0a605a36ce321cea03b48daab1cc0bbc9fd5e4962105c4889183f"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/04_recuperacion_roles_bloqueada.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "076f19074a1d9d4d5c335216550a1c722c2303f280e0a28e1fd6a5fb85685bc3"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/05_verificacion_conexion_backend_solo_lectura.sql",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "d736e8ec0dd4cca572e3ec917ec8ab31fbfe37b2ae60a06bb27504ca3234d57f"
+    },
+    {
+      "archivo": "sql/proposals/permisos_minimos/modelo-permisos.json",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "2aaa2272a4b230804de98f4ec2375ea4ea6e94e12f075c1822c77a0546e666eb"
+    },
+    {
+      "archivo": "src/app.js",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "22341a26656cf00cc92ae560d76d014246ec8f9924143851bdac6ff9decce1fe"
+    },
+    {
+      "archivo": "src/config/configuracionEmpresa.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "ea1e71f337b52d9d7af5afb32e2383766ddb3f5998c6f2147277394bdee637b5"
+    },
+    {
+      "archivo": "src/config/permisos.js",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "a23aa3c9f0087f0707a23a8a7916e7426c6d9405866a4bd057e309da82519a6e"
+    },
+    {
+      "archivo": "src/config/politicasRutas.js",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "cbb07fb1e8bede3b41bd1be91b0eb4c56d1a184b9133a56e9fc4de2f6ca2555f"
+    },
+    {
+      "archivo": "src/controllers/ConfiguracionController.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "a9b568e0426230de137dec6a79fc8260874f1a0713babc81e61af642de757bb8"
+    },
+    {
+      "archivo": "src/repositories/ConfiguracionRepository.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "2f7acc3d9fe0c33cc567515f7db7e6960016a0e869983f82987668f46013e98b"
+    },
+    {
+      "archivo": "src/routes/configuracionRoutes.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "24b29198774144fe28bddd9b965e95882f24050c43b4452f00257fab68554e90"
+    },
+    {
+      "archivo": "src/security/erroresSeguros.js",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "2f400999544965d2a2a55b362f1f86c44d5cc2797a83940a9e0bd382f6f3eab8"
+    },
+    {
+      "archivo": "src/security/validacionConfiguracion.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "dba0db3ac5f804120f404a50e4b6b42e44d79050255275c0df4ded30ba0de313"
+    },
+    {
+      "archivo": "src/security/validacionReserva.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "c2913bde826542f73310cda7dd4b7d87d1ee7ec1434e0bdebe9aedd02e140992"
+    },
+    {
+      "archivo": "src/services/ConfiguracionService.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "ec60d3b112af9053998608c05c218eabaffb50cf398919def144537ac606c737"
+    },
+    {
+      "archivo": "src/services/ReservaService.js",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "fb45a34c5db104c018d02f4e259e0ea167ff195f3f6efdc98b5a25016fc0175c"
+    },
+    {
+      "archivo": "tests/configuracion-api.test.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "586175312a398baf83e283faa1263679c19db46b13c67ea643a9c85075dcb0ee"
+    },
+    {
+      "archivo": "tests/configuracion-cleanup.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "0710e910d19a09330484c9ec6d8ab4d8ba2dd3967988000bd04909e4dc2eb359"
+    },
+    {
+      "archivo": "tests/configuracion-repository.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "9d51c4e7c8adcc573a29c666f34dc3cdea7e420132b9dd5e251a05d1e9994d78"
+    },
+    {
+      "archivo": "tests/configuracion-sql-isolation.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "0be358fccde64154a6dfe190453cbb8f7e3ff53f7a8670a106db82e106576a23"
+    },
+    {
+      "archivo": "tests/configuracion.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "e9d29c3a652fed9b9a30df6d8a368366fabe8dcb51e8314e8462532168f60c69"
+    },
+    {
+      "archivo": "tests/fechas-reserva.test.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "4ca60f802460349fbafb7854eac7ff150ef630269bb6dd2f3dad13f745d4619b"
+    },
+    {
+      "archivo": "tests/helpers/configuracionAislada.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "b4bdbb462f48acd48ef3f2274ebd42361b33480d036ddf79fb52990e3e9be41c"
+    },
+    {
+      "archivo": "tests/integration/sql-configuracion.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "b743dd62c4faa95d075bb5a55d44298ee985e693fe738d112b3f5b4ca11b3ac5"
+    },
+    {
+      "archivo": "tests/integration/sql-permisos-minimos.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "9be979c4d8648da23efe3f137581c81a64078e0d1dd5d5f64fc4d0e58ef92115"
+    },
+    {
+      "archivo": "tests/integration/sqlConfiguracionAislada.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "4512ecbcc13ff9b8a1f12390545cd5034346f9a8b0b2494815ee5aff7fa0adb4"
+    },
+    {
+      "archivo": "tests/operaciones-aisladas.test.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "ee109d8899a21ea961162b49e1ff1fea83e76ca13ffa84947b2c9d4fbaa059d3"
+    },
+    {
+      "archivo": "tests/sql-permisos-minimos.test.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "840fe69dc89ffdd435b4c60de5f25b0643fb741a20a95047fa1c74b9a5150116"
+    }
+  ]
+}

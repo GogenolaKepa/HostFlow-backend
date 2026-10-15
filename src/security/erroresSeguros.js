@@ -4,6 +4,12 @@ const MENSAJES_SEGURIDAD = Object.freeze({
   SEGURIDAD_NO_DISPONIBLE: "La gestión de cuentas no está disponible. Reintente más tarde.",
   GESTION_SQL_PENDIENTE: "La gestión de cuentas estará disponible después de activar la autenticación SQL.",
   SQL_NO_PREPARADO: "SQL no está preparado: revisar destino, permisos, roles y primer Administrador.",
+  CONFIGURACION_SOLO_LECTURA: "La configuración empresarial está en modo de solo lectura. El guardado todavía no está habilitado.",
+  CONFIGURACION_PENDIENTE: "La persistencia empresarial todavía no está activada. No se pueden guardar cambios.",
+  EMPRESA_NO_CONFIGURADA: "La empresa y sus preferencias todavía no están disponibles. Revisá la vinculación de esta instalación.",
+  MODELO_CONFIGURACION_PENDIENTE: "La persistencia empresarial no está preparada.",
+  CONFIGURACION_SQL_REQUERIDA: "La configuración empresarial requiere autenticación SQL y persistencia activada.",
+  CONFIGURACION_NO_DISPONIBLE: "No se pudo acceder a la configuración empresarial. Reintentá o revisá su activación.",
 });
 
 function textoSensitivo(texto) {

@@ -1,0 +1,105 @@
+{
+  "fase": "Configuración: datos de empresa, preferencias operativas y estabilización",
+  "publicacion": "No autorizada: sin commit/push/deploy",
+  "azure": "Sin conexiones ni escrituras del agente; pendiente de inspección y autorización",
+  "servicios": "npm run dev a cargo del usuario; agente no inicia/reinicia servicios de desarrollo",
+  "estadoInicial": {
+    "backend": 25,
+    "frontend": 15
+  },
+  "repositorios": {
+    "backend": {
+      "base": "ba1bd0ea8c2b30ddbe76e39bbbcdd863739b6557",
+      "cantidad": 26,
+      "archivos": [
+        "docs/archivos-configuracion-empresa.json",
+        "docs/configuracion-empresa.md",
+        "docs/estabilizacion-configuracion.md",
+        "package.json",
+        "sql/proposals/configuracion_empresa/00_metadatos_solo_lectura.sql",
+        "sql/proposals/configuracion_empresa/01_modelo_empresa_preferencias.sql",
+        "sql/proposals/configuracion_empresa/02_vinculacion_inicial_pendiente.sql",
+        "sql/proposals/configuracion_empresa/03_verificacion_solo_lectura.sql",
+        "sql/proposals/configuracion_empresa/04_permisos_propuestos_solo_lectura.sql",
+        "src/app.js",
+        "src/config/configuracionEmpresa.js",
+        "src/config/permisos.js",
+        "src/config/politicasRutas.js",
+        "src/controllers/ConfiguracionController.js",
+        "src/repositories/ConfiguracionRepository.js",
+        "src/routes/configuracionRoutes.js",
+        "src/security/validacionConfiguracion.js",
+        "src/services/ConfiguracionService.js",
+        "tests/configuracion-api.test.js",
+        "tests/configuracion-cleanup.test.js",
+        "tests/configuracion-repository.test.js",
+        "tests/configuracion-sql-isolation.test.js",
+        "tests/configuracion.test.js",
+        "tests/helpers/configuracionAislada.js",
+        "tests/integration/sql-configuracion.test.js",
+        "tests/integration/sqlConfiguracionAislada.js"
+      ]
+    },
+    "frontend": {
+      "base": "11d8df35fd3b2641a8050f4fce1590ff00b7c5f0",
+      "cantidad": 20,
+      "archivos": [
+        "docs/configuracion-empresa.md",
+        "src/components/configuracion/Apariencia.jsx",
+        "src/components/configuracion/CampoConfiguracion.jsx",
+        "src/components/configuracion/FormularioEmpresa.jsx",
+        "src/components/configuracion/FormularioOperativas.jsx",
+        "src/components/configuracion/PanelConfiguracion.jsx",
+        "src/context/BorradoresContext.js",
+        "src/context/BorradoresProvider.jsx",
+        "src/hooks/usePredeterminadosReserva.js",
+        "src/pages/Configuracion.jsx",
+        "src/pages/Dashboard.jsx",
+        "src/pages/Reservas.jsx",
+        "src/services/borradores.js",
+        "src/services/configuracion.js",
+        "src/styles/settings.css",
+        "tests/borradores.test.js",
+        "tests/browser/hostflow-browser.test.js",
+        "tests/configuracion.test.js",
+        "tests/cuentas-ui.test.js",
+        "tests/fixtures/permisos.json"
+      ]
+    }
+  },
+  "pruebas": {
+    "backend": 133,
+    "frontend": 41,
+    "navegadorAPIInterceptada": 21,
+    "SQLLocal": 6
+  },
+  "pendientes": [
+    "Descartar estructuras SQL empresariales equivalentes con metadatos completos",
+    "Revisar y aprobar DDL nuevo",
+    "Autorizar vinculación inicial vacía",
+    "Verificar principal y autorizar SELECT/UPDATE mínimos",
+    "Autorizar bandera temporal de configuración e IdEmpresa del servidor"
+  ],
+  "scriptsSQL": [
+    {
+      "archivo": "sql/proposals/configuracion_empresa/00_metadatos_solo_lectura.sql",
+      "sha256": "7dd77dfacda744e9a594455bdd02f0c1a3ae8faf755e8170fad5c99211663def"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/01_modelo_empresa_preferencias.sql",
+      "sha256": "c726c083b1840fe9887d261af52a758e0e9d48451991c6a1d92d05e3e901fef8"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/02_vinculacion_inicial_pendiente.sql",
+      "sha256": "cb8117c2c5e50ee8623c496e3c92a204dea88deef5e081cee06f9a04b5d50ded"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/03_verificacion_solo_lectura.sql",
+      "sha256": "a878885992800ede3d85d92c6a8e036e2b08ec6e2d69ce8b905e8c106071c5cb"
+    },
+    {
+      "archivo": "sql/proposals/configuracion_empresa/04_permisos_propuestos_solo_lectura.sql",
+      "sha256": "d89bb7f10a1d2e396fee7ff7d733fe52378d9fa3fac9be932881352566114d87"
+    }
+  ]
+}

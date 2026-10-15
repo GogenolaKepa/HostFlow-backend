@@ -2,6 +2,8 @@
 // los permisos efectivos del servidor, nunca un rol enviado por el cliente.
 // true concede la acción al Operador; Administrador dispone de todo el catálogo.
 const CATALOGO_PERMISOS = Object.freeze({
+  "configuracion.ver": false,
+  "configuracion.modificar": false,
   "usuarios.ver": false,
   "usuarios.crear": false,
   "usuarios.modificar": false,

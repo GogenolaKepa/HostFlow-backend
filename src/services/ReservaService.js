@@ -1,3 +1,4 @@
+const { rangoReservaValido } = require("../security/validacionReserva");
 const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const ChannelService = require("./ChannelService");
 const AirbnbChannelService = require("./AirbnbChannelService");
@@ -1195,8 +1196,7 @@ class ReservaService {
   // =========================================================
 
   if (
-    new Date(fechaEgreso) <=
-    new Date(fechaIngreso)
+    !rangoReservaValido(fechaIngreso, fechaEgreso)
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
@@ -1476,8 +1476,7 @@ class ReservaService {
   // =========================================================
 
   if (
-    new Date(nuevaFechaEgreso) <=
-    new Date(nuevaFechaIngreso)
+    !rangoReservaValido(nuevaFechaIngreso, nuevaFechaEgreso)
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
@@ -1907,8 +1906,7 @@ class ReservaService {
   // =========================================================
 
   if (
-    new Date(nuevaFechaEgreso) <=
-    new Date(nuevaFechaIngreso)
+    !rangoReservaValido(nuevaFechaIngreso, nuevaFechaEgreso)
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
@@ -3209,8 +3207,7 @@ async procesarNuevaReservaBooking(
   }
 
   if (
-    new Date(datos.fechaEgreso) <=
-    new Date(datos.fechaIngreso)
+    !rangoReservaValido(datos.fechaIngreso, datos.fechaEgreso)
   ) {
     throw new Error(
       "Booking envió un rango de fechas inválido."
@@ -3620,8 +3617,7 @@ async procesarModificacionReservaBooking(
         );
 
   if (
-    new Date(nuevaFechaEgreso) <=
-    new Date(nuevaFechaIngreso)
+    !rangoReservaValido(nuevaFechaIngreso, nuevaFechaEgreso)
   ) {
     throw new Error(
       "Booking envió una modificación con fechas inválidas."
@@ -4173,8 +4169,7 @@ async procesarNuevaReservaAirbnb(
   }
 
   if (
-    new Date(datos.fechaEgreso) <=
-    new Date(datos.fechaIngreso)
+    !rangoReservaValido(datos.fechaIngreso, datos.fechaEgreso)
   ) {
     throw new Error(
       "Airbnb envió un rango de fechas inválido."
@@ -4576,8 +4571,7 @@ async procesarModificacionReservaAirbnb(
         );
 
   if (
-    new Date(nuevaFechaEgreso) <=
-    new Date(nuevaFechaIngreso)
+    !rangoReservaValido(nuevaFechaIngreso, nuevaFechaEgreso)
   ) {
     throw new Error(
       "Airbnb envió una modificación con fechas inválidas."
