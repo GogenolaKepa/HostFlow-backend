@@ -466,14 +466,18 @@ class IaService {
         )
       );
 
-    const recomendacionesValidas =
-      items.filter(
-        (item) =>
-          item &&
-          idsPermitidos.has(
-            item.id
-          )
-      );
+    // El esquema pedido al proveedor no sustituye la validación de su respuesta.
+    // Un ID ambiguo o texto roto conserva la recomendación determinística.
+    const repeticiones = new Map();
+    for (const item of items) {
+      if (typeof item?.id === "string") repeticiones.set(item.id, (repeticiones.get(item.id) || 0) + 1);
+    }
+    const camposTexto = ["titulo", "descripcion", "accion", "fundamento"];
+    const recomendacionesValidas = items.filter(item =>
+      typeof item?.id === "string" && idsPermitidos.has(item.id) && repeticiones.get(item.id) === 1 &&
+      camposTexto.every(campo => typeof item[campo] === "string" && item[campo].trim())
+    ).map(item => ({ id: item.id, titulo: item.titulo, descripcion: item.descripcion,
+      accion: item.accion, fundamento: item.fundamento }));
 
     return {
       aplicada:

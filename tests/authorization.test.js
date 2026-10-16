@@ -80,6 +80,26 @@ async function pedir(metodo, ruta, body, usuario = operador, claims = {}) {
   return { status: response.status, data: metodo === "HEAD" ? null : await response.json() };
 }
 
+test('IDs de ruta inválidos se rechazan antes del controlador, incluso GET y HEAD mutantes', async () => {
+  const antes = ejecutados;
+  for (const id of ['0','-1','1.5','1e2','NaN','2147483648','%20','01']) {
+    for (const metodo of ['GET','HEAD']) assert.equal((await pedir(metodo, `/api/reservas/${id}`,undefined,admin)).status,400);
+  }
+  for (const ruta of ['/api/propiedades/1/imagenes/1e2','/api/reservas/1/incidencias/0','/api/integraciones/booking/eventos/1.5/procesar']) {
+    const metodo = ruta.includes('/imagenes/')?'DELETE':ruta.includes('/incidencias/')?'PATCH':'POST';
+    assert.equal((await pedir(metodo,ruta,{},admin)).status,400);
+  }
+  assert.equal(ejecutados,antes);assert.equal(sqlAccesos,0);
+  assert.equal((await pedir('GET','/api/reservas/1',undefined,admin)).status,200);
+});
+
+test('IDs inválidos no cambian la prioridad de 401 y 403, ni limitan BIGINT personales a int',async()=>{
+  const sinSesion=await fetch(url+'/api/reservas/NaN');assert.equal(sinSesion.status,401);
+  assert.equal((await pedir('PATCH','/api/reservas/NaN/cancelar',{},operador)).status,403);
+  assert.equal((await pedir('PUT','/api/notificaciones/personales/9223372036854775807/lectura',{},admin)).status,200);
+  assert.equal((await pedir('PUT','/api/notificaciones/personales/9223372036854775808/lectura',{},admin)).status,400);
+});
+
 test("Operador no puede cancelar, modificar propiedades, imágenes, canales ni operar integraciones por API", async () => {
   const prohibidas = [
     ["PATCH", "/api/reservas/1/cancelar"], ["POST", "/api/propiedades"], ["PUT", "/api/propiedades/1"], ["PATCH", "/api/propiedades/1/estado"],

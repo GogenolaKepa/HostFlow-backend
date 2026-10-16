@@ -311,7 +311,7 @@
       },
       {
         "archivo": "src/middlewares/autorizacion.js",
-        "sha256": "5725f7c3d4e0cdf7c55662f46495d61500e488e767b4b215993552a98543ad0f"
+        "sha256": "815301502fd3ca38130d198f97a5138c9bd463727b7e8ccdfefcee4cc5bf5cbe"
       },
       {
         "archivo": "src/middlewares/cambioPasswordObligatorio.js",
@@ -356,6 +356,10 @@
       {
         "archivo": "src/models/Usuario.js",
         "sha256": "43d109f63d9e6cea937bc787267a50e69f405d61d35a843fe2bfc8ac2767288f"
+      },
+      {
+        "archivo": "src/notifications/eventosReserva.js",
+        "sha256": "c6ae72b69570b471b28667691bd9ed71fb546306a8eece2ddc8e4decf19e37f3"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
@@ -514,6 +518,10 @@
         "sha256": "7104b26125e8addb5ebb81796e8dd3a31b9a63cbcdc95f4a307283275f735386"
       },
       {
+        "archivo": "src/security/identificadoresRuta.js",
+        "sha256": "ec9dd1bf7247744aee9aad364d80c2edd450f6c43e67ede525afa7070c9b3d47"
+      },
+      {
         "archivo": "src/security/proyecciones.js",
         "sha256": "9ce94098b9ca99512e13d7d8cca15c42f694aa5e7eac33e122dba0ca0cf26150"
       },
@@ -531,7 +539,7 @@
       },
       {
         "archivo": "src/security/validacionReserva.js",
-        "sha256": "c2913bde826542f73310cda7dd4b7d87d1ee7ec1434e0bdebe9aedd02e140992"
+        "sha256": "9cda425cf2ecdca646e21d7d131edae212e91af97128cf653f819a5519b09e4f"
       },
       {
         "archivo": "src/server.js",
@@ -575,7 +583,7 @@
       },
       {
         "archivo": "src/services/BookingChannelService.js",
-        "sha256": "0bf412034354f8c177f7d19440d1fcdd7490e29e1ef7ecd696989e70242de111"
+        "sha256": "914865d06cbae61d114e2db81230179c325d73978f2fc29ee2a32bd1e1ebb831"
       },
       {
         "archivo": "src/services/BookingInboundService.js",
@@ -623,7 +631,7 @@
       },
       {
         "archivo": "src/services/IaService.js",
-        "sha256": "71e2000a36212b3637f4fefabb81e7960676f9f79edcd00a239557ba169f8aed"
+        "sha256": "7a839bcfa658a9ffc54c2ce16bb162b5eb87d421ae4c8af34404fa890dff8e09"
       },
       {
         "archivo": "src/services/LimpiezaService.js",
@@ -655,11 +663,15 @@
       },
       {
         "archivo": "src/services/ReservaService.js",
-        "sha256": "fb45a34c5db104c018d02f4e259e0ea167ff195f3f6efdc98b5a25016fc0175c"
+        "sha256": "95c2aa4033793744616d0a34227cf0bbfd97910a73458d60802bdf2b22b19b07"
       },
       {
         "archivo": "src/services/UsuarioService.js",
         "sha256": "d5b3f3b07b8cac429ccc3f5dbd3b012ecfa5a28992aa138ede2e3ccab70c7927"
+      },
+      {
+        "archivo": "src/utils/ejecucionSerial.js",
+        "sha256": "d4d3b94c14040a1fe715ae6351549bd488de15babe4400d2d9ede8aa44cc0851"
       }
     ],
     "referencias": [

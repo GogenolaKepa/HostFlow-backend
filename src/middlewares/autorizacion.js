@@ -1,6 +1,7 @@
 const { tienePermiso } = require("../config/permisos");
 const { politicaPara } = require("../config/politicasRutas");
 const { proyectarRespuesta } = require("../security/proyecciones");
+const { identificadoresRutaValidos } = require("../security/identificadoresRuta");
 
 function prohibido(res) {
   return res.status(403).json({ mensaje: "No tiene permiso para realizar esta acción." });
@@ -9,6 +10,9 @@ function prohibido(res) {
 function autorizarAccion(req, res, next) {
   const politica = politicaPara(req.method, req.path);
   if (!politica || !tienePermiso(req.usuario, politica.permiso)) return prohibido(res);
+  if (!identificadoresRutaValidos(politica, req.path)) {
+    return res.status(400).json({ mensaje: "El identificador indicado no es válido." });
+  }
 
   req.politicaAcceso = politica;
   const json = res.json;

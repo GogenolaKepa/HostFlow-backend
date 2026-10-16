@@ -1,4 +1,4 @@
-# Notificaciones v2: estado vigente y cierre funcional pendiente
+# Notificaciones v2: estado confirmado y límites
 
 ## Hechos confirmados por el usuario
 
@@ -14,6 +14,11 @@ en la tanda de cierre:
   **55/55 derechos directos**. CONNECT adicional conocido en base, estado G.
 - hostflow_app conserva db_datareader y db_datawriter. Esto todavía NO constituye
   mínimo privilegio efectivo, aunque las concesiones directas estén completas.
+- El usuario confirmó posteriormente el guardado real de las ocho preferencias
+  del Administrador: RESERVA_NUEVA habilitada, las otras siete deshabilitadas,
+  persistencia tras F5 y reinicio. Después volvió WRITE_ENABLED a 0.
+- La tanda v2 fue publicada según el usuario; al comenzar la auditoría del
+  16/10/2026 ambos repositorios estaban limpios. No se verificó Git remoto hoy.
 
 **NO repetir DDL, migraciones, aprovisionamiento, bootstrap, 48 GRANT ni siete GRANT
 nuevos. No retirar roles amplios.** Los SQL históricos se conservan sin reescritura
@@ -69,17 +74,20 @@ IdUsuario autenticado como IdEmpresa del servidor; el contador tiene el mismo
 alcance. No existe RLS ni membresía empresarial en Usuarios. Sigue una organización
 por instalación, con principal SQL compartido y roles amplios pendientes de retiro.
 
-## Estado funcional y prueba manual pendiente
+## Estado funcional y activaciones posteriores
 
-Bandeja operativa y formulario de preferencias están implementados; la activación
-funcional real de preferencias sigue pendiente. No hay UI de bandeja personal,
+Bandeja operativa y formulario de preferencias están implementados; el guardado
+real del Administrador fue validado por el usuario, no repetido por el agente.
+No hay UI de bandeja personal,
 productores, reparto, políticas efectivas, email/SMS/push ni entrega garantizada.
 Guardar preferencias no cambia la bandeja operativa ni las reglas de negocio.
 
-Primera fase: SQL_ENABLED=1, WRITE_ENABLED=0 y PERSONALES_ENABLED=0. Habilita GET
+Estado de lectura a conservar: SQL_ENABLED=1, WRITE_ENABLED=0 y PERSONALES_ENABLED=0. Habilita GET
 de preferencias, no la bandeja personal futura ni ninguna escritura personal.
 Configuración empresarial conserva HOSTFLOW_CONFIGURACION_READ_ONLY=1.
-La segunda fase exige autorización expresa y cambia WRITE_ENABLED a 1 solamente.
+Otra prueba de escritura exige nueva autorización expresa; no se deriva de la
+validación anterior ni de las funciones puras v3 ahora preparadas. Ver
+[notificaciones-v3-preparacion.md](notificaciones-v3-preparacion.md).
 
 El contrato actual guarda el formulario COMPLETO: ocho tipos. Si no hay filas,
 el primer guardado crea ocho preferencias, aunque se marque una sola opción; las

@@ -1,3 +1,4 @@
+const { rangoReservaValido } = require("../security/validacionReserva");
 const FORMATO_HORA_RESERVA =
   /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -91,8 +92,7 @@ class BookingChannelService {
      * las horas se conservan como información operativa.
      */
     if (
-      new Date(nuevaFechaEgreso) <=
-      new Date(reserva.fechaIngreso)
+      !rangoReservaValido(reserva.fechaIngreso, nuevaFechaEgreso)
     ) {
       throw new Error(
         "La fecha de egreso debe ser posterior a la fecha de ingreso."
@@ -100,7 +100,7 @@ class BookingChannelService {
     }
 
     if (
-      Number.isNaN(nuevoMonto) ||
+      !Number.isFinite(nuevoMonto) ||
       nuevoMonto < 0
     ) {
       throw new Error(

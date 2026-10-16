@@ -2,8 +2,11 @@
 
 **Estado vigente:** [estado-notificaciones-v2.md](estado-notificaciones-v2.md).
 El usuario confirmó DDL Azure, 55 derechos + CONNECT y pruebas locales 25/25,
-8/8 y 18/18. No repetir SQL ni GRANT; la activación funcional sigue pendiente.
+8/8 y 18/18. También confirmó el guardado real de preferencias del Administrador
+y la posterior desactivación de escritura. No repetir SQL ni GRANT.
 Los planes y resultados siguientes conservan la historia de preparación.
+La preparación pura v3 está en [notificaciones-v3-preparacion.md](notificaciones-v3-preparacion.md);
+no instala productores ni destinatarios.
 
 Correcciones preventivas y secuencia de motor vigente:
 [validacion-notificaciones-sql-v2.md](validacion-notificaciones-sql-v2.md).
@@ -23,8 +26,8 @@ usuario. La propuesta anterior se conserva en `propuesta-notificaciones.md`.
 | Centro de avisos operativos | Implementado: consulta estricta de Alertas persistidas, paginada y sin sincronización. Probado con repositorios y API ficticios; pendiente de lectura real autorizada. |
 | Filtros de categoría y prioridad | Implementados en servidor y pantalla; límites cerrados. |
 | Lectura personal, contador no leído, marcar leído | Contratos backend preparados y desactivados; sin interfaz personal ni productores. Alertas.Estado no representa lecturas personales. |
-| Preferencias personales de ocho tipos | API, repositorio SQL parametrizado y UI implementados y probados sin motor. Desactivadas por defecto, sin tablas nuevas reales ni falso guardado. |
-| Productores, destinatarios y políticas empresariales | Solo modelo SQL y diseño. No hay generación, entrega, administración de políticas ni purga. |
+| Preferencias personales de ocho tipos | API, repositorio SQL parametrizado y UI implementados; persistencia administrativa real confirmada por el usuario, escritura luego desactivada. Flags cerradas por defecto. |
+| Productores, destinatarios y políticas empresariales | Constructores puros v3 preparados y desconectados; modelo SQL v2 existente según usuario. No hay generación automática, entrega, administración de políticas ni purga. |
 | Preferencias generales | Reducción de movimiento efectiva, explícitamente del navegador. No cambia fechas, horarios o reglas de negocio. |
 | Email, SMS, push, webhooks | No implementados. No hay tareas externas. |
 

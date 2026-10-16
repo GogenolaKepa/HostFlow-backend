@@ -1,4 +1,6 @@
-const { rangoReservaValido } = require("../security/validacionReserva");
+const { rangoReservaValido, idReservaValido, cantidadReserva, montoReserva } = require("../security/validacionReserva");
+const { crearEjecucionSerial } = require("../utils/ejecucionSerial");
+const procesarEntradaSerial = crearEjecucionSerial();
 const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const ChannelService = require("./ChannelService");
 const AirbnbChannelService = require("./AirbnbChannelService");
@@ -1203,6 +1205,10 @@ class ReservaService {
     );
   }
 
+  if (!idReservaValido(idPropiedad) || !idReservaValido(idHuesped)) {
+    throw new Error("Los identificadores de propiedad y huésped no son válidos.");
+  }
+
   if (
     !FORMATO_HORA_RESERVA.test(
       horaIngresoNormalizada
@@ -1237,6 +1243,8 @@ class ReservaService {
     );
   }
 
+  const montoFinal = montoReserva(montoEstimado);
+
   // =========================================================
   // HUÉSPED
   // =========================================================
@@ -1257,7 +1265,7 @@ class ReservaService {
   // =========================================================
 
   const cantidad =
-    Number(cantidadHuespedes) || 1;
+    cantidadReserva(cantidadHuespedes);
 
   if (
     cantidad >
@@ -1288,13 +1296,6 @@ class ReservaService {
   // =========================================================
   // CREAR RESERVA EN AZURE SQL
   // =========================================================
-
-  const montoFinal =
-    montoEstimado !== undefined &&
-    montoEstimado !== null &&
-    montoEstimado !== ""
-      ? Number(montoEstimado)
-      : 0;
 
   const reservaCreada =
     await ReservaRepository.crearReservaManual({
@@ -1497,7 +1498,7 @@ class ReservaService {
   }
 
   if (
-    Number.isNaN(nuevoMonto) ||
+    !Number.isFinite(nuevoMonto) ||
     nuevoMonto < 0
   ) {
     throw new Error(
@@ -1882,15 +1883,9 @@ class ReservaService {
             "00:00"
         ).trim();
 
-  const nuevaCantidadHuespedes =
-    datos.cantidadHuespedes !==
-      undefined
-      ? Number(
-          datos.cantidadHuespedes
-        )
-      : Number(
-          reserva.cantidadHuespedes
-        );
+  const nuevaCantidadHuespedes = cantidadReserva(
+    datos.cantidadHuespedes !== undefined ? datos.cantidadHuespedes : reserva.cantidadHuespedes, 0
+  );
 
   const nuevoMonto =
     datos.montoEstimado !== undefined
@@ -1927,9 +1922,8 @@ class ReservaService {
   }
 
   if (
-    Number.isNaN(
-      nuevaCantidadHuespedes
-    ) ||
+    !Number.isInteger(nuevaCantidadHuespedes) ||
+    nuevaCantidadHuespedes > 2147483647 ||
     nuevaCantidadHuespedes <= 0
   ) {
     throw new Error(
@@ -1938,7 +1932,7 @@ class ReservaService {
   }
 
   if (
-    Number.isNaN(nuevoMonto) ||
+    !Number.isFinite(nuevoMonto) ||
     nuevoMonto < 0
   ) {
     throw new Error(
@@ -2525,8 +2519,7 @@ class ReservaService {
   }
 
   if (
-    new Date(nuevaFechaEgreso) <=
-    new Date(reserva.fechaIngreso)
+    !rangoReservaValido(reserva.fechaIngreso, nuevaFechaEgreso)
   ) {
     throw new Error(
       "La fecha de egreso debe ser posterior a la fecha de ingreso."
@@ -2544,7 +2537,7 @@ class ReservaService {
   }
 
   if (
-    Number.isNaN(nuevoMonto) ||
+    !Number.isFinite(nuevoMonto) ||
     nuevoMonto < 0
   ) {
     throw new Error(
@@ -3033,7 +3026,15 @@ async procesarSincronizacionBooking(
 // BOOKING - EVENTOS ENTRANTES
 // =========================================================
 
-async procesarEventoBooking(
+async procesarEventoBooking(idEvento) {
+  const evento = BookingInboundService.obtenerEventoPorId(idEvento);
+  return procesarEntradaSerial(
+    JSON.stringify(["Booking", String(evento.idExterno)]),
+    () => this.procesarEventoBookingEnSerie(idEvento)
+  );
+}
+
+async procesarEventoBookingEnSerie(
   idEvento
 ) {
   // =========================================================
@@ -3250,8 +3251,7 @@ async procesarNuevaReservaBooking(
   // =========================================================
 
   const cantidadHuespedes =
-    Number(datos.cantidadHuespedes) ||
-    1;
+    cantidadReserva(datos.cantidadHuespedes);
 
   if (
     cantidadHuespedes >
@@ -3261,6 +3261,8 @@ async procesarNuevaReservaBooking(
       "La reserva recibida de Booking supera la capacidad máxima registrada para la propiedad."
     );
   }
+
+  const montoRecibido = montoReserva(datos.montoEstimado);
 
   // =========================================================
   // BUSCAR / CREAR HUÉSPED EN AZURE
@@ -3364,9 +3366,7 @@ async procesarNuevaReservaBooking(
         cantidadHuespedes,
 
         montoEstimado:
-          Number(
-            datos.montoEstimado
-          ) || 0,
+          montoRecibido,
 
         idExterno:
           evento.idExterno,
@@ -3422,9 +3422,7 @@ async procesarNuevaReservaBooking(
       cantidadHuespedes,
 
       montoEstimado:
-        Number(
-          datos.montoEstimado
-        ) || 0,
+        montoRecibido,
 
       conflictoDetectado,
     },
@@ -3596,25 +3594,13 @@ async procesarModificacionReservaBooking(
             "00:00"
         ).trim();
 
-  const nuevaCantidadHuespedes =
-    datos.cantidadHuespedes !==
-    undefined
-      ? Number(
-          datos.cantidadHuespedes
-        )
-      : Number(
-          reserva.cantidadHuespedes
-        );
+  const nuevaCantidadHuespedes = cantidadReserva(
+    datos.cantidadHuespedes !== undefined ? datos.cantidadHuespedes : reserva.cantidadHuespedes, 0
+  );
 
-  const nuevoMontoEstimado =
-    datos.montoEstimado !==
-    undefined
-      ? Number(
-          datos.montoEstimado
-        )
-      : Number(
-          reserva.montoEstimado
-        );
+  const nuevoMontoEstimado = montoReserva(
+    datos.montoEstimado !== undefined ? datos.montoEstimado : reserva.montoEstimado
+  );
 
   if (
     !rangoReservaValido(nuevaFechaIngreso, nuevaFechaEgreso)
@@ -3638,6 +3624,8 @@ async procesarModificacionReservaBooking(
   }
 
   if (
+    !Number.isInteger(nuevaCantidadHuespedes) ||
+    nuevaCantidadHuespedes > 2147483647 ||
     nuevaCantidadHuespedes <= 0
   ) {
     throw new Error(
@@ -3646,6 +3634,7 @@ async procesarModificacionReservaBooking(
   }
 
   if (
+    !Number.isFinite(nuevoMontoEstimado) ||
     nuevoMontoEstimado < 0
   ) {
     throw new Error(
@@ -3999,7 +3988,15 @@ async procesarCancelacionReservaBooking(
 // AIRBNB - EVENTOS ENTRANTES
 // =========================================================
 
-async procesarEventoAirbnb(
+async procesarEventoAirbnb(idEvento) {
+  const evento = AirbnbInboundService.obtenerEventoPorId(idEvento);
+  return procesarEntradaSerial(
+    JSON.stringify(["Airbnb", String(evento.idExterno)]),
+    () => this.procesarEventoAirbnbEnSerie(idEvento)
+  );
+}
+
+async procesarEventoAirbnbEnSerie(
   idEvento
 ) {
   // =========================================================
@@ -4212,9 +4209,7 @@ async procesarNuevaReservaAirbnb(
   // =========================================================
 
   const cantidadHuespedes =
-    Number(
-      datos.cantidadHuespedes
-    ) || 1;
+    cantidadReserva(datos.cantidadHuespedes);
 
   if (
     cantidadHuespedes >
@@ -4233,6 +4228,7 @@ async procesarNuevaReservaAirbnb(
   // por nombre + apellido.
   // =========================================================
 
+  const montoRecibido = montoReserva(datos.montoEstimado);
   const nombreHuesped =
     datos.nombreHuesped ||
     "Huésped";
@@ -4329,9 +4325,7 @@ async procesarNuevaReservaAirbnb(
         cantidadHuespedes,
 
         montoEstimado:
-          Number(
-            datos.montoEstimado
-          ) || 0,
+          montoRecibido,
 
         idExterno:
           evento.idExterno,
@@ -4386,9 +4380,7 @@ async procesarNuevaReservaAirbnb(
       cantidadHuespedes,
 
       montoEstimado:
-        Number(
-          datos.montoEstimado
-        ) || 0,
+        montoRecibido,
 
       conflictoDetectado,
     },
@@ -4550,25 +4542,13 @@ async procesarModificacionReservaAirbnb(
             "00:00"
         ).trim();
 
-  const nuevaCantidadHuespedes =
-    datos.cantidadHuespedes !==
-    undefined
-      ? Number(
-          datos.cantidadHuespedes
-        )
-      : Number(
-          reserva.cantidadHuespedes
-        );
+  const nuevaCantidadHuespedes = cantidadReserva(
+    datos.cantidadHuespedes !== undefined ? datos.cantidadHuespedes : reserva.cantidadHuespedes, 0
+  );
 
-  const nuevoMontoEstimado =
-    datos.montoEstimado !==
-    undefined
-      ? Number(
-          datos.montoEstimado
-        )
-      : Number(
-          reserva.montoEstimado
-        );
+  const nuevoMontoEstimado = montoReserva(
+    datos.montoEstimado !== undefined ? datos.montoEstimado : reserva.montoEstimado
+  );
 
   if (
     !rangoReservaValido(nuevaFechaIngreso, nuevaFechaEgreso)
@@ -4592,6 +4572,8 @@ async procesarModificacionReservaAirbnb(
   }
 
   if (
+    !Number.isInteger(nuevaCantidadHuespedes) ||
+    nuevaCantidadHuespedes > 2147483647 ||
     nuevaCantidadHuespedes <= 0
   ) {
     throw new Error(
@@ -4600,6 +4582,7 @@ async procesarModificacionReservaAirbnb(
   }
 
   if (
+    !Number.isFinite(nuevoMontoEstimado) ||
     nuevoMontoEstimado < 0
   ) {
     throw new Error(
