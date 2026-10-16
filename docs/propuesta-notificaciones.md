@@ -1,5 +1,10 @@
 # Próximo módulo: Notificaciones y preferencias generales
 
+Nota de continuidad: esta propuesta histórica se conserva. La implementación
+local de la bandeja de lectura, los contratos de preferencias desactivadas y el
+modelo SQL nuevo se describen en [notificaciones.md](notificaciones.md). No tomar
+el estado «no implementación» de este documento como el estado del código actual.
+
 Diseño para revisión, no implementación. No hay DDL, filas nuevas, endpoints
 operativos ni envíos externos. Una organización por instalación; no habilitar
 multiempresa solo por agregar IdEmpresa a tablas nuevas.

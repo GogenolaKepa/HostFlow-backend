@@ -1,5 +1,19 @@
 # Auditoría de permisos SQL del backend
 
+Actualización de Notificaciones confirmada por el usuario: 48 históricos y siete
+nuevos = 55/55 directos, CONNECT adicional conocido, roles amplios conservados.
+Ver [estado vigente](estado-notificaciones-v2.md). No repetir GRANT ni aplicar el
+retiro de roles de este plan histórico, cuyo universo congelado sigue siendo 48.
+
+Continuidad de Notificaciones: la matriz de 48 derechos y sus SQL permanecen
+intactos. El manifiesto actualiza evidencia del código y separa una dependencia
+futura cerrada por defecto: seis pares tabla/operación sobre tres tablas nuevas,
+con UPDATE restringido por columna. Véase
+[consolidacion-notificaciones.md](consolidacion-notificaciones.md). Revisar/extender
+perfil y scripts antes de concederlos o retirar roles; no interpretar la evidencia
+nueva como autorización DCL o permisos ya aplicados. El cuerpo restante conserva
+la auditoría histórica de los 48 derechos anteriores.
+
 > Auditoría histórica: el usuario confirmó después las 48 concesiones específicas, conservando los dos roles amplios. Ver [estado vigente](estado-publicacion.md). NO repetir concesiones ni retirar roles por seguir el plan histórico de este archivo.
 
 Estado: propuesta local preparada, SIN cambios de permisos ni conexiones a Azure.

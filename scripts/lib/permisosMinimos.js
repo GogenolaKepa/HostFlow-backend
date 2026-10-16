@@ -26,7 +26,14 @@ const MATRIZ = [
 ].map(([tabla, letras, motivo]) => ({ esquema: 'dbo', tabla,
   operaciones: OPERACIONES.filter((_, i) => letras.includes(['S','I','U','D'][i])), motivo }));
 
-const ALIAS = { pc: 'PropiedadCanales', pic: 'PropiedadImagenCanales', tarea: 'TareasLimpieza' };
+const ALIAS = { pc: 'PropiedadCanales', pic: 'PropiedadImagenCanales', tarea: 'TareasLimpieza', d: 'NotificacionDestinatarios' };
+// No modifica los 48 permisos aplicados. Esta dependencia nueva está cerrada por
+// defecto y requiere aprobar su DDL/DCL antes de activar la bandera SQL.
+const PREPARADOS = [
+  {tabla:'PreferenciasNotificacionUsuario',operaciones:['SELECT','INSERT','UPDATE'],columnasUpdate:['Habilitada','FechaActualizacion'],archivo:'src/repositories/NotificacionRepository.js',activacion:'HOSTFLOW_NOTIFICACIONES_SQL_ENABLED=1'},
+  {tabla:'Notificaciones',operaciones:['SELECT'],archivo:'src/repositories/NotificacionRepository.js',activacion:'HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1'},
+  {tabla:'NotificacionDestinatarios',operaciones:['SELECT','UPDATE'],columnasUpdate:['FechaLectura'],archivo:'src/repositories/NotificacionRepository.js',activacion:'HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1'},
+];
 function analizarFuente(fuente, archivo) {
   const referencias = [];
   const metodos = [...fuente.matchAll(/\basync\s+(\w+)\s*\(/g)];
@@ -36,7 +43,7 @@ function analizarFuente(fuente, archivo) {
   }
   for (const m of fuente.matchAll(/\b(?:FROM|JOIN)\s+dbo\.(\w+)/gi)) agregar(m[1], 'SELECT', m.index);
   for (const m of fuente.matchAll(/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+dbo\.(\w+)/gi)) agregar(m[2], /^INSERT/i.test(m[1]) ? 'INSERT' : /^UPDATE/i.test(m[1]) ? 'UPDATE' : 'DELETE', m.index);
-  for (const m of fuente.matchAll(/\b(UPDATE|DELETE)\s+(pc|pic|tarea)\b/gi)) agregar(ALIAS[m[2].toLowerCase()], m[1].toUpperCase(), m.index, 'Alias SQL resuelto y revisado contra FROM/JOIN.');
+  for (const m of fuente.matchAll(/\b(UPDATE|DELETE)\s+(pc|pic|tarea|d)\b/gi)) agregar(ALIAS[m[2].toLowerCase()], m[1].toUpperCase(), m.index, 'Alias SQL resuelto y revisado contra FROM/JOIN.');
   if (archivo.endsWith('/ConfiguracionRepository.js')) {
     const indice = fuente.indexOf('UPDATE ${tabla}');
     if (indice < 0) throw Error('Revisar UPDATE dinámico de Configuración.');
@@ -61,11 +68,11 @@ function inventariar(root) {
   }
   recorrer(path.join(root,'src'));
   const modelo=new Map(MATRIZ.map(r=>[r.tabla,r]));
-  for(const r of referencias) if(!modelo.get(r.tabla)?.operaciones.includes(r.operacion)) throw Error(`Operación fuera de matriz: ${r.archivo}:${r.linea} ${r.operacion} ${r.tabla}.`);
+  for(const r of referencias) if(!modelo.get(r.tabla)?.operaciones.includes(r.operacion) && !PREPARADOS.some(p=>p.tabla===r.tabla&&p.archivo===r.archivo&&p.operaciones.includes(r.operacion))) throw Error(`Operación fuera de matriz: ${r.archivo}:${r.linea} ${r.operacion} ${r.tabla}.`);
   for(const r of MATRIZ) for(const operacion of r.operaciones) if(!referencias.some(e=>e.tabla===r.tabla && e.operacion===operacion))throw Error(`Permiso sin evidencia SQL: ${operacion} ${r.tabla}.`);
   const otras=llamadasSQL.filter(r=>!r.archivo.startsWith('src/repositories/') && r.archivo!=='src/services/AuthService.js');
   if(otras.length)throw Error('Aparecieron consultas fuera de los repositorios/AuthService: revisar antes de conceder.');
-  return {fuentes,referencias,llamadasSQL};
+  return {fuentes,referencias,llamadasSQL,preparados:PREPARADOS};
 }
 function filasEsperadas() {
   return MATRIZ.flatMap(r=>r.operaciones.map(op=>`(N'dbo.${r.tabla}',N'${op}')`)).join(',\n ');

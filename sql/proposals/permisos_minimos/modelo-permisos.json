@@ -191,7 +191,7 @@
     "fuentes": [
       {
         "archivo": "src/app.js",
-        "sha256": "22341a26656cf00cc92ae560d76d014246ec8f9924143851bdac6ff9decce1fe"
+        "sha256": "c917f1b3c28df50c7f083e5a458da90d037e33622da80f4260f7f5f803beaeb0"
       },
       {
         "archivo": "src/config/autenticacion.js",
@@ -210,12 +210,16 @@
         "sha256": "fd30183c915828016dff6b1ff63bd5c03770c71ae6d21397d2c889c7a4fb814f"
       },
       {
+        "archivo": "src/config/notificaciones.js",
+        "sha256": "47c881fba69b97cfc88240782add368f492fc67dce2b5bee7dfa4b599634252a"
+      },
+      {
         "archivo": "src/config/permisos.js",
-        "sha256": "a23aa3c9f0087f0707a23a8a7916e7426c6d9405866a4bd057e309da82519a6e"
+        "sha256": "0a67cf79f4c574c4993df52d7c01ef757d3dcf18efbc403dc8834a2adf958efe"
       },
       {
         "archivo": "src/config/politicasRutas.js",
-        "sha256": "cbb07fb1e8bede3b41bd1be91b0eb4c56d1a184b9133a56e9fc4de2f6ca2555f"
+        "sha256": "8373a06ec4165ebbd6399fc70926bba24990458bffb9b1bf365a93e77611262b"
       },
       {
         "archivo": "src/controllers/AirbnbInboundController.js",
@@ -268,6 +272,10 @@
       {
         "archivo": "src/controllers/LimpiezaController.js",
         "sha256": "0b7cec58e2eba03ffb7dd7970f7007e543a362bb80f32661318b716ee5d0f051"
+      },
+      {
+        "archivo": "src/controllers/NotificacionController.js",
+        "sha256": "9d7e77f65f8e72eeb6aebc5e7bcb7871a259e17ed0ddecfd6a0b480d8df7be2b"
       },
       {
         "archivo": "src/controllers/PropiedadCanalController.js",
@@ -374,6 +382,10 @@
         "sha256": "192604582aaca91c1deee62c047ecdefabb4c30f56e38de7c47253078866e211"
       },
       {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "sha256": "72782f4cbd5208dd0a71c5319dcd9867e26d89a0ef4231d6e866c0f9b0ced670"
+      },
+      {
         "archivo": "src/repositories/PropiedadCanalRepository.js",
         "sha256": "72e1b6466db45b141a57fe5ab094314c9f447c941782e4ab48051afbfbf73c7d"
       },
@@ -474,6 +486,10 @@
         "sha256": "749c68dbfa9bd3b23b8e9ac47d65694e57ee65f736cfd1b209ca531f490baecc"
       },
       {
+        "archivo": "src/routes/notificacionRoutes.js",
+        "sha256": "2f8083fa0a7c28b7b67c2f88fd3c1b26e3bdeb7b8ab3744c45d020a30bae7925"
+      },
+      {
         "archivo": "src/routes/propiedadRoutes.js",
         "sha256": "97052321a1000ba77d7244373d23ddb60fae2ca2c643a300a38f37b9bc3498bd"
       },
@@ -495,7 +511,7 @@
       },
       {
         "archivo": "src/security/erroresSeguros.js",
-        "sha256": "2f400999544965d2a2a55b362f1f86c44d5cc2797a83940a9e0bd382f6f3eab8"
+        "sha256": "7104b26125e8addb5ebb81796e8dd3a31b9a63cbcdc95f4a307283275f735386"
       },
       {
         "archivo": "src/security/proyecciones.js",
@@ -508,6 +524,10 @@
       {
         "archivo": "src/security/validacionConfiguracion.js",
         "sha256": "dba0db3ac5f804120f404a50e4b6b42e44d79050255275c0df4ded30ba0de313"
+      },
+      {
+        "archivo": "src/security/validacionNotificaciones.js",
+        "sha256": "9c17db9b59ad46d0f8332a606023e49cc57f2b3cc74b4a8508f94bd6bb0ff169"
       },
       {
         "archivo": "src/security/validacionReserva.js",
@@ -608,6 +628,10 @@
       {
         "archivo": "src/services/LimpiezaService.js",
         "sha256": "dd574e05a17f7a9bc82dce3d5b628d9b157af88c8348da91c233a4d674092315"
+      },
+      {
+        "archivo": "src/services/NotificacionService.js",
+        "sha256": "e116fe39fb913e3a289b511cbb3a1480910cca0a0f95864507b98f5093f8f3ba"
       },
       {
         "archivo": "src/services/PropiedadCanalService.js",
@@ -1733,6 +1757,150 @@
         "archivo": "src/repositories/LimpiezaRepository.js",
         "linea": 173,
         "metodo": "sincronizar",
+        "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 27,
+        "metodo": "avisos",
+        "nota": ""
+      },
+      {
+        "tabla": "Alertas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 29,
+        "metodo": "avisos",
+        "nota": ""
+      },
+      {
+        "tabla": "Empresas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 41,
+        "metodo": "comprobarModelo",
+        "nota": ""
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 53,
+        "metodo": "listarPersonales",
+        "nota": ""
+      },
+      {
+        "tabla": "Notificaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 53,
+        "metodo": "listarPersonales",
+        "nota": ""
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 57,
+        "metodo": "listarPersonales",
+        "nota": ""
+      },
+      {
+        "tabla": "Notificaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 57,
+        "metodo": "listarPersonales",
+        "nota": ""
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 66,
+        "metodo": "contarPersonales",
+        "nota": ""
+      },
+      {
+        "tabla": "Notificaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 66,
+        "metodo": "contarPersonales",
+        "nota": ""
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 73,
+        "metodo": "marcarPersonalLeida",
+        "nota": ""
+      },
+      {
+        "tabla": "Notificaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 73,
+        "metodo": "marcarPersonalLeida",
+        "nota": ""
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 77,
+        "metodo": "marcarPersonalLeida",
+        "nota": ""
+      },
+      {
+        "tabla": "Notificaciones",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 77,
+        "metodo": "marcarPersonalLeida",
+        "nota": ""
+      },
+      {
+        "tabla": "PreferenciasNotificacionUsuario",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 86,
+        "metodo": "preferencias",
+        "nota": ""
+      },
+      {
+        "tabla": "PreferenciasNotificacionUsuario",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 96,
+        "metodo": "guardarPreferencias",
+        "nota": ""
+      },
+      {
+        "tabla": "PreferenciasNotificacionUsuario",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 98,
+        "metodo": "guardarPreferencias",
+        "nota": ""
+      },
+      {
+        "tabla": "PreferenciasNotificacionUsuario",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 101,
+        "metodo": "guardarPreferencias",
+        "nota": ""
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 72,
+        "metodo": "marcarPersonalLeida",
         "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
       },
       {
@@ -3276,6 +3444,46 @@
         "tipo": "query"
       },
       {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 26,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 35,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 53,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 66,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 72,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 85,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 94,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "linea": 112,
+        "tipo": "query"
+      },
+      {
         "archivo": "src/repositories/PropiedadCanalRepository.js",
         "linea": 25,
         "tipo": "query"
@@ -3695,6 +3903,42 @@
         "linea": 76,
         "tipo": "query"
       }
+    ],
+    "preparados": [
+      {
+        "tabla": "PreferenciasNotificacionUsuario",
+        "operaciones": [
+          "SELECT",
+          "INSERT",
+          "UPDATE"
+        ],
+        "columnasUpdate": [
+          "Habilitada",
+          "FechaActualizacion"
+        ],
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "activacion": "HOSTFLOW_NOTIFICACIONES_SQL_ENABLED=1"
+      },
+      {
+        "tabla": "Notificaciones",
+        "operaciones": [
+          "SELECT"
+        ],
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "activacion": "HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1"
+      },
+      {
+        "tabla": "NotificacionDestinatarios",
+        "operaciones": [
+          "SELECT",
+          "UPDATE"
+        ],
+        "columnasUpdate": [
+          "FechaLectura"
+        ],
+        "archivo": "src/repositories/NotificacionRepository.js",
+        "activacion": "HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1"
+      }
     ]
   },
   "rutas": [
@@ -3709,6 +3953,42 @@
       "path": "/dashboard/historico",
       "permiso": "dashboard.ver",
       "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/notificaciones/avisos",
+      "permiso": "notificaciones.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/notificaciones/personales",
+      "permiso": "notificaciones.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "GET",
+      "path": "/notificaciones/personales/contador",
+      "permiso": "notificaciones.ver",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "PUT",
+      "path": "/notificaciones/personales/:id/lectura",
+      "permiso": "notificaciones.leer",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "GET",
+      "path": "/notificaciones/preferencias",
+      "permiso": "notificaciones.preferencias",
+      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+    },
+    {
+      "metodo": "PUT",
+      "path": "/notificaciones/preferencias",
+      "permiso": "notificaciones.preferencias",
+      "escriturasGET": null
     },
     {
       "metodo": "GET",
@@ -4323,7 +4603,7 @@
       "escriturasGET": null
     }
   ],
-  "pruebasSQLReales": "Pendientes: prohibido ejecutar GRANT/ALTER ROLE en esta tanda, incluso en local.",
+  "pruebasSQLReales": "Confirmadas por el usuario: esquema 25/25, permisos 8/8 positivos y 18/18 negativos. No repetidas por el agente; sin SQL real en la tanda de cierre.",
   "scripts": [
     {
       "archivo": "sql/proposals/permisos_minimos/00_inspeccion_administrativa_solo_lectura.sql",
@@ -4349,5 +4629,6 @@
       "archivo": "sql/proposals/permisos_minimos/05_verificacion_conexion_backend_solo_lectura.sql",
       "sha256": "d736e8ec0dd4cca572e3ec917ec8ab31fbfe37b2ae60a06bb27504ca3234d57f"
     }
-  ]
+  ],
+  "notificacionesPreparadas": "55/55 derechos directos confirmados por el usuario (48 historicos + siete nuevos, tres UPDATE por columna), CONNECT adicional conocido y roles amplios conservados. Activacion funcional pendiente; no repetir DDL/GRANT ni ejecutar los scripts congelados de retiro."
 }

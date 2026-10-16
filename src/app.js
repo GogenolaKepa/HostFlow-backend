@@ -18,6 +18,7 @@ const cambioPasswordObligatorio = require("./middlewares/cambioPasswordObligator
 const usuarioRoutes = require("./routes/usuarioRoutes");
 const rolRoutes = require("./routes/rolRoutes");
 const configuracionRoutes = require("./routes/configuracionRoutes");
+const notificacionRoutes = require("./routes/notificacionRoutes");
 const { autorizarAccion, autorizarCampos } = require("./middlewares/autorizacion");
 
 const dashboardRoutes = require(
@@ -105,6 +106,7 @@ app.use("/api", autorizarCampos);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/roles", rolRoutes);
 app.use("/api/configuracion", configuracionRoutes);
+app.use("/api/notificaciones", notificacionRoutes);
 
 app.use(
   "/api/calendario",

@@ -1,5 +1,10 @@
 const CODIGOS = new Set(["EREQUEST", "ELOGIN", "ESOCKET", "ETIMEOUT", "ECONNCLOSED", "ENOTOPEN", "ECONNREFUSED", "ENOTFOUND", "ECONNRESET"]);
 const MENSAJES_SEGURIDAD = Object.freeze({
+  NOTIFICACIONES_PERSONALES_NO_ACTIVADAS: "La bandeja personal todavía no está activada.",
+  NOTIFICACIONES_MODELO_PENDIENTE: "El modelo de notificaciones no está preparado.",
+  NOTIFICACIONES_NO_ACTIVADAS: "Las preferencias de notificaciones todavía no están activadas.",
+  NOTIFICACIONES_SOLO_LECTURA: "El guardado de preferencias todavía no está habilitado.",
+  NOTIFICACIONES_NO_DISPONIBLES: "No se pudieron consultar los avisos o preferencias. Reintentá más tarde.",
   AUTH_NO_DISPONIBLE: "La autenticación no está disponible.",
   SEGURIDAD_NO_DISPONIBLE: "La gestión de cuentas no está disponible. Reintente más tarde.",
   GESTION_SQL_PENDIENTE: "La gestión de cuentas estará disponible después de activar la autenticación SQL.",

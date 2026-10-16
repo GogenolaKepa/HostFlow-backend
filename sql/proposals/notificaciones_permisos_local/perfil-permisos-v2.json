@@ -1,0 +1,370 @@
+{
+  "estado": "Correcciones preparadas OFFLINE; no se repitio SQL ni DCL por el agente",
+  "historicasConfirmadasPorUsuario": 48,
+  "nuevasConfirmadasPorUsuario": 7,
+  "estadoAzureDeclarado": "DDL v2 verificado, 55/55 derechos directos confirmados, CONNECT adicional conocido, db_datareader/db_datawriter conservados. No repetir DDL ni GRANT.",
+  "permisoAdicionalConocido": {
+    "clase": 0,
+    "major_id": 0,
+    "minor_id": 0,
+    "permiso": "CONNECT",
+    "estado": "G"
+  },
+  "pruebaPermisosLocalDeclarada": {
+    "positivas": 8,
+    "negativas": 18,
+    "rollback": true,
+    "origen": "Confirmado por el usuario; copia SSMS corregida, sin nueva ejecucion por el agente"
+  },
+  "pruebaEsquemaLocalDeclarada": "25/25 por el usuario, no repetidas",
+  "historicas": [
+    {
+      "esquema": "dbo",
+      "tabla": "Roles",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Usuarios",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Usuarios",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Usuarios",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "CanalesReserva",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "EstadosReserva",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "EstadosPropiedad",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Propiedades",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Propiedades",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Propiedades",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Huespedes",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Huespedes",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Huespedes",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Reservas",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Reservas",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Reservas",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaEventos",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaEventos",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaMensajes",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaMensajes",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaMensajes",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaIncidencias",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaIncidencias",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaIncidencias",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaObservaciones",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaObservaciones",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaObservaciones",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "ReservaObservaciones",
+      "columna": "",
+      "permiso": "DELETE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "TareasLimpieza",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "TareasLimpieza",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "TareasLimpieza",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Alertas",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Alertas",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Alertas",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadCanales",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadCanales",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadCanales",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenes",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenes",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenes",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenCanales",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenCanales",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenCanales",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PropiedadImagenCanales",
+      "columna": "",
+      "permiso": "DELETE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Empresas",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Empresas",
+      "columna": "",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasOperativas",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasOperativas",
+      "columna": "",
+      "permiso": "UPDATE"
+    }
+  ],
+  "nuevas": [
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasNotificacionUsuario",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasNotificacionUsuario",
+      "columna": "",
+      "permiso": "INSERT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasNotificacionUsuario",
+      "columna": "Habilitada",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "PreferenciasNotificacionUsuario",
+      "columna": "FechaActualizacion",
+      "permiso": "UPDATE"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "Notificaciones",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "NotificacionDestinatarios",
+      "columna": "",
+      "permiso": "SELECT"
+    },
+    {
+      "esquema": "dbo",
+      "tabla": "NotificacionDestinatarios",
+      "columna": "FechaLectura",
+      "permiso": "UPDATE"
+    }
+  ],
+  "entradasTotales": 55,
+  "fuentes": {
+    "ddlV2": "da7a1840fe367fbc7811d5a090a96e219ba0a84737ea570e779e8aa1917ed6bc",
+    "cuerpoDDLOriginal": "48c6769152a1a17e4fa4848f9fda1e75c52740751c79de34618a70c5c22d56c7",
+    "cuerpoDDLClonado": "5ffa7ed7032e5e3868d1b7244555f14e269de00defa56308510e8eb5a23f22dc",
+    "grantsAzureSoloTexto": "0c90d993d52e27654962b8cc870e87a4e9ba26454b6a3abafac49c1221f46288"
+  },
+  "aislamiento": {
+    "base": "HostFlow_Test_Notificaciones_V2",
+    "esquema": "HF_Notificaciones_PermisosV2",
+    "usuario": "HF_Notificaciones_PruebaV2",
+    "sinLogin": true,
+    "credenciales": false,
+    "roles": [],
+    "noEsPerfilCompletoRuntime": "Solo siete derechos nuevos sobre copias; no concede 48 historicos en esta base."
+  }
+}

@@ -14,6 +14,10 @@ function agregar(prefijo, permiso, metodos) {
 }
 
 agregar("/dashboard", "dashboard.ver", { GET: ["/resumen", "/historico"] });
+agregar("/notificaciones", "notificaciones.ver", { GET: ["/avisos"] });
+agregar("/notificaciones", "notificaciones.ver", { GET: ["/personales", "/personales/contador"] });
+agregar("/notificaciones", "notificaciones.leer", { PUT: ["/personales/:id/lectura"] });
+agregar("/notificaciones", "notificaciones.preferencias", { GET: ["/preferencias"], PUT: ["/preferencias"] });
 agregar("/configuracion", "configuracion.ver", { GET: ["/empresa", "/operativas"] });
 agregar("/configuracion", "configuracion.modificar", { PUT: ["/empresa", "/operativas"] });
 agregar("/configuracion", "reservas.crear", { GET: ["/predeterminados-reserva"] });

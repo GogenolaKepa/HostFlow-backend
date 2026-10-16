@@ -36,10 +36,14 @@ require.cache[idDB]={id:idDB,filename:idDB,loaded:true,exports:{poolPromise:Prom
 test('auditoría: todas las operaciones detectadas tienen permiso y los 48 permisos tienen evidencia',()=>{
   const a=inventariar(root);
   assert.equal(MATRIZ.length,19);assert.equal(MATRIZ.reduce((n,r)=>n+r.operaciones.length,0),48);
-  assert.equal(a.llamadasSQL.length,118);
   const modelo=JSON.parse(fs.readFileSync(path.join(carpeta,'modelo-permisos.json'),'utf8'));
   assert.deepEqual(modelo.auditoria.fuentes,a.fuentes,'Revisar cambios de código antes de reutilizar una matriz congelada.');
   assert.deepEqual(modelo.auditoria.referencias,a.referencias);
+  assert.deepEqual(modelo.auditoria.llamadasSQL,a.llamadasSQL);
+  assert.deepEqual(modelo.auditoria.preparados,a.preparados);
+  assert.deepEqual(a.preparados.map(p=>p.tabla),['PreferenciasNotificacionUsuario','Notificaciones','NotificacionDestinatarios']);
+  const politicas=require('../src/config/politicasRutas').politicas;
+  assert.deepEqual(modelo.rutas.filter(r=>!r.path.startsWith('/auth/')).map(({metodo,path,permiso})=>({metodo,path,permiso})),politicas.map(({metodo,path,permiso})=>({metodo,path,permiso})),'El inventario de rutas debe incluir los contratos nuevos, aunque estén apagados.');
   for(const s of modelo.scripts)assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root,s.archivo))).digest('hex'),s.sha256);
 });
 
