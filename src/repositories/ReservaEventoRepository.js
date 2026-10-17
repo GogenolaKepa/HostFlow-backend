@@ -20,7 +20,7 @@ class ReservaEventoRepository {
   // - null.
   // =========================================================
 
-  async crearEvento(datos) {
+  async crearEvento(datos, conexion = null) {
     const {
       idReserva,
       tipo,
@@ -89,8 +89,7 @@ class ReservaEventoRepository {
         datosJson
       );
 
-    const pool =
-      await poolPromise;
+    const pool = conexion || await poolPromise;
 
     const request =
       pool

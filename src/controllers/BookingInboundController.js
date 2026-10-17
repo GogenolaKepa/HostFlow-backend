@@ -127,8 +127,11 @@ class BookingInboundController {
       error
     );
 
-    return res.status(400).json({
+    const codigo = error.codigo;
+    const status = codigo === "OPERACION_RESULTADO_INCIERTO" || codigo === "BOOKING_ACUSE_PENDIENTE" ? 500 : 400;
+    return res.status(status).json({
       mensaje: error.message,
+      codigo,
     });
   }
 }

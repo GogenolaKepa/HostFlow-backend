@@ -25,8 +25,22 @@ registrar('ReservaRepository','obtenerPorHuesped',()=>[...reservas.values()].map
 registrar('ReservaRepository','obtenerPorCanalEIdExterno',(canal,id)=>[...reservas.values()].find(r=>r.canal===canal&&r.idExterno===id));
 registrar('ReservaRepository','existeConflictoFechas',()=>conflicto);
 registrar('ReservaRepository','crearReservaManual',guardar);
+registrar('ReservaRepository','conCreacionManualAtomica',ejecutar=>
+  ejecutar({...repos.ReservaRepository, conexion:Object.freeze({fixture:true})}));
 registrar('ReservaRepository','crearReservaExterna',guardar);
-registrar('ReservaRepository','cancelarReservaManual',id=>{reservas.get(id).estado='Cancelada';});
+// Solo adapta la nueva frontera: los casos/assertions existentes siguen iguales.
+registrar('ReservaRepository','conAltaInboundBookingAtomica',ejecutar=>
+  ejecutar({...repos.ReservaRepository, conexion:Object.freeze({fixture:true})}));
+registrar('ReservaRepository','cancelarReservaManual',id=>{reservas.get(id).estado='Cancelada';return {...reservas.get(id)};});
+// Esta suite prueba reglas con memoria; la transacción real del código se cubre con driver ficticio aparte.
+registrar('ReservaRepository','conCancelacionManualAtomica',(_id, ejecutar)=>
+  ejecutar({...repos.ReservaRepository, conexion:Object.freeze({fixture:true})}));
+registrar('ReservaRepository','conEdicionManualAtomica',(_id, ejecutar)=>
+  ejecutar({...repos.ReservaRepository, conexion:Object.freeze({fixture:true})}));
+registrar('ReservaRepository','obtenerControlEdicion',id=>({idReserva:id,idEstadoReserva:12}));
+registrar('ReservaRepository','actualizarReservaManualCondicionada',(id,d)=>{
+  Object.assign(reservas.get(id),d);return {idReserva:id};
+});
 registrar('ReservaRepository','sincronizarEstadoExterno',(id,estado)=>{reservas.get(id).estado=estado;});
 registrar('ReservaRepository','sincronizarReservaExterna',(id,d)=>{Object.assign(reservas.get(id),d);});
 registrar('ReservaEventoRepository','crearEvento',d=>{eventos.push(d);return d;});
@@ -43,6 +57,7 @@ registrar('AlertaRepository','obtenerConflictosActivos',()=>[]);
 registrar('AlertaRepository','crearOActualizarPorClave',d=>{alertas.set(d.claveAlerta,{...d,idAlerta:alertas.get(d.claveAlerta)?.idAlerta||alertas.size+1});});
 registrar('AlertaRepository','obtenerGeneradasActivas',()=>[...alertas.values()].filter(a=>a.estado!=='Resuelta'));
 registrar('AlertaRepository','resolverPorId',id=>{for(const a of alertas.values())if(a.idAlerta===id)a.estado='Resuelta';});
+repos.AlertaRepository.conSincronizacion=async ejecutar=>ejecutar(repos.AlertaRepository);
 const reservaService=require('../src/services/ReservaService'),limpiezaService=require('../src/services/LimpiezaService');
 const huespedService=require('../src/services/HuespedService'),alertaService=require('../src/services/AlertaService');
 const channels={Booking:require('../src/services/BookingInboundService'),Airbnb:require('../src/services/AirbnbInboundService')};
@@ -71,9 +86,10 @@ test('cancelación manual conserva fila, registra evento y respeta canal/estado 
  for(const canal of ['Airbnb','Booking']){const ext=guardar({...datos(),canal});await assert.rejects(reservaService.cancelarReserva(ext.idReserva),/no pueden cancelarse directamente/);}
  assert.equal(eventos.filter(e=>e.tipo==='RESERVA_CANCELADA').length,1);
 });
-test('GET de limpiezas sincroniza antes de consultar y mantiene horizonte/zona existentes',async()=>{
- await limpiezaService.obtenerLimpiezas();assert.deepEqual(calls.map(c=>c.nombre),['sincronizar','obtenerTodas']);
- const [desde,hasta]=calls[0].args;assert.equal((Date.parse(hasta)-Date.parse(desde))/86400000,365);assert.equal(limpiezaService.zonaHoraria,'America/Argentina/Buenos_Aires');
+test('GET de limpiezas solo consulta; el comando explícito conserva horizonte/zona existentes',async()=>{
+ await limpiezaService.obtenerLimpiezas();assert.deepEqual(calls.map(c=>c.nombre),['obtenerTodas']);
+ await limpiezaService.sincronizarLimpiezas();
+ const [desde,hasta]=calls[1].args;assert.equal((Date.parse(hasta)-Date.parse(desde))/86400000,365);assert.equal(limpiezaService.zonaHoraria,'America/Argentina/Buenos_Aires');
 });
 test('tarea cancelada automáticamente, estado desconocido e ID inválido no se actualizan',async()=>{
  estadoLimpieza='Cancelada';await assert.rejects(limpiezaService.cambiarEstado(1,'Completada'),/cancelada automáticamente/);

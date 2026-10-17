@@ -3,6 +3,8 @@ const {test,beforeEach}=require('node:test'),assert=require('node:assert/strict'
 const memoria=new Map(),eventos=[];let escrituras=0,numero=0,conflicto=false;
 const reservaBase={idReserva:1,idPropiedad:1,idHuesped:1,canal:'Booking',estado:'Confirmada',fechaIngreso:'2028-02-28',fechaEgreso:'2028-03-02',horaIngreso:'15:00',horaEgreso:'10:00',cantidadHuespedes:2,montoEstimado:100};
 const repo={
+ conAltaInboundBookingAtomica:async ejecutar=>ejecutar({...repo,conexion:Object.freeze({fixture:true})}),
+ conCreacionManualAtomica:async ejecutar=>ejecutar({...repo,conexion:Object.freeze({fixture:true})}),
  obtenerPorId:async id=>({...reservaBase,idReserva:Number(id)}),
  obtenerPorCanalEIdExterno:async(canal,id)=>{const fila=memoria.get(`${canal}:${id}`);return fila?{...fila}:null;},
  obtenerPropiedadPorId:async()=>({idPropiedad:1,estado:'Activa',capacidadMaxima:4,nombre:'Propiedad ficticia'}),

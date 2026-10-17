@@ -103,7 +103,7 @@ class AlertaService {
   // CONSTRUIR ALERTAS ACTUALES
   // =========================================================
 
-  async construirAlertasOperativas() {
+  async construirAlertasOperativas(repositorio = AlertaRepository) {
     const hoy =
       this.obtenerFechaArgentina();
 
@@ -119,24 +119,24 @@ class AlertaService {
       checkins,
       conflictos,
     ] =
-      await Promise.all([
-        AlertaRepository
+      [
+        await repositorio
           .obtenerIncidenciasAlertables(),
 
-        AlertaRepository
+        await repositorio
           .obtenerSincronizacionesConError(),
 
-        AlertaRepository
+        await repositorio
           .obtenerCheckinsProximos(
             hoy,
             limiteCheckins
           ),
 
-        AlertaRepository
+        await repositorio
           .obtenerConflictosActivos(
             hoy
           ),
-      ]);
+      ]; // Una transacción mssql no admite requests simultáneos.
 
     const alertas = [];
 
@@ -437,9 +437,13 @@ class AlertaService {
   // =========================================================
 
   async sincronizarAlertasOperativas() {
+    return AlertaRepository.conSincronizacion(repositorio => this.reconciliarAlertas(repositorio));
+  }
+
+  async reconciliarAlertas(repositorio) {
     const alertasActuales =
       await this
-        .construirAlertasOperativas();
+        .construirAlertasOperativas(repositorio);
 
     const clavesActivas =
       new Set(
@@ -456,7 +460,7 @@ class AlertaService {
       const alerta
       of alertasActuales
     ) {
-      await AlertaRepository
+      await repositorio
         .crearOActualizarPorClave(
           alerta
         );
@@ -476,7 +480,7 @@ class AlertaService {
      * - conflicto que ya no existe.
      */
     const generadasActivas =
-      await AlertaRepository
+      await repositorio
         .obtenerGeneradasActivas();
 
     let resueltasAutomaticamente =
@@ -491,7 +495,7 @@ class AlertaService {
           alerta.claveAlerta
         )
       ) {
-        await AlertaRepository
+        await repositorio
           .resolverPorId(
             alerta.idAlerta
           );
@@ -518,14 +522,10 @@ class AlertaService {
   async obtenerAlertas(
     filtros = {}
   ) {
-    await this
-      .sincronizarAlertasOperativas();
-
     return this.obtenerAlertasPersistidas(filtros);
   }
 
-  // Lectura sin sincronizacion: permite montar/refrescar Inicio sin DML.
-  // Las consultas y acciones del Centro de alertas mantienen la sincronizacion.
+  // Todas las lecturas usan lo persistido; solo POST /alertas/sincronizar reconcilia.
   async obtenerAlertasPersistidas(filtros = {}) {
     return AlertaRepository
       .obtenerTodas(
@@ -534,9 +534,6 @@ class AlertaService {
   }
 
   async obtenerResumen() {
-    await this
-      .sincronizarAlertasOperativas();
-
     return AlertaRepository
       .obtenerResumen();
   }

@@ -4,12 +4,18 @@ const {
 } = require("../config/database");
 
 class LimpiezaRepository {
-  async sincronizar(
+  async sincronizar(fechaDesde, fechaHasta) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    return transaccionOperativa('HostFlow:Operaciones:Limpiezas', tx =>
+      this.sincronizarEnTransaccion(fechaDesde, fechaHasta, tx));
+  }
+
+  async sincronizarEnTransaccion(
     fechaDesde,
-    fechaHasta
+    fechaHasta,
+    conexion
   ) {
-    const pool =
-      await poolPromise;
+    const pool = conexion;
 
     const resultado =
       await pool
@@ -131,7 +137,11 @@ class LimpiezaRepository {
                tarea.IdReservaSalida
 
           WHERE
-            tarea.Estado <> N'Completada';
+            tarea.Estado <> N'Completada'
+            AND (tarea.Estado = N'Cancelada' OR EXISTS (
+              SELECT tarea.IdPropiedad, tarea.IdReservaSiguiente, tarea.FechaInicio, tarea.FechaLimite
+              EXCEPT SELECT candidata.IdPropiedad, candidata.IdReservaSiguiente, candidata.FechaInicio, candidata.FechaLimite
+            ));
 
           DECLARE @Actualizadas INT =
             @@ROWCOUNT;
@@ -527,11 +537,8 @@ class LimpiezaRepository {
     return resultado.recordset;
   }
 
-  async obtenerPorId(
-    idTareaLimpieza
-  ) {
-    const pool =
-      await poolPromise;
+  async obtenerPorId(idTareaLimpieza, conexion = null) {
+    const pool = conexion || await poolPromise;
 
     const resultado =
       await pool
@@ -623,14 +630,16 @@ class LimpiezaRepository {
     );
   }
 
-  async cambiarEstado(
-    idTareaLimpieza,
-    estado
-  ) {
-    const pool =
-      await poolPromise;
+  async cambiarEstado(idTareaLimpieza, estado) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    return transaccionOperativa('HostFlow:Operaciones:Limpiezas', tx =>
+      this.cambiarEstadoEnTransaccion(idTareaLimpieza, estado, tx));
+  }
 
-    await pool
+  async cambiarEstadoEnTransaccion(idTareaLimpieza, estado, conexion) {
+    const pool = conexion;
+
+    const resultado = await pool
       .request()
       .input(
         "idTareaLimpieza",
@@ -655,12 +664,11 @@ class LimpiezaRepository {
 
         WHERE
           IdTareaLimpieza =
-            @idTareaLimpieza;
+            @idTareaLimpieza AND Estado <> N'Cancelada';
       `);
+    if (resultado.rowsAffected[0] !== 1) throw new Error('La tarea no existe o fue cancelada. Recargá las limpiezas.');
 
-    return this.obtenerPorId(
-      idTareaLimpieza
-    );
+    return this.obtenerPorId(idTareaLimpieza, conexion);
   }
 
   async obtenerResumen() {

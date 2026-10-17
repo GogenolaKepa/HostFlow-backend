@@ -1,5 +1,7 @@
 const CODIGOS = new Set(["EREQUEST", "ELOGIN", "ESOCKET", "ETIMEOUT", "ECONNCLOSED", "ENOTOPEN", "ECONNREFUSED", "ENOTFOUND", "ECONNRESET"]);
 const MENSAJES_SEGURIDAD = Object.freeze({
+  OPERACION_RESULTADO_INCIERTO: "No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.",
+  BOOKING_ACUSE_PENDIENTE: "Los datos de la reserva están confirmados en HostFlow, pero no se pudo confirmar el acuse del evento de Booking. Recargá los datos antes de volver a procesarlo.",
   NOTIFICACIONES_PERSONALES_NO_ACTIVADAS: "La bandeja personal todavía no está activada.",
   NOTIFICACIONES_MODELO_PENDIENTE: "El modelo de notificaciones no está preparado.",
   NOTIFICACIONES_NO_ACTIVADAS: "Las preferencias de notificaciones todavía no están activadas.",

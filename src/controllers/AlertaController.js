@@ -114,6 +114,7 @@ class AlertaController {
       return res.status(500).json({
         mensaje:
           "No se pudieron sincronizar las alertas operativas.",
+        codigo: error.codigo,
 
         error:
           error.message,

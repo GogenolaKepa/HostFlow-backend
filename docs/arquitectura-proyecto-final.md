@@ -106,18 +106,22 @@ La reserva manual rechaza un conflicto. Una reserva externa confirmada conserva
 la información recibida y registra el conflicto para revisión. Airbnb y Booking
 son **simulaciones en memoria**, no integraciones oficiales ni colas duraderas.
 
-La serialización nueva evita procesamiento simultáneo del mismo canal/ID externo
-en un proceso. No ofrece exclusión entre instancias ni transacción atómica entre
-reserva, huésped, timeline y acuse. La comprobación manual de disponibilidad sigue
-sin una garantía transaccional global entre solicitudes concurrentes; un despliegue
-con múltiples procesos requiere un diseño específico y evidencia de motor.
+La cola en memoria serializa el mismo canal/ID externo en un proceso y no es
+duradera. El CRUD manual y el alta inbound Booking comparten un applock SQL
+transaccional con finalización; sus filas e historial se confirman juntos.
+El acuse de Booking sigue fuera de SQL y solo ocurre después del commit.
+La exclusión depende de que todos los escritores participen: otros flujos de
+canales y SQL directo siguen fuera del protocolo. Faltan garantías globales y
+evidencia de carreras/fallos del motor; el piloto feliz no las sustituye.
 
-GET `/reservas` y `/reservas/:id` finalizan vencidas; GET de Limpiezas sincroniza
-tareas; GET de Alertas sincroniza y resuelve condiciones; GET `/recomendaciones`
-consulta Limpiezas y puede escribir. HEAD hereda GET. No usar navegación ni estos
-endpoints como verificación de lectura en producción. Dashboard y avisos operativos
-leen alertas persistidas sin sincronizarlas; Calendario puede consultar Limpiezas
-desde el frontend, aunque su endpoint propio sea de lectura.
+La normalización local separa esos efectos: GET/HEAD de Reservas, Limpiezas,
+Alertas y FlowIA solo consultan. Finalizar vencidas es un POST administrativo
+confirmado, y sincronizar Limpiezas/Alertas son comandos explícitos. La UI no los
+ejecuta al navegar. No hay un job nuevo; las vistas usan el estado persistido de
+la última ejecución. Ver [contrato y límites](normalizacion-operativa.md).
+La finalización/timeline, las reconciliaciones, el CRUD manual y el alta inbound
+Booking usan las unidades transaccionales documentadas allí. La coordinación
+global, otros flujos externos y la durabilidad conservan límites pendientes.
 
 FlowIA calcula señales determinísticas y puede enriquecer su explicación mediante
 `IaService` y Gemini. La falta o falla del proveedor conserva el motor de reglas.

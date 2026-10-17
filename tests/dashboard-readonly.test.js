@@ -77,13 +77,13 @@ test("Inicio de Operador y recarga no sincronizan ni filtran informacion economi
   assert.equal(syncCalls, 0);
 });
 
-test("Centro de alertas conserva sincronizacion antes de leer con los mismos filtros", async () => {
+test("Centro de alertas consulta los mismos filtros sin sincronizacion implícita", async () => {
   const beforeQueries = queries.length;
   let called = false;
   AlertaService.sincronizarAlertasOperativas = async () => { called = true; };
   try {
     const data = await AlertaService.obtenerAlertas({ estado: "Nueva" });
-    assert.equal(called, true); assert.equal(data.length, 6);
+    assert.equal(called, false); assert.equal(data.length, 6);
     assert.equal(queries.length, beforeQueries + 1);
   } finally { AlertaService.sincronizarAlertasOperativas = async () => { syncCalls++; throw new Error("Sincronizacion prohibida al consultar Inicio."); }; }
 });

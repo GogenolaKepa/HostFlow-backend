@@ -105,9 +105,6 @@ class LimpiezaService {
   async obtenerLimpiezas(
     filtros = {}
   ) {
-    await this
-      .sincronizarLimpiezas();
-
     return LimpiezaRepository
       .obtenerTodas(
         filtros
@@ -115,9 +112,6 @@ class LimpiezaService {
   }
 
   async obtenerResumen() {
-    await this
-      .sincronizarLimpiezas();
-
     return LimpiezaRepository
       .obtenerResumen();
   }

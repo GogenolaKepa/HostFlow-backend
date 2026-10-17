@@ -155,83 +155,21 @@ class ReservaService {
   // =========================================================
 
   async finalizarReservasVencidas() {
-    const fechaActual =
-      this.obtenerFechaActualArgentina();
+    return ReservaRepository.finalizarConEventos(this.obtenerFechaActualArgentina());
+  }
 
-    const resultado =
-      await ReservaRepository
-        .finalizarReservasVencidas(
-          fechaActual
-        );
+  esReservaVencida(reserva) {
+    return reserva?.estado === "Confirmada" && reserva.fechaEgreso < this.obtenerFechaActualArgentina();
+  }
 
-    // =========================================================
-    // TIMELINE - FINALIZACIÓN AUTOMÁTICA
-    // =========================================================
-    //
-    // El Repository devuelve únicamente los IDs de reservas
-    // que efectivamente pasaron de Confirmada a Finalizada.
-    //
-    // Como una reserva ya Finalizada no vuelve a entrar en ese
-    // UPDATE, este evento se registra una sola vez.
-    // =========================================================
-
-    for (
-      const idReserva
-      of resultado.idsReservas || []
-    ) {
-      const reserva =
-        await ReservaRepository
-          .obtenerPorId(
-            idReserva
-          );
-
-      await this.registrarEventoReserva({
-        idReserva,
-
-        tipo:
-          "RESERVA_FINALIZADA",
-
-        titulo:
-          "Reserva finalizada automáticamente",
-
-        descripcion:
-          "HostFlow marcó la reserva como finalizada porque la fecha de egreso ya había pasado.",
-
-        origen:
-          "Sistema",
-
-        datosJson: {
-          estadoAnterior:
-            "Confirmada",
-
-          estadoNuevo:
-            "Finalizada",
-
-          fechaEgreso:
-            reserva?.fechaEgreso ||
-            null,
-
-          canal:
-            reserva?.canal ||
-            null,
-
-          propiedad:
-            reserva?.propiedad ||
-            null,
-
-          huesped:
-            reserva?.huesped ||
-            null,
-        },
-      });
+  validarReservaNoVencida(reserva) {
+    if (this.esReservaVencida(reserva)) {
+      throw new Error("La reserva está vencida y corresponde finalizarla. Un Administrador debe ejecutar Finalizar vencidas antes de gestionarla.");
     }
-
-    return resultado;
   }
 
   async obtenerReservas() {
-    await this
-      .finalizarReservasVencidas();
+
   const reservasDb =
     await ReservaRepository.obtenerTodas();
 
@@ -253,6 +191,7 @@ class ReservaService {
 
       return {
         ...reserva,
+        finalizacionPendiente: this.esReservaVencida(reserva),
 
         tipoGestion:
           ChannelService.obtenerTipoGestion(
@@ -260,9 +199,7 @@ class ReservaService {
           ),
 
         accionesDisponibles:
-          ChannelService.obtenerAccionesDisponibles(
-            reserva
-          ),
+          ChannelService.obtenerAccionesDisponibles(this.esReservaVencida(reserva) ? { ...reserva, estado: "Finalizada" } : reserva),
 
         solicitudAirbnbPendiente:
           solicitudAirbnbPendiente
@@ -1069,12 +1006,11 @@ class ReservaService {
       );
   }
 
-  async obtenerReservaPorId(idReserva) {
-  await this
-    .finalizarReservasVencidas();
+  async obtenerReservaPorId(idReserva, repositorio = ReservaRepository) {
+
 
   const reserva =
-    await ReservaRepository.obtenerPorId(
+    await repositorio.obtenerPorId(
       idReserva
     );
 
@@ -1100,6 +1036,7 @@ class ReservaService {
 
   return {
     ...reserva,
+    finalizacionPendiente: this.esReservaVencida(reserva),
 
     tipoGestion:
       ChannelService.obtenerTipoGestion(
@@ -1107,9 +1044,7 @@ class ReservaService {
       ),
 
     accionesDisponibles:
-      ChannelService.obtenerAccionesDisponibles(
-        reserva
-      ),
+      ChannelService.obtenerAccionesDisponibles(this.esReservaVencida(reserva) ? { ...reserva, estado: "Finalizada" } : reserva),
 
     solicitudAirbnbPendiente:
       solicitudAirbnbPendiente
@@ -1156,8 +1091,7 @@ class ReservaService {
   // =========================================================
 
   async crearReserva(datos) {
-  await this
-    .finalizarReservasVencidas();
+
 
   const {
     idPropiedad,
@@ -1226,8 +1160,9 @@ class ReservaService {
   // PROPIEDAD
   // =========================================================
 
+  return ReservaRepository.conCreacionManualAtomica(async contexto => {
   const propiedad =
-    await ReservaRepository.obtenerPropiedadPorId(
+    await contexto.obtenerPropiedadPorId(
       idPropiedad
     );
 
@@ -1250,7 +1185,7 @@ class ReservaService {
   // =========================================================
 
   const huesped =
-    await ReservaRepository.obtenerHuespedPorId(
+    await contexto.obtenerHuespedPorId(
       idHuesped
     );
 
@@ -1281,7 +1216,7 @@ class ReservaService {
   // =========================================================
 
   const existeConflicto =
-    await ReservaRepository.existeConflictoFechas(
+    await contexto.existeConflictoFechas(
       idPropiedad,
       fechaIngreso,
       fechaEgreso
@@ -1298,7 +1233,7 @@ class ReservaService {
   // =========================================================
 
   const reservaCreada =
-    await ReservaRepository.crearReservaManual({
+    await contexto.crearReservaManual({
       idPropiedad,
       idHuesped,
       fechaIngreso,
@@ -1311,6 +1246,9 @@ class ReservaService {
       montoEstimado:
         montoFinal,
     });
+  if (!reservaCreada || !idReservaValido(reservaCreada.idReserva)) {
+    throw new Error("No se pudo confirmar la creación de la reserva.");
+  }
 
   // =========================================================
   // TIMELINE - RESERVA CREADA
@@ -1320,7 +1258,7 @@ class ReservaService {
   // No generamos eventos retroactivos para reservas antiguas.
   // =========================================================
 
-  await this.registrarEventoReserva({
+  const evento = await ReservaEventoRepository.crearEvento({
     idReserva:
       reservaCreada.idReserva,
 
@@ -1371,7 +1309,10 @@ class ReservaService {
       montoEstimado:
         montoFinal,
     },
-  });
+  }, contexto.conexion);
+  if (!evento || evento.idReserva !== reservaCreada.idReserva || evento.tipo !== "RESERVA_CREADA") {
+    throw new Error("No se pudo confirmar el historial de creación.");
+  }
 
   /*
    * Volvemos a obtenerla mediante el Service
@@ -1379,22 +1320,23 @@ class ReservaService {
    * operaciones de canal, etc.
    */
   return await this.obtenerReservaPorId(
-    reservaCreada.idReserva
+    reservaCreada.idReserva,
+    contexto
   );
+  });
 }
 
   async modificarReserva(idReserva, datos) {
-  await this
-    .finalizarReservasVencidas();
-
+  return ReservaRepository.conEdicionManualAtomica(idReserva, async contexto => {
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
   // =========================================================
 
   const reserva =
-    await ReservaRepository.obtenerPorId(
+    await contexto.obtenerPorId(
       idReserva
     );
+  this.validarReservaNoVencida(reserva);
 
   if (!reserva) {
     throw new Error(
@@ -1424,6 +1366,7 @@ class ReservaService {
       "La reserva ya no admite modificaciones."
     );
   }
+  const control = await contexto.obtenerControlEdicion(reserva.idReserva);
 
   // =========================================================
   // NUEVOS DATOS
@@ -1511,7 +1454,7 @@ class ReservaService {
   // =========================================================
 
   const existeConflicto =
-    await ReservaRepository.existeConflictoFechas(
+    await contexto.existeConflictoFechas(
       reserva.idPropiedad,
       nuevaFechaIngreso,
       nuevaFechaEgreso,
@@ -1528,7 +1471,7 @@ class ReservaService {
   // ACTUALIZAR EN AZURE SQL
   // =========================================================
 
-  await ReservaRepository.actualizarReservaManual(
+  await contexto.actualizarReservaManualCondicionada(
     reserva.idReserva,
     {
       fechaIngreso: nuevaFechaIngreso,
@@ -1537,7 +1480,8 @@ class ReservaService {
       horaEgreso: nuevaHoraEgreso,
       estado: nuevoEstado,
       montoEstimado: nuevoMonto,
-    }
+    },
+    control
   );
 
   // =========================================================
@@ -1611,7 +1555,7 @@ class ReservaService {
   if (
     camposModificados.length > 0
   ) {
-    await this.registrarEventoReserva({
+    const evento = await ReservaEventoRepository.crearEvento({
       idReserva:
         reserva.idReserva,
 
@@ -1676,28 +1620,32 @@ class ReservaService {
             ),
         },
       },
-    });
+    }, contexto.conexion);
+    if (!evento || evento.idReserva !== reserva.idReserva || evento.tipo !== "RESERVA_MODIFICADA") {
+      throw new Error("No se pudo confirmar el historial de modificación.");
+    }
   }
 
   // Volvemos a obtenerla para agregar
   // tipoGestion, accionesDisponibles, etc.
   return await this.obtenerReservaPorId(
-    reserva.idReserva
+    reserva.idReserva,
+    contexto
   );
+  });
 }
 
   async cancelarReserva(idReserva) {
-  await this
-    .finalizarReservasVencidas();
-
+  return ReservaRepository.conCancelacionManualAtomica(idReserva, async contexto => {
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
   // =========================================================
 
   const reserva =
-    await ReservaRepository.obtenerPorId(
+    await contexto.obtenerPorId(
       idReserva
     );
+  this.validarReservaNoVencida(reserva);
 
   if (!reserva) {
     throw new Error(
@@ -1739,15 +1687,19 @@ class ReservaService {
   // CANCELAR EN AZURE SQL
   // =========================================================
 
-  await ReservaRepository.cancelarReservaManual(
+  const cancelada = await contexto.cancelarReservaManual(
     reserva.idReserva
   );
+  if (!cancelada || cancelada.estado !== "Cancelada") {
+    throw new Error("No se pudo confirmar la cancelación de la reserva.");
+  }
 
   // =========================================================
   // TIMELINE - RESERVA CANCELADA
   // =========================================================
 
-  await this.registrarEventoReserva({
+  // Obligatorio: no usar registrarEventoReserva, que tolera errores en flujos legacy.
+  const evento = await ReservaEventoRepository.crearEvento({
     idReserva:
       reserva.idReserva,
 
@@ -1781,13 +1733,22 @@ class ReservaService {
           reserva.montoEstimado
         ),
     },
-  });
+  }, contexto.conexion);
+  if (!evento || evento.idReserva !== reserva.idReserva || evento.tipo !== "RESERVA_CANCELADA") {
+    throw new Error("No se pudo confirmar el historial de cancelación.");
+  }
 
   // La volvemos a obtener para que regrese con
   // tipoGestion, accionesDisponibles, etc.
-  return await this.obtenerReservaPorId(
-    reserva.idReserva
+  const resultado = await this.obtenerReservaPorId(
+    reserva.idReserva,
+    contexto
   );
+  if (resultado.estado !== "Cancelada") {
+    throw new Error("No se pudo confirmar la cancelación de la reserva.");
+  }
+  return resultado;
+  });
 }
 
   // =========================================================
@@ -1798,8 +1759,7 @@ class ReservaService {
   idReserva,
   datos
 ) {
-  await this
-    .finalizarReservasVencidas();
+
 
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
@@ -1809,6 +1769,7 @@ class ReservaService {
     await ReservaRepository.obtenerPorId(
       idReserva
     );
+  this.validarReservaNoVencida(reserva);
 
   if (!reserva) {
     throw new Error(
@@ -2452,13 +2413,13 @@ class ReservaService {
   idReserva,
   datos
 ) {
-  await this
-    .finalizarReservasVencidas();
+
 
   const reserva =
     await ReservaRepository.obtenerPorId(
       idReserva
     );
+  this.validarReservaNoVencida(reserva);
 
   if (!reserva) {
     throw new Error(
@@ -2639,13 +2600,13 @@ async reportarNoShowBooking(
   idReserva,
   datos = {}
 ) {
-  await this
-    .finalizarReservasVencidas();
+
 
   const reserva =
     await ReservaRepository.obtenerPorId(
       idReserva
     );
+  this.validarReservaNoVencida(reserva);
 
   if (!reserva) {
     throw new Error(
@@ -3126,33 +3087,26 @@ async procesarEventoBookingEnSerie(
 async procesarNuevaReservaBooking(
   evento
 ) {
+  const resultado = await ReservaRepository.conAltaInboundBookingAtomica(async contexto => {
   // =========================================================
   // IDEMPOTENCIA - BUSCAR ID EXTERNO EN AZURE
   // =========================================================
 
   const reservaExistente =
-    await ReservaRepository
+    await contexto
       .obtenerPorCanalEIdExterno(
         "Booking",
         evento.idExterno
       );
 
   if (reservaExistente) {
-    const eventoProcesado =
-      BookingInboundService
-        .marcarEventoProcesado(
-          evento.idEvento
-        );
-
     const reservaActual =
       await this.obtenerReservaPorId(
-        reservaExistente.idReserva
+        reservaExistente.idReserva,
+        contexto
       );
 
     return {
-      evento:
-        eventoProcesado,
-
       reserva:
         reservaActual,
 
@@ -3183,7 +3137,7 @@ async procesarNuevaReservaBooking(
   // =========================================================
 
   const propiedad =
-    await ReservaRepository
+    await contexto
       .obtenerPropiedadPorId(
         datos.idPropiedad
       );
@@ -3277,7 +3231,7 @@ async procesarNuevaReservaBooking(
     "Booking";
 
   let huesped =
-    await ReservaRepository
+    await contexto
       .obtenerHuespedPorNombreYApellido(
         nombreHuesped,
         apellidoHuesped
@@ -3285,7 +3239,7 @@ async procesarNuevaReservaBooking(
 
   if (!huesped) {
     huesped =
-      await ReservaRepository
+      await contexto
         .crearHuespedExterno({
           nombre:
             nombreHuesped,
@@ -3313,6 +3267,9 @@ async procesarNuevaReservaBooking(
             "Booking",
         });
   }
+  if (!huesped || !idReservaValido(huesped.idHuesped)) {
+    throw new Error("No se pudo confirmar el huésped de la reserva de Booking.");
+  }
 
   // =========================================================
   // DETECTAR CONFLICTO
@@ -3326,7 +3283,7 @@ async procesarNuevaReservaBooking(
   // =========================================================
 
   const conflictoDetectado =
-    await ReservaRepository
+    await contexto
       .existeConflictoFechas(
         propiedad.idPropiedad,
         datos.fechaIngreso,
@@ -3338,7 +3295,7 @@ async procesarNuevaReservaBooking(
   // =========================================================
 
   const nuevaReserva =
-    await ReservaRepository
+    await contexto
       .crearReservaExterna({
         idPropiedad:
           propiedad.idPropiedad,
@@ -3371,9 +3328,12 @@ async procesarNuevaReservaBooking(
         idExterno:
           evento.idExterno,
       });
+  if (!nuevaReserva || !idReservaValido(nuevaReserva.idReserva)) {
+    throw new Error("No se pudo confirmar la creación de la reserva de Booking.");
+  }
 
 
-  await this.registrarEventoReserva({
+  const eventoRecibido = await ReservaEventoRepository.crearEvento({
     idReserva:
       nuevaReserva.idReserva,
 
@@ -3426,39 +3386,35 @@ async procesarNuevaReservaBooking(
 
       conflictoDetectado,
     },
-  });
-
-if (conflictoDetectado) {
-    await this.registrarConflictoReserva({
-      idReserva:
-        nuevaReserva.idReserva,
-
-      canal:
-        "Booking",
-
-      fechaIngreso:
-        datos.fechaIngreso,
-
-      fechaEgreso:
-        datos.fechaEgreso,
-
-      contexto:
-        "RESERVA_RECIBIDA",
-
-      idExterno:
-        evento.idExterno,
-    });
+  }, contexto.conexion);
+  if (!eventoRecibido || eventoRecibido.idReserva !== nuevaReserva.idReserva ||
+      eventoRecibido.tipo !== "RESERVA_RECIBIDA" || eventoRecibido.origen !== "Booking") {
+    throw new Error("No se pudo confirmar el historial de recepción de Booking.");
   }
 
-  // =========================================================
-  // MARCAR EVENTO COMO PROCESADO
-  // =========================================================
-
-  const eventoProcesado =
-    BookingInboundService
-      .marcarEventoProcesado(
-        evento.idEvento
-      );
+if (conflictoDetectado) {
+    const eventoConflicto = await ReservaEventoRepository.crearEvento({
+      idReserva:
+        nuevaReserva.idReserva,
+      tipo: "CONFLICTO_DETECTADO",
+      titulo: "Conflicto de disponibilidad detectado",
+      descripcion: "HostFlow detectó una superposición con otra reserva. Como el cambio proviene de un canal externo confirmado, la información del canal se conserva y el conflicto queda registrado para revisión.",
+      origen: "Sistema",
+      datosJson: {
+        canal: "Booking",
+        contexto: "RESERVA_RECIBIDA",
+        fechaIngreso: datos.fechaIngreso || null,
+        fechaEgreso: datos.fechaEgreso || null,
+        idExterno: evento.idExterno || null,
+        idOperacion: null,
+        idSolicitud: null,
+      },
+    }, contexto.conexion);
+    if (!eventoConflicto || eventoConflicto.idReserva !== nuevaReserva.idReserva ||
+        eventoConflicto.tipo !== "CONFLICTO_DETECTADO" || eventoConflicto.origen !== "Sistema") {
+      throw new Error("No se pudo confirmar el historial de conflicto de Booking.");
+    }
+  }
 
   // =========================================================
   // DEVOLVER RESERVA COMPLETA
@@ -3466,13 +3422,11 @@ if (conflictoDetectado) {
 
   const reservaActual =
     await this.obtenerReservaPorId(
-      nuevaReserva.idReserva
+      nuevaReserva.idReserva,
+      contexto
     );
 
   return {
-    evento:
-      eventoProcesado,
-
     reserva:
       reservaActual,
 
@@ -3485,6 +3439,21 @@ if (conflictoDetectado) {
         ? "La reserva fue recibida desde Booking, pero genera un conflicto con otra reserva existente en HostFlow."
         : null,
   };
+  });
+
+  // Fuera de la unidad SQL: un fallo del ACK no revierte un commit confirmado.
+  let eventoProcesado;
+  try {
+    eventoProcesado = BookingInboundService.marcarEventoProcesado(evento.idEvento);
+    if (!eventoProcesado || eventoProcesado.idEvento !== evento.idEvento ||
+        eventoProcesado.canal !== "Booking" || eventoProcesado.estado !== "Procesado") {
+      throw new Error("Acuse de Booking no confirmado.");
+    }
+  } catch {
+    throw Object.assign(new Error("Los datos de la reserva están confirmados en HostFlow, pero no se pudo confirmar el acuse del evento de Booking. Recargá los datos antes de volver a procesarlo."),
+      { codigo: "BOOKING_ACUSE_PENDIENTE" });
+  }
+  return { evento: eventoProcesado, ...resultado };
 }
 
 async procesarModificacionReservaBooking(
@@ -5010,9 +4979,7 @@ async procesarCancelacionReservaAirbnb(
         ),
 
       accionesDisponibles:
-        ChannelService.obtenerAccionesDisponibles(
-          reserva
-        ),
+        ChannelService.obtenerAccionesDisponibles(this.esReservaVencida(reserva) ? { ...reserva, estado: "Finalizada" } : reserva),
 
       // =====================================================
       // AIRBNB

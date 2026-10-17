@@ -4,6 +4,9 @@ const ReservaController = require("../controllers/ReservaController");
 
 const router = express.Router();
 
+// Comando explícito, separado de GET/HEAD y protegido por reservas.estado.
+router.post('/finalizar-vencidas', (req, res) => ReservaController.finalizarVencidas(req, res));
+
 // =========================================================
 // CONSULTAS
 // =========================================================

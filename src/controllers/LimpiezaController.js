@@ -108,6 +108,7 @@ class LimpiezaController {
           mensaje:
             error.message ||
             "No se pudieron sincronizar las tareas de limpieza.",
+          codigo: error.codigo,
         });
     }
   }
@@ -165,6 +166,7 @@ class LimpiezaController {
         )
         .json({
           mensaje,
+          codigo: error.codigo,
         });
     }
   }

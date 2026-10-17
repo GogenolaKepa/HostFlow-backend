@@ -40,6 +40,7 @@ agregar("/propiedades", "imagenes.gestionar", {
 });
 agregar("/reservas", "reservas.ver", { GET: ["/", "/:id", "/:id/eventos"] });
 agregar("/reservas", "reservas.crear", { POST: ["/"] });
+agregar("/reservas", "reservas.estado", { POST: ["/finalizar-vencidas"] });
 agregar("/reservas", "reservas.modificar", { PUT: ["/:id"] });
 agregar("/reservas", "reservas.cancelar", { PATCH: ["/:id/cancelar"] });
 agregar("/reservas", "reservas.canales", { POST: ["/:id/airbnb/propuesta", "/:id/booking/estadia", "/:id/booking/no-show"] });

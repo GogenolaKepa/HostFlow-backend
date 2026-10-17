@@ -75,7 +75,7 @@
         "INSERT",
         "UPDATE"
       ],
-      "motivo": "Alta/edición/cancelación/estado/canales y finalización automática en GET."
+      "motivo": "Alta/edición/cancelación/estado/canales y comando explícito de finalización de vencidas."
     },
     {
       "esquema": "dbo",
@@ -125,7 +125,7 @@
         "INSERT",
         "UPDATE"
       ],
-      "motivo": "Sincronización automática y cambios de estado, incluidos GET de Limpiezas y FlowIA."
+      "motivo": "Sincronización explícita transaccional y cambios de estado; GET de Limpiezas y FlowIA solo leen."
     },
     {
       "esquema": "dbo",
@@ -135,7 +135,7 @@
         "INSERT",
         "UPDATE"
       ],
-      "motivo": "Upsert, lectura y resolución automática/manual; GET puede sincronizar."
+      "motivo": "Upsert y resolución automática mediante POST explícito; GET solo lee."
     },
     {
       "esquema": "dbo",
@@ -219,7 +219,7 @@
       },
       {
         "archivo": "src/config/politicasRutas.js",
-        "sha256": "8373a06ec4165ebbd6399fc70926bba24990458bffb9b1bf365a93e77611262b"
+        "sha256": "ea1377213bffa9c7bdf646564c4e747192367b2ae226414521c0f8244987641f"
       },
       {
         "archivo": "src/controllers/AirbnbInboundController.js",
@@ -235,7 +235,7 @@
       },
       {
         "archivo": "src/controllers/AlertaController.js",
-        "sha256": "a6c4a95c471f513d20f277f764e75781009966db132c3f83796349ad72df5441"
+        "sha256": "a966457d377c138262f9d6c98dc8f2010b6baa919266b9e2748e3b545603fc65"
       },
       {
         "archivo": "src/controllers/AuthController.js",
@@ -243,7 +243,7 @@
       },
       {
         "archivo": "src/controllers/BookingInboundController.js",
-        "sha256": "c4dfd5287f6aac93b6c81109841571ad19fbc7b1c45cce484b0862fbebd39c50"
+        "sha256": "f2da9111e5ca7c6954ca4e091874f5bb914763f37e91385b21eaaf3ee7394e41"
       },
       {
         "archivo": "src/controllers/BookingPropertyImageInboundController.js",
@@ -271,7 +271,7 @@
       },
       {
         "archivo": "src/controllers/LimpiezaController.js",
-        "sha256": "0b7cec58e2eba03ffb7dd7970f7007e543a362bb80f32661318b716ee5d0f051"
+        "sha256": "b0a45811f47581158241625423b676dd705f816c9dfdcd061ee7bd8ec995f7b0"
       },
       {
         "archivo": "src/controllers/NotificacionController.js",
@@ -295,7 +295,7 @@
       },
       {
         "archivo": "src/controllers/ReservaController.js",
-        "sha256": "980772f06cda1ca1f63c479a5fcb34f836e46dd9771e0c5eda409b3096eba001"
+        "sha256": "8f1f7866b2a83f964b8f00ba1247e11b76edba7beeb2bb0230ccddcde8f74ecc"
       },
       {
         "archivo": "src/controllers/UsuarioController.js",
@@ -363,7 +363,7 @@
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "sha256": "49ac061246aa7d36818318cf41210a161416ce9c62673060c0936a0c045b20a9"
+        "sha256": "f7421cf13e1d539f93f993e55809a7061b7c080eba3493ffea8b0a8addad49ed"
       },
       {
         "archivo": "src/repositories/CalendarioRepository.js",
@@ -383,7 +383,7 @@
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "sha256": "192604582aaca91c1deee62c047ecdefabb4c30f56e38de7c47253078866e211"
+        "sha256": "7b81665c88b8d3611d31038b986a62f0afe7e7d54a71d33ccd6d066731bc06b6"
       },
       {
         "archivo": "src/repositories/NotificacionRepository.js",
@@ -411,7 +411,7 @@
       },
       {
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "sha256": "6c3b91fbc2a83947e98407be52efd33623509e14babc59555294155965965e92"
+        "sha256": "d7b3871f87c96db1dfb89932462dc33fa4dc7e693609743485173813d3be465d"
       },
       {
         "archivo": "src/repositories/ReservaIncidenciaRepository.js",
@@ -427,11 +427,15 @@
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "sha256": "78b1835725fd0597df599f5ae444aa14f34bcebd9343a32353a31e3337fd7ab4"
+        "sha256": "f84e110b6d34260de68ab73967c555b37828b1f1d113e59a76e2c7c62a7ac2e5"
       },
       {
         "archivo": "src/repositories/RolRepository.js",
         "sha256": "ed611968a5d3ba3b65ba70bf106733db1a3a80b7ff2c508e331b34a680baab51"
+      },
+      {
+        "archivo": "src/repositories/transaccionOperativa.js",
+        "sha256": "3fbb8ab75293a62f285f028021ba7c7bdebec13ef89d6b68b15d2ad4cad3b403"
       },
       {
         "archivo": "src/repositories/UsuarioRepository.js",
@@ -503,7 +507,7 @@
       },
       {
         "archivo": "src/routes/reservaRoutes.js",
-        "sha256": "48d95a7493a3dd4740e72b630d06b8b3fb2acdaa199ed6ead76fcf0a10a31ed4"
+        "sha256": "17a3a8b3baafc370ba965f10c4d8f8207f748a8d0cf5b3f2e5e0d48846037ec9"
       },
       {
         "archivo": "src/routes/rolRoutes.js",
@@ -515,7 +519,7 @@
       },
       {
         "archivo": "src/security/erroresSeguros.js",
-        "sha256": "7104b26125e8addb5ebb81796e8dd3a31b9a63cbcdc95f4a307283275f735386"
+        "sha256": "11fbc92609a178f281e5f74bed19ff72fdda7c0f409d2646594286ab7d5131bc"
       },
       {
         "archivo": "src/security/identificadoresRuta.js",
@@ -575,7 +579,7 @@
       },
       {
         "archivo": "src/services/AlertaService.js",
-        "sha256": "ee07d752367a75be43f8038fdd6adc556a9c5e535d95a2407f3c1f62f086be28"
+        "sha256": "93c169fa1d4de198abb2597eb72ceaad7020fad18bec69589d0742f9b1942a0e"
       },
       {
         "archivo": "src/services/AuthService.js",
@@ -635,7 +639,7 @@
       },
       {
         "archivo": "src/services/LimpiezaService.js",
-        "sha256": "dd574e05a17f7a9bc82dce3d5b628d9b157af88c8348da91c233a4d674092315"
+        "sha256": "d8b544cff5a97708cbc59dcbb31b5d808a60c050de06a74a99f2d1f08a41eaa7"
       },
       {
         "archivo": "src/services/NotificacionService.js",
@@ -663,7 +667,7 @@
       },
       {
         "archivo": "src/services/ReservaService.js",
-        "sha256": "95c2aa4033793744616d0a34227cf0bbfd97910a73458d60802bdf2b22b19b07"
+        "sha256": "f30bb8bfc27efd27dea8ae7f1a86ec5d4190d88094d8b565ab36136ae884f9b8"
       },
       {
         "archivo": "src/services/UsuarioService.js",
@@ -679,28 +683,12 @@
         "tabla": "ReservaIncidencias",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 51,
+        "linea": 59,
         "metodo": "obtenerIncidenciasAlertables",
         "nota": ""
       },
       {
         "tabla": "Reservas",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 53,
-        "metodo": "obtenerIncidenciasAlertables",
-        "nota": ""
-      },
-      {
-        "tabla": "Propiedades",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 57,
-        "metodo": "obtenerIncidenciasAlertables",
-        "nota": ""
-      },
-      {
-        "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
         "linea": 61,
@@ -708,10 +696,26 @@
         "nota": ""
       },
       {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 65,
+        "metodo": "obtenerIncidenciasAlertables",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 69,
+        "metodo": "obtenerIncidenciasAlertables",
+        "nota": ""
+      },
+      {
         "tabla": "PropiedadCanales",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 109,
+        "linea": 116,
         "metodo": "obtenerSincronizacionesConError",
         "nota": ""
       },
@@ -719,7 +723,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 111,
+        "linea": 118,
         "metodo": "obtenerSincronizacionesConError",
         "nota": ""
       },
@@ -727,28 +731,12 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 115,
+        "linea": 122,
         "metodo": "obtenerSincronizacionesConError",
         "nota": ""
       },
       {
         "tabla": "Reservas",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 182,
-        "metodo": "obtenerCheckinsProximos",
-        "nota": ""
-      },
-      {
-        "tabla": "Propiedades",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 184,
-        "metodo": "obtenerCheckinsProximos",
-        "nota": ""
-      },
-      {
-        "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
         "linea": 188,
@@ -756,10 +744,26 @@
         "nota": ""
       },
       {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 190,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AlertaRepository.js",
+        "linea": 194,
+        "metodo": "obtenerCheckinsProximos",
+        "nota": ""
+      },
+      {
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 192,
+        "linea": 198,
         "metodo": "obtenerCheckinsProximos",
         "nota": ""
       },
@@ -767,7 +771,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 196,
+        "linea": 202,
         "metodo": "obtenerCheckinsProximos",
         "nota": ""
       },
@@ -775,7 +779,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 283,
+        "linea": 288,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -783,7 +787,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 285,
+        "linea": 290,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -791,7 +795,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 298,
+        "linea": 303,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -799,7 +803,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 302,
+        "linea": 307,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -807,7 +811,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 306,
+        "linea": 311,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -815,7 +819,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 310,
+        "linea": 315,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -823,7 +827,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 314,
+        "linea": 319,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -831,7 +835,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 318,
+        "linea": 323,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -839,7 +843,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 322,
+        "linea": 327,
         "metodo": "obtenerConflictosActivos",
         "nota": ""
       },
@@ -847,7 +851,7 @@
         "tabla": "Alertas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 442,
+        "linea": 446,
         "metodo": "crearOActualizarPorClave",
         "nota": ""
       },
@@ -855,7 +859,7 @@
         "tabla": "Alertas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 578,
+        "linea": 597,
         "metodo": "crearOActualizarPorClave",
         "nota": ""
       },
@@ -863,7 +867,7 @@
         "tabla": "Alertas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 699,
+        "linea": 717,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -871,7 +875,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 701,
+        "linea": 719,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -879,7 +883,7 @@
         "tabla": "Alertas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 788,
+        "linea": 805,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -887,7 +891,7 @@
         "tabla": "Alertas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 811,
+        "linea": 827,
         "metodo": "obtenerGeneradasActivas",
         "nota": ""
       },
@@ -895,7 +899,7 @@
         "tabla": "Alertas",
         "operacion": "SELECT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 884,
+        "linea": 899,
         "metodo": "obtenerResumen",
         "nota": ""
       },
@@ -903,7 +907,7 @@
         "tabla": "Alertas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 447,
+        "linea": 451,
         "metodo": "crearOActualizarPorClave",
         "nota": ""
       },
@@ -911,7 +915,7 @@
         "tabla": "Alertas",
         "operacion": "INSERT",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 515,
+        "linea": 534,
         "metodo": "crearOActualizarPorClave",
         "nota": ""
       },
@@ -919,7 +923,7 @@
         "tabla": "Alertas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 941,
+        "linea": 955,
         "metodo": "marcarLeida",
         "nota": ""
       },
@@ -927,7 +931,7 @@
         "tabla": "Alertas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 986,
+        "linea": 999,
         "metodo": "resolver",
         "nota": ""
       },
@@ -1591,100 +1595,76 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 51,
-        "metodo": "sincronizar",
+        "linea": 57,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 53,
-        "metodo": "sincronizar",
+        "linea": 59,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 61,
-        "metodo": "sincronizar",
+        "linea": 67,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 63,
-        "metodo": "sincronizar",
+        "linea": 69,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "TareasLimpieza",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 127,
-        "metodo": "sincronizar",
+        "linea": 133,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "TareasLimpieza",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 165,
-        "metodo": "sincronizar",
+        "linea": 175,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "TareasLimpieza",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 181,
-        "metodo": "sincronizar",
+        "linea": 191,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 183,
-        "metodo": "sincronizar",
+        "linea": 193,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 187,
-        "metodo": "sincronizar",
+        "linea": 197,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "TareasLimpieza",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 446,
-        "metodo": "obtenerTodas",
-        "nota": ""
-      },
-      {
-        "tabla": "Propiedades",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 448,
-        "metodo": "obtenerTodas",
-        "nota": ""
-      },
-      {
-        "tabla": "Reservas",
-        "operacion": "SELECT",
-        "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 452,
-        "metodo": "obtenerTodas",
-        "nota": ""
-      },
-      {
-        "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
         "linea": 456,
@@ -1692,10 +1672,10 @@
         "nota": ""
       },
       {
-        "tabla": "Huespedes",
+        "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 460,
+        "linea": 458,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -1703,7 +1683,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 464,
+        "linea": 462,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -1711,7 +1691,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 468,
+        "linea": 466,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -1719,7 +1699,31 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 472,
+        "linea": 470,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 474,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 478,
+        "metodo": "obtenerTodas",
+        "nota": ""
+      },
+      {
+        "tabla": "Huespedes",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/LimpiezaRepository.js",
+        "linea": 482,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -1727,7 +1731,7 @@
         "tabla": "TareasLimpieza",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 613,
+        "linea": 620,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -1735,7 +1739,7 @@
         "tabla": "TareasLimpieza",
         "operacion": "SELECT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 735,
+        "linea": 743,
         "metodo": "obtenerResumen",
         "nota": ""
       },
@@ -1743,32 +1747,32 @@
         "tabla": "TareasLimpieza",
         "operacion": "INSERT",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 139,
-        "metodo": "sincronizar",
+        "linea": 149,
+        "metodo": "sincronizarEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "TareasLimpieza",
         "operacion": "UPDATE",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 648,
-        "metodo": "cambiarEstado",
+        "linea": 657,
+        "metodo": "cambiarEstadoEnTransaccion",
         "nota": ""
       },
       {
         "tabla": "TareasLimpieza",
         "operacion": "UPDATE",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 103,
-        "metodo": "sincronizar",
+        "linea": 109,
+        "metodo": "sincronizarEnTransaccion",
         "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
       },
       {
         "tabla": "TareasLimpieza",
         "operacion": "UPDATE",
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 173,
-        "metodo": "sincronizar",
+        "linea": 183,
+        "metodo": "sincronizarEnTransaccion",
         "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
       },
       {
@@ -2679,7 +2683,7 @@
         "tabla": "ReservaEventos",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "linea": 288,
+        "linea": 287,
         "metodo": "obtenerPorReserva",
         "nota": ""
       },
@@ -2687,7 +2691,7 @@
         "tabla": "ReservaEventos",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "linea": 368,
+        "linea": 367,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2695,7 +2699,7 @@
         "tabla": "ReservaEventos",
         "operacion": "INSERT",
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "linea": 164,
+        "linea": 163,
         "metodo": "crearEvento",
         "nota": ""
       },
@@ -2815,7 +2819,47 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 69,
+        "linea": 56,
+        "metodo": "conReservaManualAtomica",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 93,
+        "metodo": "obtenerControlEdicion",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 123,
+        "metodo": "actualizarReservaManualCondicionada",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 135,
+        "metodo": "actualizarReservaManualCondicionada",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 137,
+        "metodo": "actualizarReservaManualCondicionada",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 221,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2823,7 +2867,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 73,
+        "linea": 225,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2831,7 +2875,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 79,
+        "linea": 231,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2839,7 +2883,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 85,
+        "linea": 237,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2847,7 +2891,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 91,
+        "linea": 243,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2855,7 +2899,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 185,
+        "linea": 331,
         "metodo": "finalizarReservasVencidas",
         "nota": ""
       },
@@ -2863,7 +2907,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 197,
+        "linea": 343,
         "metodo": "finalizarReservasVencidas",
         "nota": ""
       },
@@ -2871,7 +2915,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 395,
+        "linea": 541,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2879,7 +2923,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 399,
+        "linea": 545,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2887,7 +2931,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 407,
+        "linea": 553,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2895,7 +2939,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 415,
+        "linea": 561,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2903,7 +2947,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 423,
+        "linea": 569,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2911,7 +2955,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 477,
+        "linea": 623,
         "metodo": "obtenerPropiedadPorId",
         "nota": ""
       },
@@ -2919,7 +2963,7 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 481,
+        "linea": 627,
         "metodo": "obtenerPropiedadPorId",
         "nota": ""
       },
@@ -2927,7 +2971,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 537,
+        "linea": 683,
         "metodo": "obtenerHuespedPorId",
         "nota": ""
       },
@@ -2935,7 +2979,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 609,
+        "linea": 757,
         "metodo": "obtenerHuespedPorNombreYApellido",
         "nota": ""
       },
@@ -2943,7 +2987,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 727,
+        "linea": 877,
         "metodo": "existeConflictoFechas",
         "nota": ""
       },
@@ -2951,7 +2995,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 731,
+        "linea": 881,
         "metodo": "existeConflictoFechas",
         "nota": ""
       },
@@ -2959,7 +3003,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1051,
+        "linea": 1201,
         "metodo": "crearReservaManual",
         "nota": ""
       },
@@ -2967,7 +3011,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1063,
+        "linea": 1213,
         "metodo": "crearReservaManual",
         "nota": ""
       },
@@ -2975,7 +3019,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1249,
+        "linea": 1401,
         "metodo": "actualizarReservaManual",
         "nota": ""
       },
@@ -2983,7 +3027,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1341,
+        "linea": 1493,
         "metodo": "cancelarReservaManual",
         "nota": ""
       },
@@ -2991,7 +3035,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1629,
+        "linea": 1781,
         "metodo": "sincronizarReservaExterna",
         "nota": ""
       },
@@ -2999,7 +3043,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1827,
+        "linea": 1979,
         "metodo": "sincronizarEstadoExterno",
         "nota": ""
       },
@@ -3007,7 +3051,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2005,
+        "linea": 2159,
         "metodo": "obtenerPorCanalEIdExterno",
         "nota": ""
       },
@@ -3015,7 +3059,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2009,
+        "linea": 2163,
         "metodo": "obtenerPorCanalEIdExterno",
         "nota": ""
       },
@@ -3023,7 +3067,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2017,
+        "linea": 2171,
         "metodo": "obtenerPorCanalEIdExterno",
         "nota": ""
       },
@@ -3031,7 +3075,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2025,
+        "linea": 2179,
         "metodo": "obtenerPorCanalEIdExterno",
         "nota": ""
       },
@@ -3039,7 +3083,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2033,
+        "linea": 2187,
         "metodo": "obtenerPorCanalEIdExterno",
         "nota": ""
       },
@@ -3047,7 +3091,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2199,
+        "linea": 2353,
         "metodo": "crearReservaExterna",
         "nota": ""
       },
@@ -3055,7 +3099,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2225,
+        "linea": 2379,
         "metodo": "crearReservaExterna",
         "nota": ""
       },
@@ -3063,7 +3107,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2437,
+        "linea": 2593,
         "metodo": "obtenerPorHuesped",
         "nota": ""
       },
@@ -3071,7 +3115,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2441,
+        "linea": 2597,
         "metodo": "obtenerPorHuesped",
         "nota": ""
       },
@@ -3079,7 +3123,7 @@
         "tabla": "CanalesReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2449,
+        "linea": 2605,
         "metodo": "obtenerPorHuesped",
         "nota": ""
       },
@@ -3087,7 +3131,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2457,
+        "linea": 2613,
         "metodo": "obtenerPorHuesped",
         "nota": ""
       },
@@ -3095,7 +3139,15 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 231,
+        "linea": 127,
+        "metodo": "actualizarReservaManualCondicionada",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 377,
         "metodo": "finalizarReservasVencidas",
         "nota": ""
       },
@@ -3103,7 +3155,7 @@
         "tabla": "Huespedes",
         "operacion": "INSERT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 863,
+        "linea": 1013,
         "metodo": "crearHuespedExterno",
         "nota": ""
       },
@@ -3111,7 +3163,7 @@
         "tabla": "Reservas",
         "operacion": "INSERT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1069,
+        "linea": 1219,
         "metodo": "crearReservaManual",
         "nota": ""
       },
@@ -3119,7 +3171,7 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1269,
+        "linea": 1421,
         "metodo": "actualizarReservaManual",
         "nota": ""
       },
@@ -3127,7 +3179,7 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1361,
+        "linea": 1513,
         "metodo": "cancelarReservaManual",
         "nota": ""
       },
@@ -3135,7 +3187,7 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1479,
+        "linea": 1631,
         "metodo": "sincronizarCambioExterno",
         "nota": ""
       },
@@ -3143,7 +3195,7 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1651,
+        "linea": 1803,
         "metodo": "sincronizarReservaExterna",
         "nota": ""
       },
@@ -3151,7 +3203,7 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1757,
+        "linea": 1909,
         "metodo": "actualizarEstadoSincronizacion",
         "nota": ""
       },
@@ -3159,7 +3211,7 @@
         "tabla": "Reservas",
         "operacion": "UPDATE",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1847,
+        "linea": 1999,
         "metodo": "sincronizarEstadoExterno",
         "nota": ""
       },
@@ -3167,7 +3219,7 @@
         "tabla": "Reservas",
         "operacion": "INSERT",
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2245,
+        "linea": 2399,
         "metodo": "crearReservaExterna",
         "nota": ""
       },
@@ -3287,57 +3339,57 @@
     "llamadasSQL": [
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 16,
+        "linea": 24,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 83,
+        "linea": 90,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 150,
+        "linea": 156,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 235,
+        "linea": 240,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 439,
+        "linea": 443,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 637,
+        "linea": 655,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 764,
+        "linea": 781,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 805,
+        "linea": 821,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 833,
+        "linea": 848,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 940,
+        "linea": 954,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/AlertaRepository.js",
-        "linea": 985,
+        "linea": 998,
         "tipo": "query"
       },
       {
@@ -3432,27 +3484,27 @@
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 27,
+        "linea": 33,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 287,
+        "linea": 297,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 546,
+        "linea": 553,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 647,
+        "linea": 656,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
-        "linea": 673,
+        "linea": 681,
         "tipo": "query"
       },
       {
@@ -3692,17 +3744,17 @@
       },
       {
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "linea": 163,
+        "linea": 162,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "linea": 259,
+        "linea": 258,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaEventoRepository.js",
-        "linea": 339,
+        "linea": 338,
         "tipo": "query"
       },
       {
@@ -3772,7 +3824,17 @@
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 19,
+        "linea": 56,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 92,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 121,
         "tipo": "query"
       },
       {
@@ -3792,72 +3854,77 @@
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 521,
+        "linea": 609,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 589,
+        "linea": 667,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 721,
+        "linea": 737,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 861,
+        "linea": 871,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1035,
+        "linea": 1011,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1237,
+        "linea": 1185,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1329,
+        "linea": 1389,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1477,
+        "linea": 1481,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1615,
+        "linea": 1629,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1755,
+        "linea": 1767,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1815,
+        "linea": 1907,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 1921,
+        "linea": 1967,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2185,
+        "linea": 2075,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/ReservaRepository.js",
-        "linea": 2359,
+        "linea": 2339,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/ReservaRepository.js",
+        "linea": 2515,
         "tipo": "query"
       },
       {
@@ -3868,6 +3935,11 @@
       {
         "archivo": "src/repositories/RolRepository.js",
         "linea": 26,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/transaccionOperativa.js",
+        "linea": 12,
         "tipo": "query"
       },
       {
@@ -3958,31 +4030,31 @@
       "metodo": "GET",
       "path": "/dashboard/resumen",
       "permiso": "dashboard.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/dashboard/historico",
       "permiso": "dashboard.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/notificaciones/avisos",
       "permiso": "notificaciones.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/notificaciones/personales",
       "permiso": "notificaciones.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/notificaciones/personales/contador",
       "permiso": "notificaciones.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "PUT",
@@ -3994,7 +4066,7 @@
       "metodo": "GET",
       "path": "/notificaciones/preferencias",
       "permiso": "notificaciones.preferencias",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "PUT",
@@ -4006,13 +4078,13 @@
       "metodo": "GET",
       "path": "/configuracion/empresa",
       "permiso": "configuracion.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/configuracion/operativas",
       "permiso": "configuracion.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "PUT",
@@ -4030,19 +4102,19 @@
       "metodo": "GET",
       "path": "/configuracion/predeterminados-reserva",
       "permiso": "reservas.crear",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/usuarios",
       "permiso": "usuarios.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/usuarios/:id",
       "permiso": "usuarios.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4072,31 +4144,31 @@
       "metodo": "GET",
       "path": "/roles",
       "permiso": "roles.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/dashboard/reportes",
       "permiso": "reportes.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/dashboard/reportes/opciones",
       "permiso": "reportes.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/propiedades",
       "permiso": "propiedades.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/propiedades/:id",
       "permiso": "propiedades.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4120,7 +4192,7 @@
       "metodo": "GET",
       "path": "/propiedades/:id/canales",
       "permiso": "canales.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4138,13 +4210,13 @@
       "metodo": "GET",
       "path": "/propiedades/:id/imagenes",
       "permiso": "imagenes.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/propiedades/:id/imagenes/todas",
       "permiso": "imagenes.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4192,24 +4264,30 @@
       "metodo": "GET",
       "path": "/reservas",
       "permiso": "reservas.ver",
-      "escriturasGET": "UPDATE Reservas; INSERT ReservaEventos si se finaliza alguna reserva vencida."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/reservas/:id",
       "permiso": "reservas.ver",
-      "escriturasGET": "UPDATE Reservas; INSERT ReservaEventos si se finaliza alguna reserva vencida (puede afectar otras reservas, no solo el ID)."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/reservas/:id/eventos",
       "permiso": "reservas.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
       "path": "/reservas",
       "permiso": "reservas.crear",
+      "escriturasGET": null
+    },
+    {
+      "metodo": "POST",
+      "path": "/reservas/finalizar-vencidas",
+      "permiso": "reservas.estado",
       "escriturasGET": null
     },
     {
@@ -4264,7 +4342,7 @@
       "metodo": "GET",
       "path": "/reservas/:id/mensajes",
       "permiso": "mensajes.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4276,7 +4354,7 @@
       "metodo": "GET",
       "path": "/reservas/:id/incidencias",
       "permiso": "incidencias.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4300,7 +4378,7 @@
       "metodo": "GET",
       "path": "/reservas/:id/observaciones",
       "permiso": "observaciones.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4330,13 +4408,13 @@
       "metodo": "GET",
       "path": "/huespedes",
       "permiso": "huespedes.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/huespedes/:id",
       "permiso": "huespedes.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4354,19 +4432,19 @@
       "metodo": "GET",
       "path": "/calendario",
       "permiso": "calendario.ver",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/limpiezas",
       "permiso": "limpiezas.ver",
-      "escriturasGET": "SELECT fuentes; INSERT/UPDATE TareasLimpieza durante sincronización."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/limpiezas/resumen",
       "permiso": "limpiezas.ver",
-      "escriturasGET": "SELECT fuentes; INSERT/UPDATE TareasLimpieza durante sincronización."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4384,13 +4462,13 @@
       "metodo": "GET",
       "path": "/alertas",
       "permiso": "alertas.ver",
-      "escriturasGET": "SELECT fuentes; INSERT/UPDATE Alertas, incluida resolución automática."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/alertas/resumen",
       "permiso": "alertas.ver",
-      "escriturasGET": "SELECT fuentes; INSERT/UPDATE Alertas durante sincronización."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4414,25 +4492,25 @@
       "metodo": "GET",
       "path": "/recomendaciones",
       "permiso": "flowia.ver",
-      "escriturasGET": "Consulta LimpiezaService.obtenerLimpiezas: INSERT/UPDATE TareasLimpieza; el resto consulta SQL/IA."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/integraciones/airbnb/eventos",
       "permiso": "integraciones.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/integraciones/airbnb/propiedades/eventos",
       "permiso": "integraciones.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/integraciones/airbnb/propiedades/imagenes/eventos",
       "permiso": "integraciones.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",
@@ -4504,19 +4582,19 @@
       "metodo": "GET",
       "path": "/integraciones/booking/eventos",
       "permiso": "integraciones.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/integraciones/booking/propiedades/eventos",
       "permiso": "integraciones.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "GET",
       "path": "/integraciones/booking/propiedades/imagenes/eventos",
       "permiso": "integraciones.gestionar",
-      "escriturasGET": "No se detecta DML persistente en el handler/servicio de consulta."
+      "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
     },
     {
       "metodo": "POST",

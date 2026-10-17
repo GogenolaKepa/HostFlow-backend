@@ -4,13 +4,21 @@ const {
 } = require("../config/database");
 
 class AlertaRepository {
+  async conSincronizacion(ejecutar) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    return transaccionOperativa('HostFlow:Operaciones:Alertas', tx => {
+      const repositorio = new AlertaRepository();
+      repositorio.conexion = tx;
+      return ejecutar(repositorio);
+    });
+  }
+
   // =========================================================
   // FUENTES OPERATIVAS
   // =========================================================
 
   async obtenerIncidenciasAlertables() {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool.request().query(`
@@ -76,8 +84,7 @@ class AlertaRepository {
   }
 
   async obtenerSincronizacionesConError() {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool.request().query(`
@@ -131,8 +138,7 @@ class AlertaRepository {
     fechaDesde,
     fechaHasta
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool
@@ -221,8 +227,7 @@ class AlertaRepository {
   async obtenerConflictosActivos(
     fechaActual
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool
@@ -357,8 +362,7 @@ class AlertaRepository {
   async crearOActualizarPorClave(
     alerta
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const datosJson =
       alerta.datos === undefined ||
@@ -508,7 +512,22 @@ class AlertaRepository {
 
             WHERE
               ClaveAlerta =
-                @claveAlerta;
+                @claveAlerta AND (
+                Estado = N'Resuelta' OR EXISTS (
+                  SELECT CONVERT(varbinary(max),CONVERT(nvarchar(max),Tipo)),
+                    CONVERT(varbinary(max),CONVERT(nvarchar(max),Categoria)),
+                    CONVERT(varbinary(max),CONVERT(nvarchar(max),Titulo)),
+                    CONVERT(varbinary(max),CONVERT(nvarchar(max),Mensaje)),
+                    CONVERT(varbinary(max),CONVERT(nvarchar(max),Severidad)), IdReserva, IdPropiedad,
+                    IdIncidenciaReserva, IdPropiedadCanal,
+                    CONVERT(varbinary(max),CONVERT(nvarchar(max),Origen)),
+                    CONVERT(varbinary(max),CONVERT(nvarchar(max),DatosJson))
+                  EXCEPT SELECT CONVERT(varbinary(max),@tipo),CONVERT(varbinary(max),@categoria),
+                    CONVERT(varbinary(max),@titulo),CONVERT(varbinary(max),@mensaje),
+                    CONVERT(varbinary(max),@severidad),@idReserva,@idPropiedad,
+                    @idIncidenciaReserva,@idPropiedadCanal,CONVERT(varbinary(max),@origen),CONVERT(varbinary(max),@datosJson)
+                )
+              );
           END
           ELSE
           BEGIN
@@ -593,8 +612,7 @@ class AlertaRepository {
   async obtenerTodas(
     filtros = {}
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const estado =
       filtros.estado &&
@@ -750,8 +768,7 @@ class AlertaRepository {
   async obtenerPorId(
     idAlerta
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool
@@ -798,8 +815,7 @@ class AlertaRepository {
   }
 
   async obtenerGeneradasActivas() {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool.request().query(`
@@ -826,8 +842,7 @@ class AlertaRepository {
   }
 
   async obtenerResumen() {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     const resultado =
       await pool.request().query(`
@@ -927,8 +942,7 @@ class AlertaRepository {
   async marcarLeida(
     idAlerta
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     await pool
       .request()
@@ -961,7 +975,7 @@ class AlertaRepository {
 
         WHERE
           IdAlerta =
-            @idAlerta;
+            @idAlerta AND Estado = N'Nueva';
       `);
 
     return this.obtenerPorId(
@@ -972,8 +986,7 @@ class AlertaRepository {
   async resolver(
     idAlerta
   ) {
-    const pool =
-      await poolPromise;
+    const pool = this.conexion || await poolPromise;
 
     await pool
       .request()
@@ -1005,7 +1018,7 @@ class AlertaRepository {
 
         WHERE
           IdAlerta =
-            @idAlerta;
+            @idAlerta AND Estado <> N'Resuelta';
       `);
 
     return this.obtenerPorId(

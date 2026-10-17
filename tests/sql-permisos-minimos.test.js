@@ -24,10 +24,10 @@ class Request {
     const evidencias=analizarFuente(sql,'consulta-capturada.sql');
     for(const e of evidencias)if(!derechos.get(e.tabla)?.has(e.operacion))throw Object.assign(Error(`Permiso faltante: ${e.operacion} ${e.tabla}`),{code:'PERMISO_SIMULADO'});
     consultas.push(sql);
-    return {recordset:[{...fila}],recordsets:Array.from({length:8},()=>[{...fila}]),rowsAffected:[1]};
+    return {recordset:[{...fila,bloqueo:0}],recordsets:Array.from({length:8},()=>[{...fila}]),rowsAffected:[1]};
   }
 }
-class Transaction {async begin(){}async commit(){}async rollback(){}}
+class Transaction {request(){return new Request();}async begin(){}async commit(){}async rollback(){}}
 const pool={request:()=>new Request()};
 const driver=new Proxy({Request,Transaction,ISOLATION_LEVEL:{READ_COMMITTED:2}}, {get:(target,k)=>target[k]||(()=>({tipo:k}))});
 const idDB=require.resolve('../src/config/database');

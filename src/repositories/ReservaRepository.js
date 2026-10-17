@@ -8,7 +8,159 @@ const {
 
 
 
+// La fachada reutiliza la conexión recibida sin administrar su ciclo de vida.
+function validarConexion(conexion) {
+  if (!conexion || typeof conexion.request !== "function") {
+    throw new TypeError("El contexto transaccional requiere una conexión con request().");
+  }
+  return conexion;
+}
+
+async function conexionPara(conexion) {
+  // Solo la ausencia explícita de contexto conserva el acceso histórico al pool.
+  return conexion === null || conexion === undefined
+    ? await poolPromise
+    : validarConexion(conexion);
+}
+
 class ReservaRepository {
+  async conAltaInboundBookingAtomica(ejecutar) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    // Mismo protocolo cooperante; identidad externa y disponibilidad se leen después del lock.
+    return transaccionOperativa('HostFlow:Operaciones:FinalizacionReservas', tx =>
+      ejecutar(this.conContextoTransaccional(tx)));
+  }
+
+  async conCreacionManualAtomica(ejecutar) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    // Antes de comprobar disponibilidad; no hay aún ID de reserva que bloquear.
+    return transaccionOperativa('HostFlow:Operaciones:FinalizacionReservas', tx =>
+      ejecutar(this.conContextoTransaccional(tx)));
+  }
+
+  async conCancelacionManualAtomica(idReserva, ejecutar) {
+    return this.conReservaManualAtomica(idReserva, ejecutar);
+  }
+
+  async conEdicionManualAtomica(idReserva, ejecutar) {
+    return this.conReservaManualAtomica(idReserva, ejecutar);
+  }
+
+  async conReservaManualAtomica(idReserva, ejecutar) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    // Puente con el protocolo ya usado por finalización: mismo recurso, sin cambiarlo.
+    // No coordina todavía los escritores legacy que no adquieren este applock.
+    return transaccionOperativa('HostFlow:Operaciones:FinalizacionReservas', async tx => {
+      await tx.request()
+        .input('idReserva', sql.Int, Number(idReserva))
+        .query(`SELECT IdReserva FROM dbo.Reservas WITH (UPDLOCK, HOLDLOCK)
+          WHERE IdReserva = @idReserva;`);
+      return ejecutar(this.conContextoTransaccional(tx));
+    });
+  }
+
+  conContextoTransaccional(conexion) {
+    validarConexion(conexion);
+    // Fachada por operación, sin conexión mutable en el singleton ni transacción anidada.
+    // conexion también se puede pasar a ReservaEventoRepository.crearEvento.
+    return Object.freeze({
+      conexion,
+      obtenerPorId: id => this.obtenerPorId(id, conexion),
+      obtenerPropiedadPorId: id => this.obtenerPropiedadPorId(id, conexion),
+      obtenerHuespedPorId: id => this.obtenerHuespedPorId(id, conexion),
+      obtenerControlEdicion: id => this.obtenerControlEdicion(id, conexion),
+      existeConflictoFechas: (idPropiedad, ingreso, egreso, ignorada = null) =>
+        this.existeConflictoFechas(idPropiedad, ingreso, egreso, ignorada, conexion),
+      crearReservaManual: datos => this.crearReservaManual(datos, conexion),
+      actualizarReservaManual: (id, datos) => this.actualizarReservaManual(id, datos, conexion),
+      actualizarReservaManualCondicionada: (id, datos, control) =>
+        this.actualizarReservaManualCondicionada(id, datos, control, conexion),
+      cancelarReservaManual: id => this.cancelarReservaManual(id, conexion),
+      // Preparación de altas externas: no activa una unidad de trabajo ni acusa colas.
+      obtenerPorCanalEIdExterno: (canal, idExterno) =>
+        this.obtenerPorCanalEIdExterno(canal, idExterno, conexion),
+      obtenerHuespedPorNombreYApellido: (nombre, apellido) =>
+        this.obtenerHuespedPorNombreYApellido(nombre, apellido, conexion),
+      crearHuespedExterno: datos => this.crearHuespedExterno(datos, conexion),
+      crearReservaExterna: datos => this.crearReservaExterna(datos, conexion),
+    });
+  }
+
+  async obtenerControlEdicion(idReserva, conexion) {
+    const { recordset } = await validarConexion(conexion).request()
+      .input('idReserva', sql.Int, Number(idReserva))
+      .query(`SELECT IdReserva AS idReserva, IdEstadoReserva AS idEstadoReserva
+        FROM dbo.Reservas WHERE IdReserva = @idReserva;`);
+    const control = recordset[0];
+    if (!control || control.idReserva !== Number(idReserva) || !Number.isInteger(control.idEstadoReserva)) {
+      throw this.conflictoEdicion();
+    }
+    // Estado persistido leído bajo el lock de fila; no es una revisión de formulario.
+    return Object.freeze(control);
+  }
+
+  conflictoEdicion() {
+    return Object.assign(new Error('La reserva cambió y no se pudo modificar. Recargá los datos antes de reintentar.'),
+      { codigo: 'RESERVA_CONFLICTO_CONCURRENCIA' });
+  }
+
+  async actualizarReservaManualCondicionada(idReserva, datos, control, conexion) {
+    const tx = validarConexion(conexion);
+    if (!control || control.idReserva !== Number(idReserva) || !Number.isInteger(control.idEstadoReserva)) {
+      throw this.conflictoEdicion();
+    }
+    const { recordset } = await tx.request()
+      .input('idReserva', sql.Int, Number(idReserva))
+      .input('idEstadoEsperado', sql.Int, control.idEstadoReserva)
+      .input('fechaIngreso', sql.Date, datos.fechaIngreso)
+      .input('horaIngreso', sql.VarChar(5), datos.horaIngreso || '00:00')
+      .input('fechaEgreso', sql.Date, datos.fechaEgreso)
+      .input('horaEgreso', sql.VarChar(5), datos.horaEgreso || '00:00')
+      .input('estado', sql.NVarChar(50), datos.estado)
+      .input('montoEstimado', sql.Decimal(18, 2), Number(datos.montoEstimado))
+      .query(`DECLARE @IdEstadoReserva INT;
+        DECLARE @Actualizadas TABLE (idReserva INT NOT NULL);
+        SELECT @IdEstadoReserva = IdEstadoReserva FROM dbo.EstadosReserva WHERE Nombre = @estado;
+        IF @IdEstadoReserva IS NULL
+          THROW 50001, 'El estado indicado no existe.', 1;
+
+        UPDATE dbo.Reservas
+        SET FechaIngreso = CAST(CONCAT(CONVERT(CHAR(10), @fechaIngreso, 23), 'T', @horaIngreso, ':00') AS DATETIME2(0)),
+            FechaEgreso = CAST(CONCAT(CONVERT(CHAR(10), @fechaEgreso, 23), 'T', @horaEgreso, ':00') AS DATETIME2(0)),
+            IdEstadoReserva = @IdEstadoReserva,
+            MontoEstimado = @montoEstimado,
+            FechaActualizacion = SYSDATETIME()
+        OUTPUT INSERTED.IdReserva INTO @Actualizadas (idReserva)
+        WHERE IdReserva = @idReserva AND IdEstadoReserva = @idEstadoEsperado
+          AND IdEstadoReserva IN (SELECT IdEstadoReserva FROM dbo.EstadosReserva
+            WHERE Nombre NOT IN (N'Cancelada', N'Finalizada'))
+          AND IdCanalReserva IN (SELECT IdCanalReserva FROM dbo.CanalesReserva WHERE Nombre = N'Manual');
+        SELECT idReserva FROM @Actualizadas;`);
+    // OUTPUT acreditado por ID, sin depender de rowsAffected/NOCOUNT o sumar efectos de triggers.
+    if (!Array.isArray(recordset) || recordset.length !== 1 || recordset[0].idReserva !== Number(idReserva)) {
+      throw this.conflictoEdicion();
+    }
+    return recordset[0];
+  }
+
+  async finalizarConEventos(fechaActual) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    const eventos = require('./ReservaEventoRepository');
+    return transaccionOperativa('HostFlow:Operaciones:FinalizacionReservas', async tx => {
+      const resultado = await this.finalizarReservasVencidas(fechaActual, tx);
+      for (const idReserva of resultado.idsReservas) {
+        const reserva = await this.obtenerPorId(idReserva, tx);
+        await eventos.crearEvento({ idReserva, tipo: 'RESERVA_FINALIZADA',
+          titulo: 'Reserva finalizada automáticamente',
+          descripcion: 'HostFlow marcó la reserva como finalizada porque la fecha de egreso ya había pasado.',
+          origen: 'Sistema', datosJson: { estadoAnterior: 'Confirmada', estadoNuevo: 'Finalizada',
+            fechaEgreso: reserva?.fechaEgreso || null, canal: reserva?.canal || null,
+            propiedad: reserva?.propiedad || null, huesped: reserva?.huesped || null } }, tx);
+      }
+      return resultado;
+    });
+  }
+
 
   async obtenerTodas() {
 
@@ -128,11 +280,7 @@ class ReservaRepository {
 
 
 
-  async finalizarReservasVencidas(
-
-    fechaActual
-
-  ) {
+  async finalizarReservasVencidas(fechaActual, conexion = null) {
 
     if (!fechaActual) {
 
@@ -146,9 +294,7 @@ class ReservaRepository {
 
 
 
-    const pool =
-
-      await poolPromise;
+    const pool = conexion || await poolPromise;
 
 
 
@@ -292,9 +438,9 @@ class ReservaRepository {
 
 
 
-  async obtenerPorId(idReserva) {
+  async obtenerPorId(idReserva, conexion = null) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -440,9 +586,9 @@ class ReservaRepository {
 
 
 
-async obtenerPropiedadPorId(idPropiedad) {
+async obtenerPropiedadPorId(idPropiedad, conexion = null) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -498,9 +644,9 @@ async obtenerPropiedadPorId(idPropiedad) {
 
 
 
-async obtenerHuespedPorId(idHuesped) {
+async obtenerHuespedPorId(idHuesped, conexion = null) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -552,11 +698,13 @@ async obtenerHuespedPorNombreYApellido(
 
   nombre,
 
-  apellido
+  apellido,
+
+  conexion = null
 
 ) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -644,11 +792,13 @@ async existeConflictoFechas(
 
   fechaEgreso,
 
-  idReservaIgnorada = null
+  idReservaIgnorada = null,
+
+  conexion = null
 
 ) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -774,11 +924,11 @@ async existeConflictoFechas(
 
 }
 
-async crearHuespedExterno(datos) {
+async crearHuespedExterno(datos, conexion = null) {
 
   const pool =
 
-    await poolPromise;
+    await conexionPara(conexion);
 
 
 
@@ -942,9 +1092,9 @@ async crearHuespedExterno(datos) {
 
 }
 
-async crearReservaManual(datos) {
+async crearReservaManual(datos, conexion = null) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -1142,7 +1292,7 @@ async crearReservaManual(datos) {
 
 
 
-  return this.obtenerPorId(idReserva);
+  return this.obtenerPorId(idReserva, conexion);
 
 }
 
@@ -1152,11 +1302,13 @@ async actualizarReservaManual(
 
   idReserva,
 
-  datos
+  datos,
+
+  conexion = null
 
 ) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -1302,13 +1454,13 @@ async actualizarReservaManual(
 
 
 
-  return this.obtenerPorId(idReserva);
+  return this.obtenerPorId(idReserva, conexion);
 
 }
 
-async cancelarReservaManual(idReserva) {
+async cancelarReservaManual(idReserva, conexion = null) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -1374,7 +1526,7 @@ async cancelarReservaManual(idReserva) {
 
 
 
-  return this.obtenerPorId(idReserva);
+  return this.obtenerPorId(idReserva, conexion);
 
 }
 
@@ -1884,11 +2036,13 @@ async obtenerPorCanalEIdExterno(
 
   canal,
 
-  idExterno
+  idExterno,
+
+  conexion = null
 
 ) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -2060,9 +2214,9 @@ async obtenerPorCanalEIdExterno(
 
 }
 
-async crearReservaExterna(datos) {
+async crearReservaExterna(datos, conexion = null) {
 
-  const pool = await poolPromise;
+  const pool = await conexionPara(conexion);
 
 
 
@@ -2322,7 +2476,9 @@ async crearReservaExterna(datos) {
 
   return this.obtenerPorId(
 
-    idReserva
+    idReserva,
+
+    conexion
 
   );
 

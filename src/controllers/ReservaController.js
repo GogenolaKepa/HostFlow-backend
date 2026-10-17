@@ -2,6 +2,19 @@ const { protegerError, registrarErrorSeguro } = require("../security/erroresSegu
 const ReservaService = require("../services/ReservaService");
 
 class ReservaController {
+  async finalizarVencidas(req, res) {
+    if (req.body?.confirmar !== true || Object.keys(req.body).some(k => k !== 'confirmar')) {
+      return res.status(400).json({ mensaje: 'Confirmá expresamente la finalización de reservas vencidas.' });
+    }
+    try {
+      const resultado = await ReservaService.finalizarReservasVencidas();
+      return res.status(200).json({ mensaje: 'Finalización de reservas vencidas completada.', resultado });
+    } catch (error) {
+      const seguro = protegerError(error);
+      registrarErrorSeguro('Error en finalización explícita', seguro);
+      return res.status(500).json({ mensaje: seguro.message, codigo: seguro.codigo });
+    }
+  }
   // =========================================================
   // CONSULTAS
   // =========================================================
@@ -514,8 +527,9 @@ class ReservaController {
         error
       );
 
-      return res.status(400).json({
+      return res.status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : 400).json({
         mensaje: error.message,
+        codigo: error.codigo,
       });
     }
   }
@@ -542,8 +556,11 @@ class ReservaController {
         error
       );
 
-      return res.status(400).json({
+      const status = error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500
+        : error.codigo === "RESERVA_CONFLICTO_CONCURRENCIA" ? 409 : 400;
+      return res.status(status).json({
         mensaje: error.message,
+        codigo: error.codigo,
       });
     }
   }
@@ -569,8 +586,9 @@ class ReservaController {
         error
       );
 
-      return res.status(400).json({
+      return res.status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : 400).json({
         mensaje: error.message,
+        codigo: error.codigo,
       });
     }
   }

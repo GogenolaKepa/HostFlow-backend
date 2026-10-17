@@ -59,15 +59,7 @@ function preparar() {
     ['POST','/auth/login','Público con limitación de intentos'],['GET','/auth/me','JWT'],
     ['PATCH','/auth/me','cuenta.modificar'],['POST','/auth/cambiar-password','cuenta.password'],['POST','/auth/logout','JWT'],
   ].map(([metodo,path,permiso])=>({metodo,path,permiso})));
-  const efectosGET={
-    '/reservas':'UPDATE Reservas; INSERT ReservaEventos si se finaliza alguna reserva vencida.',
-    '/reservas/:id':'UPDATE Reservas; INSERT ReservaEventos si se finaliza alguna reserva vencida (puede afectar otras reservas, no solo el ID).',
-    '/limpiezas':'SELECT fuentes; INSERT/UPDATE TareasLimpieza durante sincronización.',
-    '/limpiezas/resumen':'SELECT fuentes; INSERT/UPDATE TareasLimpieza durante sincronización.',
-    '/alertas':'SELECT fuentes; INSERT/UPDATE Alertas, incluida resolución automática.',
-    '/alertas/resumen':'SELECT fuentes; INSERT/UPDATE Alertas durante sincronización.',
-    '/recomendaciones':'Consulta LimpiezaService.obtenerLimpiezas: INSERT/UPDATE TareasLimpieza; el resto consulta SQL/IA.',
-  };
+  const efectosGET={}; // La normalización separó finalización/sincronizaciones en POST explícitos.
   const archivos={};
   archivos['00_inspeccion_administrativa_solo_lectura.sql']=`-- SOLO METADATOS. Preparado, NO ejecutado. Requiere autorización de lectura.
 -- No consultar filas, contraseñas ni hashes. La sesión debe tener VIEW DEFINITION.

@@ -1,5 +1,10 @@
 # Auditoría de permisos SQL del backend
 
+Vigencia operativa: [normalizacion-operativa.md](normalizacion-operativa.md) separa
+GET/HEAD de finalización/sincronizaciones mediante comandos explícitos. La sección
+histórica de GET mutantes más abajo describe el código anterior, no el contrato
+local actual. No se modificaron ni ejecutaron sus scripts DCL bloqueados.
+
 Actualización de Notificaciones confirmada por el usuario: 48 históricos y siete
 nuevos = 55/55 directos, CONNECT adicional conocido, roles amplios conservados.
 Ver [estado vigente](estado-notificaciones-v2.md). No repetir GRANT ni aplicar el
