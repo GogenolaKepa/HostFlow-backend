@@ -663,7 +663,7 @@
       },
       {
         "archivo": "src/services/CotizacionService.js",
-        "sha256": "1296a01f4126667bc806f10798361ccd9b8c6b465ec533754196eedf43609e61"
+        "sha256": "096e3c879356bcb740f5bd4938b3cde275135a7c7a8b495d891bb395176d15c9"
       },
       {
         "archivo": "src/services/DashboardService.js",
