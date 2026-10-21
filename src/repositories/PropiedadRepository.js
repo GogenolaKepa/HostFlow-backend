@@ -1,18 +1,28 @@
+const {fechaOperativa}=require('../utils/fechaOperativa');
 const {
   poolPromise,
   sql,
 } = require("../config/database");
+const {estadoMonedas}=require('../config/monedas');
+const {proyectarPrecios}=require('./precioPropiedad');
+const {ErrorSeguridad}=require('../security/seguridadUsuarios');
+async function conexionPropiedad(conexion){
+ if(conexion===undefined||conexion===null)return poolPromise;
+ if(typeof conexion.request!=='function')throw new TypeError('Contexto de Propiedades inválido.');
+ return conexion;
+}
 
 class PropiedadRepository {
   // =========================================================
   // OBTENER TODAS
   // =========================================================
 
-  async obtenerTodas() {
-    const pool = await poolPromise;
+  async obtenerTodas(conexion) {
+    const pool = await conexionPropiedad(conexion);
 
     const resultado = await pool
       .request()
+      .input('fechaHoy',sql.Date,fechaOperativa())
       .query(`
         SELECT
           p.IdPropiedad AS idPropiedad,
@@ -127,11 +137,11 @@ class PropiedadRepository {
               N'No show'
             )
 
-            AND r.FechaIngreso <=
-              CAST(GETDATE() AS DATE)
+            AND CAST(r.FechaIngreso AS DATE) <=
+              @fechaHoy
 
-            AND r.FechaEgreso >
-              CAST(GETDATE() AS DATE)
+            AND CAST(r.FechaEgreso AS DATE) >
+              @fechaHoy
 
           ORDER BY
             r.FechaIngreso DESC,
@@ -166,8 +176,8 @@ class PropiedadRepository {
               N'No show'
             )
 
-            AND r.FechaIngreso >
-              CAST(GETDATE() AS DATE)
+            AND CAST(r.FechaIngreso AS DATE) >
+              @fechaHoy
 
           ORDER BY
             r.FechaIngreso ASC,
@@ -199,7 +209,7 @@ class PropiedadRepository {
           p.Nombre ASC;
       `);
 
-    return resultado.recordset;
+    return proyectarPrecios(resultado.recordset,pool);
   }
 
   // =========================================================
@@ -207,12 +217,13 @@ class PropiedadRepository {
   // =========================================================
 
   async obtenerPorId(
-    idPropiedad
+    idPropiedad, conexion
   ) {
-    const pool = await poolPromise;
+    const pool = await conexionPropiedad(conexion);
 
     const resultado = await pool
       .request()
+      .input('fechaHoy',sql.Date,fechaOperativa())
       .input(
         "idPropiedad",
         sql.Int,
@@ -332,11 +343,11 @@ class PropiedadRepository {
               N'No show'
             )
 
-            AND r.FechaIngreso <=
-              CAST(GETDATE() AS DATE)
+            AND CAST(r.FechaIngreso AS DATE) <=
+              @fechaHoy
 
-            AND r.FechaEgreso >
-              CAST(GETDATE() AS DATE)
+            AND CAST(r.FechaEgreso AS DATE) >
+              @fechaHoy
 
           ORDER BY
             r.FechaIngreso DESC,
@@ -371,8 +382,8 @@ class PropiedadRepository {
               N'No show'
             )
 
-            AND r.FechaIngreso >
-              CAST(GETDATE() AS DATE)
+            AND CAST(r.FechaIngreso AS DATE) >
+              @fechaHoy
 
           ORDER BY
             r.FechaIngreso ASC,
@@ -405,10 +416,7 @@ class PropiedadRepository {
             @idPropiedad;
       `);
 
-    return (
-      resultado.recordset[0] ||
-      null
-    );
+    return (await proyectarPrecios(resultado.recordset,pool))[0]||null;
   }
 
   // =========================================================
@@ -416,9 +424,9 @@ class PropiedadRepository {
   // =========================================================
 
   async obtenerEstadoPorNombre(
-    estado
+    estado, conexion
   ) {
-    const pool = await poolPromise;
+    const pool = await conexionPropiedad(conexion);
 
     const resultado = await pool
       .request()
@@ -456,9 +464,9 @@ class PropiedadRepository {
 
   async crear(
     datos,
-    idEstadoPropiedad
+    idEstadoPropiedad, conexion
   ) {
-    const pool = await poolPromise;
+    const pool = await conexionPropiedad(conexion);
 
     const resultado = await pool
       .request()
@@ -496,10 +504,8 @@ class PropiedadRepository {
       )
       .input(
         "precioBase",
-        sql.Decimal(18, 2),
-        Number(
-          datos.precioBase
-        )
+        sql.VarChar(40),
+        String(datos.precioBase)
       )
       .input(
         "idEstadoPropiedad",
@@ -532,7 +538,7 @@ class PropiedadRepository {
           @ciudad,
           @provincia,
           @capacidadMaxima,
-          @precioBase,
+          CONVERT(decimal(18,2),@precioBase),
           @idEstadoPropiedad,
           SYSDATETIME()
         );
@@ -543,7 +549,7 @@ class PropiedadRepository {
         .idPropiedad;
 
     return this.obtenerPorId(
-      idPropiedad
+      idPropiedad, conexion
     );
   }
 
@@ -558,8 +564,9 @@ class PropiedadRepository {
   ) {
     const pool = await poolPromise;
 
-    await pool
+    const resultado = await pool
       .request()
+      .input('preservarPrecio',sql.Bit,datos.preservarPrecio===true)
       .input(
         "idPropiedad",
         sql.Int,
@@ -601,10 +608,8 @@ class PropiedadRepository {
       )
       .input(
         "precioBase",
-        sql.Decimal(18, 2),
-        Number(
-          datos.precioBase
-        )
+        sql.VarChar(40),
+        String(datos.precioBase)
       )
       .input(
         "idEstadoPropiedad",
@@ -623,13 +628,17 @@ class PropiedadRepository {
           Ciudad = @ciudad,
           Provincia = @provincia,
           CapacidadMaxima = @capacidadMaxima,
-          PrecioBase = @precioBase,
+          PrecioBase = CASE WHEN @preservarPrecio=1 THEN PrecioBase ELSE CONVERT(decimal(18,2),@precioBase) END,
           IdEstadoPropiedad = @idEstadoPropiedad
 
         WHERE
           IdPropiedad =
-            @idPropiedad;
+            @idPropiedad
+            ${estadoMonedas().activado?'AND (@preservarPrecio=1 OR NOT EXISTS(SELECT 1 FROM dbo.TarifasPropiedad t WHERE t.IdPropiedad=@idPropiedad))':''};
       `);
+
+    if(estadoMonedas().activado&&resultado.rowsAffected?.reduce((a,b)=>a+b,0)!==1)
+      throw new ErrorSeguridad(409,'MONEDAS_PRECIO_AUTORITATIVO','La tarifa declarada se modifica únicamente desde Monedas y cotizaciones. Recargá los datos.');
 
     return this.obtenerPorId(
       idPropiedad

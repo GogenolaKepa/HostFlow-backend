@@ -1,3 +1,4 @@
+const {fechaOperativa}=require('../utils/fechaOperativa');
 const {
   poolPromise,
   sql,
@@ -15,6 +16,7 @@ class HuespedRepository {
   const resultado =
     await pool
       .request()
+      .input('fechaHoy',sql.Date,fechaOperativa())
       .query(`
         SELECT
           h.IdHuesped AS idHuesped,
@@ -37,10 +39,10 @@ class HuespedRepository {
                   N'Finalizada',
                   N'No show'
                 )
-                AND r.FechaIngreso <=
-                  CAST(GETDATE() AS DATE)
-                AND r.FechaEgreso >
-                  CAST(GETDATE() AS DATE)
+                AND CAST(r.FechaIngreso AS DATE) <=
+                  @fechaHoy
+                AND CAST(r.FechaEgreso AS DATE) >
+                  @fechaHoy
               THEN 1
               ELSE 0
             END
@@ -54,8 +56,8 @@ class HuespedRepository {
                   N'Finalizada',
                   N'No show'
                 )
-                AND r.FechaIngreso >
-                  CAST(GETDATE() AS DATE)
+                AND CAST(r.FechaIngreso AS DATE) >
+                  @fechaHoy
               THEN 1
               ELSE 0
             END

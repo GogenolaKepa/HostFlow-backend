@@ -86,6 +86,17 @@ function limitarAccionesReserva(reserva, usuario) {
 function proyectarRespuesta(req, datos) {
   if (!datos || typeof datos !== "object") return datos;
   const path = req.path.toLowerCase().replace(/\/$/, "");
+  if(path.startsWith('/reservas')&&!tienePermiso(req.usuario,'reservas.importes')){
+    const acuerdoPublico=a=>a?seleccionar(a,['idReserva','moneda','monedaPago','reglaCambio','estadoFijacion','estadoReserva']):null;
+    const reservaPublica=r=>r?.acuerdoMonetario?{...r,acuerdoMonetario:acuerdoPublico(r.acuerdoMonetario)}:r;
+    datos={...datos};if(datos.reserva)datos.reserva=reservaPublica(datos.reserva);
+    if(Array.isArray(datos.reservas))datos.reservas=datos.reservas.map(reservaPublica);
+    if(Array.isArray(datos.eventos))datos.eventos=datos.eventos.map(e=>{
+      const d=e.datosJson;if(!d||typeof d!=='object')return e;
+      if(d.motivoMonetario)return {...e,datosJson:{motivoMonetario:d.motivoMonetario,anterior:acuerdoPublico(d.anterior),actual:acuerdoPublico(d.actual)}};
+      return d.acuerdoMonetario?{...e,datosJson:{...d,acuerdoMonetario:acuerdoPublico(d.acuerdoMonetario)}}:e;
+    });
+  }
   if (path.startsWith("/reservas") && !tienePermiso(req.usuario, "reservas.cancelar")) {
     datos = { ...datos };
     if (Array.isArray(datos.reservas)) datos.reservas = datos.reservas.map((r) => limitarAccionesReserva(r, req.usuario));

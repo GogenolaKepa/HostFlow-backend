@@ -1,5 +1,9 @@
 const CODIGOS = new Set(["EREQUEST", "ELOGIN", "ESOCKET", "ETIMEOUT", "ECONNCLOSED", "ENOTOPEN", "ECONNREFUSED", "ENOTFOUND", "ECONNRESET"]);
 const MENSAJES_SEGURIDAD = Object.freeze({
+  MONEDAS_PENDIENTES: 'La persistencia de monedas está pendiente de aprobación. No se guardaron cambios.',
+  MONEDAS_SOLO_LECTURA: 'Monedas está en modo de solo lectura.',
+  MONEDAS_MODELO_PENDIENTE: 'El modelo de monedas o la empresa no están preparados.',
+  MONEDAS_FUENTE_NO_DISPONIBLE: 'La fuente oficial no está disponible. No se usó una cotización de reemplazo.',
   OPERACION_RESULTADO_INCIERTO: "No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.",
   BOOKING_ACUSE_PENDIENTE: "Los datos de la reserva están confirmados en HostFlow, pero no se pudo confirmar el acuse del evento de Booking. Recargá los datos antes de volver a procesarlo.",
   NOTIFICACIONES_PERSONALES_NO_ACTIVADAS: "La bandeja personal todavía no está activada.",

@@ -33,6 +33,10 @@ const PREPARADOS = [
   {tabla:'PreferenciasNotificacionUsuario',operaciones:['SELECT','INSERT','UPDATE'],columnasUpdate:['Habilitada','FechaActualizacion'],archivo:'src/repositories/NotificacionRepository.js',activacion:'HOSTFLOW_NOTIFICACIONES_SQL_ENABLED=1'},
   {tabla:'Notificaciones',operaciones:['SELECT'],archivo:'src/repositories/NotificacionRepository.js',activacion:'HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1'},
   {tabla:'NotificacionDestinatarios',operaciones:['SELECT','UPDATE'],columnasUpdate:['FechaLectura'],archivo:'src/repositories/NotificacionRepository.js',activacion:'HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1'},
+  {tabla:'ConfiguracionMonetaria',operaciones:['SELECT','INSERT','UPDATE'],archivo:'src/repositories/MonedasRepository.js',activacion:'HOSTFLOW_MONEDAS_SQL_ENABLED=1; escritura exige HOSTFLOW_MONEDAS_WRITE_ENABLED=1'},
+  {tabla:'TarifasPropiedad',operaciones:['SELECT','INSERT','UPDATE'],archivo:'src/repositories/MonedasRepository.js',activacion:'HOSTFLOW_MONEDAS_SQL_ENABLED=1; escritura exige HOSTFLOW_MONEDAS_WRITE_ENABLED=1'},
+  {tabla:'TarifasPropiedad',operaciones:['SELECT'],archivo:'src/repositories/PropiedadRepository.js',activacion:'HOSTFLOW_MONEDAS_SQL_ENABLED=1; solo guardia del precio legacy'},
+  {tabla:'AcuerdosMonetariosReserva',operaciones:['SELECT','INSERT','UPDATE'],archivo:'src/repositories/AcuerdoMonetarioRepository.js',activacion:'HOSTFLOW_MONEDAS_RESERVAS_ENABLED=1; escritura exige HOSTFLOW_MONEDAS_WRITE_ENABLED=1'},
 ];
 function analizarFuente(fuente, archivo) {
   const referencias = [];

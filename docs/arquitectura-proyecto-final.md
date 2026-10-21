@@ -1,6 +1,6 @@
 # HostFlow: arquitectura y alcance para el Proyecto Final
 
-Material técnico reutilizable, basado en el código del workspace al 16/10/2026.
+Material técnico reutilizable, actualizado contra el código local al 18/10/2026.
 No sustituye una memoria académica aprobada ni acredita requisitos institucionales.
 Se encontraron documentos técnicos en `backend/docs` y `frontend/docs`; no se
 encontraron la tesis principal, una rúbrica UAI ni requisitos institucionales
@@ -72,9 +72,10 @@ confirmada previamente por el usuario; no se repitió durante esta tanda.
 | Operación | TareasLimpieza y Alertas derivan condiciones de estadías, incidencias y sincronización. El estado de una alerta operativa no equivale a lectura personal. |
 | Organización | Empresas y PreferenciasOperativas están vinculadas por IdEmpresa. Auditoría referencia Usuarios; rowversion detecta ediciones obsoletas. |
 | Notificaciones v2 | Notificaciones referencia Empresas y tiene clave única empresa/evento; NotificacionDestinatarios relaciona evento y Usuarios; PreferenciasNotificacionUsuario se identifica por usuario/tipo; PoliticasNotificacionEmpresa por empresa/tipo. |
+| Monedas v2, local pendiente de activación | ConfiguracionMonetaria por empresa; TarifasPropiedad como precio por noche autoritativo; AcuerdosMonetariosReserva como contrato original y snapshot de check-in. Las tres tablas nuevas usan rowversion; Reservas no adquiere una columna inventada. |
 
 Es **una organización por instalación**: `HOSTFLOW_EMPRESA_ID` proviene del servidor.
-No hay membresías empresariales de usuarios, RLS ni aislamiento completo de las
+No hay membresías empresariales de usuarios ni implementación propia de RLS o aislamiento completo de las
 tablas operativas por empresa. Las FK no convierten la solución en SaaS multiempresa.
 
 ## Seguridad implementada y límites
@@ -148,9 +149,49 @@ pendientes; no se apoyan en permisos heredados para simular una activación comp
 
 ## Evidencia y evaluación pendiente
 
+### Monedas y cifras económicas
+
+El modelo local permite declarar ARS/USD y una tarifa original, preservando el
+PrecioBase histórico como legado sin divisa acreditada. Al activarse, la tarifa
+nueva es la única autoridad: actualizar metadatos no compite con ella. El alta de
+propiedad y tarifa es conjunta; el alta manual de reserva y su acuerdo también.
+No se calculan cobros ni se asigna moneda a importes históricos automáticamente.
+
+USD pagadero en ARS puede fijarse una vez al check-in mediante confirmación y
+fuente explícita BCRA/MANUAL. La consulta BCRA ocurre por acción antes de la
+transacción; dentro se usa el valor acreditado, sin red. El snapshot conserva
+importe USD, tasa, fecha efectiva, autor y equivalente; cancelar no lo elimina.
+Reportes agrupa contratos originales por moneda; no suma USD con ARS ni duplica
+equivalencias. Los avisos de variación orientan a revisar la tarifa; no la cambian.
+FlowIA reutiliza esos avisos sin necesitar Gemini ni productores de Notificaciones.
+
+Todo este núcleo monetario está probado localmente con fixtures. Su DDL,
+derechos nuevos y banderas aún necesitan validación/autorización independientes;
+no se presenta como persistencia real ya probada. La recuperación desactiva
+escritura conservando lectura e interpretación de acuerdos existentes.
+Ver [contrato monetario](monedas-y-cotizaciones.md).
+
+### Integración comprobada y alcance de la evidencia
+
+El piloto histórico verificó en Azure el recorrido manual feliz de creación,
+edición y cancelación de una reserva con tres eventos; no acreditó carreras,
+rollback o fallos de conexión del motor. No se reutilizan esos registros.
+
+El cierre local incorpora un recorrido con Express, JWT, controladores, servicios
+y repositorios reales sobre un driver ficticio: crear propiedad y huésped,
+reservar, renombrar huésped, consultar calendario, editar, cancelar, historial,
+reporte y F5. Edge intercepta las peticiones y las dirige solo a esa API efímera.
+La comparación pantalla/CSV/Excel usa la misma población ficticia. Esto detecta
+incompatibilidades entre capas; no constituye una ejecución de los SQL en motor.
+
+Los días operativos se calculan en Buenos Aires incluso con host UTC. Se probó
+el corte de medianoche/cambio de mes y se parametrizan esas fechas en los
+listados de huéspedes y propiedades, evitando depender de GETDATE de Azure.
+
 La [trazabilidad](trazabilidad-proyecto-final.md) relaciona objetivos, código y pruebas.
 Los resultados actuales y comandos se conservan en
-`HostFlow/revision/auditoria-integral-octubre/PRUEBAS.md`. Las pruebas herméticas
+`HostFlow/revision/cierre-nocturno-2026-10-18/INFORME-FINAL.md`; los registros de
+auditoría y piloto anteriores conservan su fecha/alcance históricos. Las pruebas herméticas
 acreditan comportamiento con fixtures, no una ejecución en Azure ni el aislamiento
 real del motor. Las pruebas SQL históricas del usuario se identifican como tales.
 

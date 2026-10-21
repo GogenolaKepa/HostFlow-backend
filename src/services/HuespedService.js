@@ -1,7 +1,9 @@
+const {fechaOperativa}=require('../utils/fechaOperativa');
 const HuespedRepository =
   require("../repositories/HuespedRepository");
   const ReservaRepository =
   require("../repositories/ReservaRepository");
+const {normalizarHuesped}=require('../security/validacionHuesped');
 
 class HuespedService {
   // =========================================================
@@ -134,15 +136,7 @@ class HuespedService {
   // FECHA ACTUAL
   // =========================================================
 
-  const hoy =
-    new Date();
-
-  hoy.setHours(
-    0,
-    0,
-    0,
-    0
-  );
+  const hoy = fechaOperativa();
 
   // =========================================================
   // RESERVAS ACTIVAS
@@ -167,15 +161,9 @@ class HuespedService {
           return false;
         }
 
-        const ingreso =
-          new Date(
-            `${reserva.fechaIngreso}T00:00:00`
-          );
+        const ingreso = reserva.fechaIngreso;
 
-        const egreso =
-          new Date(
-            `${reserva.fechaEgreso}T00:00:00`
-          );
+        const egreso = reserva.fechaEgreso;
 
         return (
           ingreso <= hoy &&
@@ -203,10 +191,7 @@ class HuespedService {
             return false;
           }
 
-          const ingreso =
-            new Date(
-              `${reserva.fechaIngreso}T00:00:00`
-            );
+          const ingreso = reserva.fechaIngreso;
 
           return ingreso > hoy;
         }
@@ -256,6 +241,7 @@ class HuespedService {
   async crearHuesped(
     datos
   ) {
+    datos=normalizarHuesped(datos,{alta:true});
     const {
       nombre,
       apellido,
@@ -314,6 +300,8 @@ class HuespedService {
     idHuesped,
     datos
   ) {
+    const emailVaciado=Object.hasOwn(datos||{},'email')&&!String(datos.email||'').trim();
+    datos=normalizarHuesped(datos);
     const huespedActual =
       await HuespedRepository
         .obtenerPorId(
@@ -325,6 +313,8 @@ class HuespedService {
         "El huésped no existe."
       );
     }
+
+    if(emailVaciado&&huespedActual.email)throw new Error('El email registrado no puede quedar vacío.');
 
     // Si cambia el email, verificamos que
     // no pertenezca a otro huésped.

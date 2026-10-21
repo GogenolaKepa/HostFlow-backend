@@ -30,7 +30,7 @@ function autorizarCampos(req, res, next) {
   if (req.usuario.rol === "Operador") {
     let campos;
     if (politica.path === "/reservas" && req.method === "POST") {
-      campos = ["idPropiedad", "idHuesped", "fechaIngreso", "horaIngreso", "fechaEgreso", "horaEgreso", "cantidadHuespedes", "montoEstimado"];
+      campos = ["idPropiedad", "idHuesped", "fechaIngreso", "horaIngreso", "fechaEgreso", "horaEgreso", "cantidadHuespedes", "montoEstimado", "acuerdoMonetario"];
     }
     if (politica.path === "/reservas/:id" && req.method === "PUT") {
       campos = ["fechaIngreso", "horaIngreso", "fechaEgreso", "horaEgreso"];

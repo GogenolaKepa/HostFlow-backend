@@ -106,6 +106,7 @@ app.use("/api", autorizarCampos);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/roles", rolRoutes);
 app.use("/api/configuracion", configuracionRoutes);
+app.use('/api/monedas',require('./routes/monedasRoutes'));
 app.use("/api/notificaciones", notificacionRoutes);
 
 app.use(

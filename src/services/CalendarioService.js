@@ -1,3 +1,4 @@
+const {fechaOperativa}=require('../utils/fechaOperativa');
 const CalendarioRepository = require(
   "../repositories/CalendarioRepository"
 );
@@ -698,14 +699,7 @@ class CalendarioService {
   // =========================================================
 
   obtenerFechaHoy() {
-    const ahora =
-      new Date();
-
-    return this.formatearFecha(
-      ahora.getFullYear(),
-      ahora.getMonth() + 1,
-      ahora.getDate()
-    );
+    return fechaOperativa();
   }
 
   // =========================================================

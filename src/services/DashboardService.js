@@ -1,3 +1,4 @@
+const {fechaReservaValida}=require('../security/validacionReserva');
 const DashboardResumen = require(
   "../models/DashboardResumen"
 );
@@ -208,12 +209,7 @@ class DashboardService {
   validarFechaISO(
     fecha
   ) {
-    return /^\d{4}-\d{2}-\d{2}$/
-      .test(
-        String(
-          fecha || ""
-        )
-      );
+    return fechaReservaValida(fecha);
   }
 
   sumarDiasFechaISO(
@@ -368,7 +364,7 @@ class DashboardService {
         );
 
       if (
-        !this.validarFechaISO(
+        fechaHasta === '9999-12-31' || !this.validarFechaISO(
           fechaDesde
         ) ||
         !this.validarFechaISO(

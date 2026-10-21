@@ -512,7 +512,7 @@ class ReservaController {
     try {
       const reserva =
         await ReservaService.crearReserva(
-          req.body
+          req.body, req.usuario
         );
 
       return res.status(201).json({
@@ -527,7 +527,7 @@ class ReservaController {
         error
       );
 
-      return res.status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : 400).json({
+      return res.status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : error.status||400).json({
         mensaje: error.message,
         codigo: error.codigo,
       });
@@ -557,7 +557,7 @@ class ReservaController {
       );
 
       const status = error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500
-        : error.codigo === "RESERVA_CONFLICTO_CONCURRENCIA" ? 409 : 400;
+        : error.codigo === "RESERVA_CONFLICTO_CONCURRENCIA" ? 409 : error.status||400;
       return res.status(status).json({
         mensaje: error.message,
         codigo: error.codigo,

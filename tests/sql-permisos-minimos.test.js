@@ -41,7 +41,12 @@ test('auditoría: todas las operaciones detectadas tienen permiso y los 48 permi
   assert.deepEqual(modelo.auditoria.referencias,a.referencias);
   assert.deepEqual(modelo.auditoria.llamadasSQL,a.llamadasSQL);
   assert.deepEqual(modelo.auditoria.preparados,a.preparados);
-  assert.deepEqual(a.preparados.map(p=>p.tabla),['PreferenciasNotificacionUsuario','Notificaciones','NotificacionDestinatarios']);
+  assert.deepEqual(a.preparados.map(p=>p.tabla),['PreferenciasNotificacionUsuario','Notificaciones','NotificacionDestinatarios','ConfiguracionMonetaria','TarifasPropiedad','TarifasPropiedad','AcuerdosMonetariosReserva']);
+  for(const preparado of a.preparados.slice(3,5)) {
+    assert.deepEqual(preparado.operaciones,['SELECT','INSERT','UPDATE']);
+    assert.equal(preparado.archivo,'src/repositories/MonedasRepository.js');
+    assert.match(preparado.activacion,/HOSTFLOW_MONEDAS_SQL_ENABLED=1/);
+  }
   const politicas=require('../src/config/politicasRutas').politicas;
   assert.deepEqual(modelo.rutas.filter(r=>!r.path.startsWith('/auth/')).map(({metodo,path,permiso})=>({metodo,path,permiso})),politicas.map(({metodo,path,permiso})=>({metodo,path,permiso})),'El inventario de rutas debe incluir los contratos nuevos, aunque estén apagados.');
   for(const s of modelo.scripts)assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root,s.archivo))).digest('hex'),s.sha256);

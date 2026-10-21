@@ -21,6 +21,14 @@ agregar("/notificaciones", "notificaciones.preferencias", { GET: ["/preferencias
 agregar("/configuracion", "configuracion.ver", { GET: ["/empresa", "/operativas"] });
 agregar("/configuracion", "configuracion.modificar", { PUT: ["/empresa", "/operativas"] });
 agregar("/configuracion", "reservas.crear", { GET: ["/predeterminados-reserva"] });
+agregar('/monedas','propiedades.ver',{GET:['/estado','/tarifas']});
+agregar('/monedas','configuracion.ver',{GET:['/configuracion']});
+agregar('/monedas','configuracion.modificar',{PUT:['/configuracion'],POST:['/consultar-bcra']});
+agregar('/monedas','propiedades.gestionar',{PUT:['/tarifas/:id']});
+agregar('/monedas','propiedades.gestionar',{POST:['/propiedades']});
+agregar('/monedas','reservas.importes',{GET:['/reservas/:id/acuerdo'],PUT:['/reservas/:id/acuerdo'],POST:['/reservas/:id/fijacion']});
+agregar('/monedas','reportes.economia',{GET:['/resumen']});
+agregar('/monedas','alertas.ver',{GET:['/alertas']});
 agregar("/usuarios", "usuarios.ver", { GET: ["/", "/:id"] });
 agregar("/usuarios", "usuarios.crear", { POST: ["/"] });
 agregar("/usuarios", "usuarios.modificar", { PUT: ["/:id"] });

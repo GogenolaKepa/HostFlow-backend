@@ -95,6 +95,7 @@ class AirbnbPropertyService {
 
         precioBase:
           propiedad.precioBase,
+        ...(propiedad.monedaBase ? {moneda:propiedad.monedaBase} : {}),
       },
     };
   }
@@ -218,6 +219,7 @@ actualizarPublicacion(
 
       precioBase:
         propiedad.precioBase,
+        ...(propiedad.monedaBase ? {moneda:propiedad.monedaBase} : {}),
 
       estado:
         propiedad.estado,

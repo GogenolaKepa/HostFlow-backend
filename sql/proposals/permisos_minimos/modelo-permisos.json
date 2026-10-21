@@ -191,7 +191,7 @@
     "fuentes": [
       {
         "archivo": "src/app.js",
-        "sha256": "c917f1b3c28df50c7f083e5a458da90d037e33622da80f4260f7f5f803beaeb0"
+        "sha256": "88597cd419ad5690d5b08fffbe191459d5b1ce21c0f5200782e67703be67ce3f"
       },
       {
         "archivo": "src/config/autenticacion.js",
@@ -210,6 +210,10 @@
         "sha256": "fd30183c915828016dff6b1ff63bd5c03770c71ae6d21397d2c889c7a4fb814f"
       },
       {
+        "archivo": "src/config/monedas.js",
+        "sha256": "29027410d617bd89bae9e3fcbdfb13383f13df043a3860ac51cf2a7bc6cbd45c"
+      },
+      {
         "archivo": "src/config/notificaciones.js",
         "sha256": "47c881fba69b97cfc88240782add368f492fc67dce2b5bee7dfa4b599634252a"
       },
@@ -219,7 +223,7 @@
       },
       {
         "archivo": "src/config/politicasRutas.js",
-        "sha256": "ea1377213bffa9c7bdf646564c4e747192367b2ae226414521c0f8244987641f"
+        "sha256": "74018230f27a3d37ba9dc85a696d1f520db585730efface25a845d9b5c12fa22"
       },
       {
         "archivo": "src/controllers/AirbnbInboundController.js",
@@ -283,7 +287,7 @@
       },
       {
         "archivo": "src/controllers/PropiedadController.js",
-        "sha256": "44846a5495be729141271b9eeb95ee15e601011ea2aef136d81e8b26915496d6"
+        "sha256": "be26469b7d4a6ee57af8b9d4bb416f8c724564f3cd5c8e834fae4a670dc57527"
       },
       {
         "archivo": "src/controllers/PropiedadImagenController.js",
@@ -295,7 +299,7 @@
       },
       {
         "archivo": "src/controllers/ReservaController.js",
-        "sha256": "8f1f7866b2a83f964b8f00ba1247e11b76edba7beeb2bb0230ccddcde8f74ecc"
+        "sha256": "ed1f4e21450b6e1eeaf3189097c84cd6ee5beb903134d079f9d325aebee508d8"
       },
       {
         "archivo": "src/controllers/UsuarioController.js",
@@ -306,12 +310,20 @@
         "sha256": "7cc27c919a9e7d227f096f2cd83003c4b31919c2761cabc45bd0eb6de558b670"
       },
       {
+        "archivo": "src/domain/acuerdosMonetarios.js",
+        "sha256": "b9914542849ecbc8fabaaa3075e510150cbc7c9ed87cf335f53f09e8d0c95552"
+      },
+      {
+        "archivo": "src/domain/monedas.js",
+        "sha256": "ac547f80f08054c8723da1a57ceaeaa328d74bb541a05cc28f9012fe531bd26b"
+      },
+      {
         "archivo": "src/middlewares/autenticacion.js",
         "sha256": "769e76c1a0aad55adbb6e539016eaec4d6b7a6473521152278b36e135244f83f"
       },
       {
         "archivo": "src/middlewares/autorizacion.js",
-        "sha256": "815301502fd3ca38130d198f97a5138c9bd463727b7e8ccdfefcee4cc5bf5cbe"
+        "sha256": "6935420c3faae9df3e3a5d66231a64524161c1cf94f4e7a726704451238cdd1c"
       },
       {
         "archivo": "src/middlewares/cambioPasswordObligatorio.js",
@@ -362,6 +374,10 @@
         "sha256": "c6ae72b69570b471b28667691bd9ed71fb546306a8eece2ddc8e4decf19e37f3"
       },
       {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "sha256": "9f5428c3e596474df0eb2b85e9dc4b63dddf2cc7fae936ca665453b944453979"
+      },
+      {
         "archivo": "src/repositories/AlertaRepository.js",
         "sha256": "f7421cf13e1d539f93f993e55809a7061b7c080eba3493ffea8b0a8addad49ed"
       },
@@ -379,15 +395,23 @@
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "sha256": "7802c3b7f47852eee046ffb4009f0ca08992d1602335b4f1550255295add13a7"
+        "sha256": "546d4b3316abad4dddfd49edf8e7ff2be11ac4ff84d2da27e0809464981d006c"
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
         "sha256": "7b81665c88b8d3611d31038b986a62f0afe7e7d54a71d33ccd6d066731bc06b6"
       },
       {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "sha256": "3b5476979a0aaa59c4cc1960cf173a8fe5460d177d4d4d99138da7a0b9f69ff5"
+      },
+      {
         "archivo": "src/repositories/NotificacionRepository.js",
         "sha256": "72782f4cbd5208dd0a71c5319dcd9867e26d89a0ef4231d6e866c0f9b0ced670"
+      },
+      {
+        "archivo": "src/repositories/precioPropiedad.js",
+        "sha256": "2282d5c1ec46e0aa4c428330a8142187f77ace41630aaf94f6d3b7f6efc0bcb9"
       },
       {
         "archivo": "src/repositories/PropiedadCanalRepository.js",
@@ -403,7 +427,7 @@
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "sha256": "84be7599d0a28a124956d1eade596f62a041f51ee97b84aa106a255b339b7872"
+        "sha256": "1c26faec810b8f297e501ca7acb44d980bf8d5f5e322e2e6b1249dcb272cda2b"
       },
       {
         "archivo": "src/repositories/RecomendacionRepository.js",
@@ -494,6 +518,10 @@
         "sha256": "749c68dbfa9bd3b23b8e9ac47d65694e57ee65f736cfd1b209ca531f490baecc"
       },
       {
+        "archivo": "src/routes/monedasRoutes.js",
+        "sha256": "2044d86228c637a72c6625abf8909b070c9e92f57538d3cf3c34dc7ebefbb08c"
+      },
+      {
         "archivo": "src/routes/notificacionRoutes.js",
         "sha256": "2f8083fa0a7c28b7b67c2f88fd3c1b26e3bdeb7b8ab3744c45d020a30bae7925"
       },
@@ -519,7 +547,7 @@
       },
       {
         "archivo": "src/security/erroresSeguros.js",
-        "sha256": "11fbc92609a178f281e5f74bed19ff72fdda7c0f409d2646594286ab7d5131bc"
+        "sha256": "3f03d14643da741aa2780a8e66b1a34a2f4e88f218364a0f5df9a289376c8e79"
       },
       {
         "archivo": "src/security/identificadoresRuta.js",
@@ -527,7 +555,7 @@
       },
       {
         "archivo": "src/security/proyecciones.js",
-        "sha256": "9ce94098b9ca99512e13d7d8cca15c42f694aa5e7eac33e122dba0ca0cf26150"
+        "sha256": "0ee2b6af80fe18f348276c489978ea5a4e77d5883de7aaebc7e0416f9c9ea09a"
       },
       {
         "archivo": "src/security/seguridadUsuarios.js",
@@ -536,6 +564,10 @@
       {
         "archivo": "src/security/validacionConfiguracion.js",
         "sha256": "dba0db3ac5f804120f404a50e4b6b42e44d79050255275c0df4ded30ba0de313"
+      },
+      {
+        "archivo": "src/security/validacionHuesped.js",
+        "sha256": "4c4ea3004cd4f8d9c045e3e9ca323d9621d18bb64097c47f09b3a22f3e0a44c9"
       },
       {
         "archivo": "src/security/validacionNotificaciones.js",
@@ -548,6 +580,10 @@
       {
         "archivo": "src/server.js",
         "sha256": "4f91d103f6bcf3899686554aa3facb72db678b76ef544ea48a73e0f03e3fd35b"
+      },
+      {
+        "archivo": "src/services/AcuerdoMonetarioService.js",
+        "sha256": "b274519472c914cf552d739a9ac09747123ba9cdd1df160f1d4b64f434cd614d"
       },
       {
         "archivo": "src/services/AirbnbChannelService.js",
@@ -575,7 +611,7 @@
       },
       {
         "archivo": "src/services/AirbnbPropertyService.js",
-        "sha256": "5f6bdd10a20b9d96eeefa0da6dd6bc30c8236926a074b25a6dd38b8f0bacb413"
+        "sha256": "0b7090f31be525b4c6b6bfd98376d735ed746947fd6e789d03bea50f6449cf65"
       },
       {
         "archivo": "src/services/AlertaService.js",
@@ -611,11 +647,11 @@
       },
       {
         "archivo": "src/services/BookingPropertyService.js",
-        "sha256": "d3fbb8971bdc9f98b471cb3399bcd0381ebd0ddad0833dbe4886929884726731"
+        "sha256": "5f448a7d7a632941e0dcd6e69460daa7bcfc8d5b9e68da58126680c875548efc"
       },
       {
         "archivo": "src/services/CalendarioService.js",
-        "sha256": "8f74e661ce05fe0e00b99445f8e66b40bba2507bfd9313c29c3d8b4072e6ee6e"
+        "sha256": "8478b610348a6eac4b3c33ac44be9f123ecf83df23891ddca272cc4a64a24b1b"
       },
       {
         "archivo": "src/services/ChannelService.js",
@@ -626,12 +662,16 @@
         "sha256": "ec60d3b112af9053998608c05c218eabaffb50cf398919def144537ac606c737"
       },
       {
+        "archivo": "src/services/CotizacionService.js",
+        "sha256": "1296a01f4126667bc806f10798361ccd9b8c6b465ec533754196eedf43609e61"
+      },
+      {
         "archivo": "src/services/DashboardService.js",
-        "sha256": "3573d5fb53c3e8f5a982e1ce43baecb34054f279e730020a5e0313b98d86a39b"
+        "sha256": "21f6966e079191e74777b38af8e5a00dfed0abdd604629bcb21584f065eab387"
       },
       {
         "archivo": "src/services/HuespedService.js",
-        "sha256": "e2e39a641379699123e7425ea90ce07ea50c0ace3d0d4504d2d69f8201898e53"
+        "sha256": "62459951f72f1d7a351277da751db513fae1e0e26c9937391d832a80fd0940b0"
       },
       {
         "archivo": "src/services/IaService.js",
@@ -642,12 +682,16 @@
         "sha256": "d8b544cff5a97708cbc59dcbb31b5d808a60c050de06a74a99f2d1f08a41eaa7"
       },
       {
+        "archivo": "src/services/MonedasService.js",
+        "sha256": "9df79d21dcd2b81aee773dbd524b9d8ec4bcd162955b0475c97fc7e273793fe6"
+      },
+      {
         "archivo": "src/services/NotificacionService.js",
         "sha256": "e116fe39fb913e3a289b511cbb3a1480910cca0a0f95864507b98f5093f8f3ba"
       },
       {
         "archivo": "src/services/PropiedadCanalService.js",
-        "sha256": "cdb9e09f5713594d5e892a43b1e1c00dfa7626d5c829280e2e68940e8642e9bc"
+        "sha256": "fb2a1064cde34c2d23e68a51470258286f2890f9479f422487ea0642f0b93f3f"
       },
       {
         "archivo": "src/services/PropiedadImagenCanalService.js",
@@ -659,7 +703,7 @@
       },
       {
         "archivo": "src/services/PropiedadService.js",
-        "sha256": "4518dc0c79cb7fb8fc1a066b5c747f6b15f71ffcd0f7376749f45c1e1d385c78"
+        "sha256": "9281487dc0f4beec8c1b221f2bc8fff45f29412c7d05609e719293418dd2c7af"
       },
       {
         "archivo": "src/services/RecomendacionService.js",
@@ -667,7 +711,7 @@
       },
       {
         "archivo": "src/services/ReservaService.js",
-        "sha256": "f30bb8bfc27efd27dea8ae7f1a86ec5d4190d88094d8b565ab36136ae884f9b8"
+        "sha256": "591615bd1f88fad9a98c2bb31fe27969fb9bf2a94c41c5d54612f668f8b2ea15"
       },
       {
         "archivo": "src/services/UsuarioService.js",
@@ -676,9 +720,101 @@
       {
         "archivo": "src/utils/ejecucionSerial.js",
         "sha256": "d4d3b94c14040a1fe715ae6351549bd488de15babe4400d2d9ede8aa44cc0851"
+      },
+      {
+        "archivo": "src/utils/fechaOperativa.js",
+        "sha256": "d5b1e3723644422e975d6899d6b3b60828c71ea629e01ffb3cb92f3acf16c168"
       }
     ],
     "referencias": [
+      {
+        "tabla": "Empresas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 34,
+        "metodo": "comprobarModelo",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 40,
+        "metodo": "obtener",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 45,
+        "metodo": "listar",
+        "nota": ""
+      },
+      {
+        "tabla": "Reservas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 54,
+        "metodo": "resumen",
+        "nota": ""
+      },
+      {
+        "tabla": "CanalesReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 54,
+        "metodo": "resumen",
+        "nota": ""
+      },
+      {
+        "tabla": "EstadosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 54,
+        "metodo": "resumen",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 55,
+        "metodo": "resumen",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 72,
+        "metodo": "guardar",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 69,
+        "metodo": "guardar",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 73,
+        "metodo": "guardar",
+        "nota": ""
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 86,
+        "metodo": "fijar",
+        "nota": ""
+      },
       {
         "tabla": "ReservaIncidencias",
         "operacion": "SELECT",
@@ -1539,7 +1675,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 64,
+        "linea": 66,
         "metodo": "obtenerTodos",
         "nota": ""
       },
@@ -1547,7 +1683,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 66,
+        "linea": 68,
         "metodo": "obtenerTodos",
         "nota": ""
       },
@@ -1555,7 +1691,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 70,
+        "linea": 72,
         "metodo": "obtenerTodos",
         "nota": ""
       },
@@ -1563,7 +1699,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 120,
+        "linea": 122,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -1571,7 +1707,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 158,
+        "linea": 160,
         "metodo": "obtenerPorEmail",
         "nota": ""
       },
@@ -1579,7 +1715,7 @@
         "tabla": "Huespedes",
         "operacion": "INSERT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 216,
+        "linea": 218,
         "metodo": "crear",
         "nota": ""
       },
@@ -1587,7 +1723,7 @@
         "tabla": "Huespedes",
         "operacion": "UPDATE",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 299,
+        "linea": 301,
         "metodo": "actualizar",
         "nota": ""
       },
@@ -1774,6 +1910,94 @@
         "linea": 183,
         "metodo": "sincronizarEnTransaccion",
         "nota": "Alias SQL resuelto y revisado contra FROM/JOIN."
+      },
+      {
+        "tabla": "Empresas",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 15,
+        "metodo": "comprobarModelo",
+        "nota": ""
+      },
+      {
+        "tabla": "ConfiguracionMonetaria",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 23,
+        "metodo": "configuracion",
+        "nota": ""
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 31,
+        "metodo": "tarifas",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 32,
+        "metodo": "tarifas",
+        "nota": ""
+      },
+      {
+        "tabla": "ConfiguracionMonetaria",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 46,
+        "metodo": "guardarConfiguracion",
+        "nota": ""
+      },
+      {
+        "tabla": "Propiedades",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 65,
+        "metodo": "guardarTarifa",
+        "nota": ""
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 66,
+        "metodo": "guardarTarifa",
+        "nota": ""
+      },
+      {
+        "tabla": "ConfiguracionMonetaria",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 43,
+        "metodo": "guardarConfiguracion",
+        "nota": ""
+      },
+      {
+        "tabla": "ConfiguracionMonetaria",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 47,
+        "metodo": "guardarConfiguracion",
+        "nota": ""
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operacion": "INSERT",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 62,
+        "metodo": "guardarTarifa",
+        "nota": ""
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operacion": "UPDATE",
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 67,
+        "metodo": "guardarTarifa",
+        "nota": ""
       },
       {
         "tabla": "Alertas",
@@ -2419,7 +2643,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 96,
+        "linea": 106,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2427,7 +2651,7 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 98,
+        "linea": 108,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2435,7 +2659,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 110,
+        "linea": 120,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2443,7 +2667,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 112,
+        "linea": 122,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2451,7 +2675,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 116,
+        "linea": 126,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2459,7 +2683,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 149,
+        "linea": 159,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2467,7 +2691,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 151,
+        "linea": 161,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2475,7 +2699,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 155,
+        "linea": 165,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2483,7 +2707,7 @@
         "tabla": "PropiedadImagenes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 183,
+        "linea": 193,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2491,7 +2715,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 301,
+        "linea": 312,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2499,7 +2723,7 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 303,
+        "linea": 314,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2507,7 +2731,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 315,
+        "linea": 326,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2515,7 +2739,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 317,
+        "linea": 328,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2523,7 +2747,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 321,
+        "linea": 332,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2531,7 +2755,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 354,
+        "linea": 365,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2539,7 +2763,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 356,
+        "linea": 367,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2547,7 +2771,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 360,
+        "linea": 371,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2555,7 +2779,7 @@
         "tabla": "PropiedadImagenes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 388,
+        "linea": 399,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2563,15 +2787,23 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 441,
+        "linea": 449,
         "metodo": "obtenerEstadoPorNombre",
+        "nota": ""
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operacion": "SELECT",
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "linea": 637,
+        "metodo": "actualizar",
         "nota": ""
       },
       {
         "tabla": "Propiedades",
         "operacion": "INSERT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 512,
+        "linea": 518,
         "metodo": "crear",
         "nota": ""
       },
@@ -2579,7 +2811,7 @@
         "tabla": "Propiedades",
         "operacion": "UPDATE",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 617,
+        "linea": 622,
         "metodo": "actualizar",
         "nota": ""
       },
@@ -2587,7 +2819,7 @@
         "tabla": "Propiedades",
         "operacion": "UPDATE",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 666,
+        "linea": 675,
         "metodo": "cambiarEstado",
         "nota": ""
       },
@@ -3338,6 +3570,41 @@
     ],
     "llamadasSQL": [
       {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 23,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 31,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 39,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 45,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 53,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 68,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "linea": 86,
+        "tipo": "query"
+      },
+      {
         "archivo": "src/repositories/AlertaRepository.js",
         "linea": 24,
         "tipo": "query"
@@ -3459,27 +3726,27 @@
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 18,
+        "linea": 20,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 110,
+        "linea": 112,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 148,
+        "linea": 150,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 215,
+        "linea": 217,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 298,
+        "linea": 300,
         "tipo": "query"
       },
       {
@@ -3505,6 +3772,36 @@
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
         "linea": 681,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 10,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 20,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 28,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 42,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 61,
+        "tipo": "query"
+      },
+      {
+        "archivo": "src/repositories/MonedasRepository.js",
+        "linea": 83,
         "tipo": "query"
       },
       {
@@ -3704,32 +4001,32 @@
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 16,
+        "linea": 26,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 221,
+        "linea": 232,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 430,
+        "linea": 438,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 511,
+        "linea": 517,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 616,
+        "linea": 621,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 665,
+        "linea": 674,
         "tipo": "query"
       },
       {
@@ -4022,6 +4319,44 @@
         ],
         "archivo": "src/repositories/NotificacionRepository.js",
         "activacion": "HOSTFLOW_NOTIFICACIONES_PERSONALES_ENABLED=1"
+      },
+      {
+        "tabla": "ConfiguracionMonetaria",
+        "operaciones": [
+          "SELECT",
+          "INSERT",
+          "UPDATE"
+        ],
+        "archivo": "src/repositories/MonedasRepository.js",
+        "activacion": "HOSTFLOW_MONEDAS_SQL_ENABLED=1; escritura exige HOSTFLOW_MONEDAS_WRITE_ENABLED=1"
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operaciones": [
+          "SELECT",
+          "INSERT",
+          "UPDATE"
+        ],
+        "archivo": "src/repositories/MonedasRepository.js",
+        "activacion": "HOSTFLOW_MONEDAS_SQL_ENABLED=1; escritura exige HOSTFLOW_MONEDAS_WRITE_ENABLED=1"
+      },
+      {
+        "tabla": "TarifasPropiedad",
+        "operaciones": [
+          "SELECT"
+        ],
+        "archivo": "src/repositories/PropiedadRepository.js",
+        "activacion": "HOSTFLOW_MONEDAS_SQL_ENABLED=1; solo guardia del precio legacy"
+      },
+      {
+        "tabla": "AcuerdosMonetariosReserva",
+        "operaciones": [
+          "SELECT",
+          "INSERT",
+          "UPDATE"
+        ],
+        "archivo": "src/repositories/AcuerdoMonetarioRepository.js",
+        "activacion": "HOSTFLOW_MONEDAS_RESERVAS_ENABLED=1; escritura exige HOSTFLOW_MONEDAS_WRITE_ENABLED=1"
       }
     ]
   },
@@ -4103,6 +4438,66 @@
       "path": "/configuracion/predeterminados-reserva",
       "permiso": "reservas.crear",
       "escriturasGET": "Lectura sin DML; finalización/sincronizaciones separadas en POST explícitos."
+    },
+    {
+      "metodo": "GET",
+      "path": "/monedas/estado",
+      "permiso": "propiedades.ver"
+    },
+    {
+      "metodo": "GET",
+      "path": "/monedas/tarifas",
+      "permiso": "propiedades.ver"
+    },
+    {
+      "metodo": "GET",
+      "path": "/monedas/configuracion",
+      "permiso": "configuracion.ver"
+    },
+    {
+      "metodo": "PUT",
+      "path": "/monedas/configuracion",
+      "permiso": "configuracion.modificar"
+    },
+    {
+      "metodo": "POST",
+      "path": "/monedas/consultar-bcra",
+      "permiso": "configuracion.modificar"
+    },
+    {
+      "metodo": "PUT",
+      "path": "/monedas/tarifas/:id",
+      "permiso": "propiedades.gestionar"
+    },
+    {
+      "metodo": "POST",
+      "path": "/monedas/propiedades",
+      "permiso": "propiedades.gestionar"
+    },
+    {
+      "metodo": "GET",
+      "path": "/monedas/reservas/:id/acuerdo",
+      "permiso": "reservas.importes"
+    },
+    {
+      "metodo": "PUT",
+      "path": "/monedas/reservas/:id/acuerdo",
+      "permiso": "reservas.importes"
+    },
+    {
+      "metodo": "POST",
+      "path": "/monedas/reservas/:id/fijacion",
+      "permiso": "reservas.importes"
+    },
+    {
+      "metodo": "GET",
+      "path": "/monedas/resumen",
+      "permiso": "reportes.economia"
+    },
+    {
+      "metodo": "GET",
+      "path": "/monedas/alertas",
+      "permiso": "alertas.ver"
     },
     {
       "metodo": "GET",
@@ -4720,5 +5115,6 @@
       "sha256": "d736e8ec0dd4cca572e3ec917ec8ab31fbfe37b2ae60a06bb27504ca3234d57f"
     }
   ],
-  "notificacionesPreparadas": "55/55 derechos directos confirmados por el usuario (48 historicos + siete nuevos, tres UPDATE por columna), CONNECT adicional conocido y roles amplios conservados. Activacion funcional pendiente; no repetir DDL/GRANT ni ejecutar los scripts congelados de retiro."
+  "notificacionesPreparadas": "55/55 derechos directos confirmados por el usuario (48 historicos + siete nuevos, tres UPDATE por columna), CONNECT adicional conocido y roles amplios conservados. Activacion funcional pendiente; no repetir DDL/GRANT ni ejecutar los scripts congelados de retiro.",
+  "monedasPreparadas": "Modelo monetario v2: ConfiguracionMonetaria/TarifasPropiedad/AcuerdosMonetariosReserva requieren SELECT/INSERT y UPDATE de columnas especificas propuestos, NO concedidos. Guardias de precio legacy solo SELECT. SQL, escritura e integracion de Reservas apagados por defecto. Matriz historica 19/48, siete derechos Notificaciones y seis guiones de transicion preservados. No usar los perfiles congelados anteriores para activar o retirar roles sin extenderlos y probarlos."
 }

@@ -7,6 +7,7 @@ const PropiedadCanalRepository = require(
 const PropiedadCanalService = require(
   "./PropiedadCanalService"
 );
+const {ErrorSeguridad}=require('../security/seguridadUsuarios');
 
 class PropiedadService {
   // =========================================================
@@ -124,6 +125,9 @@ class PropiedadService {
   // =========================================================
 
   async crearPropiedad(datos) {
+    const {estadoMonedas}=require('../config/monedas');
+    if(estadoMonedas().activado)throw new ErrorSeguridad(409,'MONEDAS_PRECIO_AUTORITATIVO','Creá la propiedad y su tarifa desde el formulario monetario actualizado.');
+    if(['moneda','monedaBase','tarifaMonetaria'].some(campo=>Object.hasOwn(datos,campo)))throw new ErrorSeguridad(400,'MONEDAS_PENDIENTES','El alta anterior no puede guardar una moneda declarada.');
     const estadoNormalizado =
       this.normalizarEstado(
         datos.estado || "Activa"
@@ -174,6 +178,7 @@ async modificarPropiedad(
   idPropiedad,
   datos
 ) {
+  if(['moneda','monedaBase','tarifaMonetaria'].some(campo=>Object.hasOwn(datos,campo)))throw new ErrorSeguridad(400,'MONEDAS_ENDPOINT','La moneda y la tarifa se revisan desde Monedas y cotizaciones.');
   const propiedadActual =
     await PropiedadRepository.obtenerPorId(
       idPropiedad
@@ -192,6 +197,7 @@ async modificarPropiedad(
     );
 
   const datosActualizados = {
+    preservarPrecio: datos.precioBase===undefined,
     nombre:
       datos.nombre !== undefined
         ? datos.nombre.trim()

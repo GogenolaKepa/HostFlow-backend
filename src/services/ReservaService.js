@@ -12,6 +12,7 @@ const ReservaEventoRepository = require("../repositories/ReservaEventoRepository
 const ReservaMensajeRepository = require("../repositories/ReservaMensajeRepository");
 const ReservaIncidenciaRepository = require("../repositories/ReservaIncidenciaRepository");
 const ReservaObservacionRepository = require("../repositories/ReservaObservacionRepository");
+const AcuerdosMonetarios = require('./AcuerdoMonetarioService');
 
 const FORMATO_HORA_RESERVA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -173,7 +174,8 @@ class ReservaService {
   const reservasDb =
     await ReservaRepository.obtenerTodas();
 
-  return reservasDb.map(
+  const reservasConAcuerdo=await AcuerdosMonetarios.enriquecerReservas(reservasDb);
+  return reservasConAcuerdo.map(
     (reserva) => {
       const solicitudAirbnbPendiente =
         reserva.canal === "Airbnb"
@@ -1034,8 +1036,11 @@ class ReservaService {
         )
       : null;
 
+  const acuerdoMonetario=await AcuerdosMonetarios.leer(reserva,repositorio);
+
   return {
     ...reserva,
+    ...(acuerdoMonetario?{acuerdoMonetario}:{}),
     finalizacionPendiente: this.esReservaVencida(reserva),
 
     tipoGestion:
@@ -1090,7 +1095,8 @@ class ReservaService {
   // RESERVAS MANUALES
   // =========================================================
 
-  async crearReserva(datos) {
+  async crearReserva(datos,actor=null) {
+  const especificacionAcuerdo=AcuerdosMonetarios.prepararAlta(datos.acuerdoMonetario,actor);
 
 
   const {
@@ -1249,6 +1255,7 @@ class ReservaService {
   if (!reservaCreada || !idReservaValido(reservaCreada.idReserva)) {
     throw new Error("No se pudo confirmar la creación de la reserva.");
   }
+  const acuerdoCreado=especificacionAcuerdo?await AcuerdosMonetarios.crearParaAlta(reservaCreada,especificacionAcuerdo,actor,contexto):null;
 
   // =========================================================
   // TIMELINE - RESERVA CREADA
@@ -1275,6 +1282,7 @@ class ReservaService {
       "Manual",
 
     datosJson: {
+      ...(acuerdoCreado?{acuerdoMonetario:acuerdoCreado}:{}),
       canal:
         "Manual",
 
@@ -1367,6 +1375,7 @@ class ReservaService {
     );
   }
   const control = await contexto.obtenerControlEdicion(reserva.idReserva);
+  await AcuerdosMonetarios.validarEdicion(reserva,datos,contexto);
 
   // =========================================================
   // NUEVOS DATOS

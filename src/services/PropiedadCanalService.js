@@ -607,6 +607,7 @@ async procesarEventoPropiedadAirbnb(
       : propiedadActual.estado;
 
   const datosActualizados = {
+    preservarPrecio: datos.precioBase===undefined,
     nombre:
       datos.nombre !== undefined
         ? String(datos.nombre).trim()
@@ -995,6 +996,7 @@ async procesarEventoPropiedadBooking(
       : propiedadActual.estado;
 
   const datosActualizados = {
+    preservarPrecio: datos.precioBase===undefined,
     nombre:
       datos.nombre !== undefined
         ? String(datos.nombre).trim()

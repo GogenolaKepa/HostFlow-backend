@@ -37,6 +37,7 @@ function prepararCreacionAislada() {
             await bloquear(tx, `fila:${args.idReserva}`);
             return { recordset: actual(tx, args.idReserva) ? [{ IdReserva: args.idReserva }] : [] };
           }
+          if(h.consultaExtra){const extra=await h.consultaExtra({texto,args,tx,paso});if(extra!==undefined)return extra;}
           if (texto.includes('IdEstadoReserva AS idEstadoReserva')) {
             const fila = actual(tx, args.idReserva);
             return { recordset: fila ? [{ idReserva: fila.idReserva, idEstadoReserva: h.idEstado(fila.estado) }] : [] };
@@ -115,6 +116,7 @@ function prepararCreacionAislada() {
       h.commits++; await paso('commitAntes', this);
       for (const [id, fila] of this.cambios) h.filas.set(id, copiar(fila));
       h.eventos.push(...copiar(this.eventos)); this.confirmada = true;
+      h.publicarExtra?.(this);
       h.confirmaciones.push({ tx: this.id, filas: copiar([...h.filas.values()]), eventos: copiar(h.eventos) });
       this.liberaciones.forEach(liberar => liberar());
       if (h.acusePerdido) throw Error('Commit ficticio aplicado; acuse perdido');
@@ -136,12 +138,15 @@ function prepararCreacionAislada() {
     h.filas = new Map(); h.eventos = []; h.colas = new Map(); h.transacciones = []; h.confirmaciones = [];
     h.fallos = {}; h.hooks = {}; h.inicios = 0; h.commits = 0; h.rollbacks = 0; h.inserts = 0; h.poolRequests = 0;
     h.resultadoLock = 0; h.acusePerdido = false; h.eventoSinResultado = false;
+    h.consultaExtra=null;h.publicarExtra=null;
     h.siguienteId = 1; h.siguienteEvento = 1; h.consultas = [];
     h.propiedades = new Map([7, 9].map(idPropiedad => [idPropiedad, { idPropiedad, nombre: 'Casa ficticia', estado: 'Activa', capacidadMaxima: 4 }]));
     h.huespedes = new Map([[8, { idHuesped: 8, nombre: 'Persona', apellido: 'Ficticia' }]]);
   };
   h.idEstado = estado => ({ Pendiente: 11, Confirmada: 12, Cancelada: 13, Finalizada: 14, 'No show': 15 })[estado];
   h.reset();
+  h.pool=pool;h.driver={...sql,Transaction,Request:class {constructor(conexion){return conexion.request();}}};
+  h.requestPara=request;
   const db = require.resolve('../../src/config/database');
   require.cache[db] = { id: db, filename: db, loaded: true, exports: { sql: { ...sql, Transaction }, poolPromise: Promise.resolve(pool) } };
   return h;
