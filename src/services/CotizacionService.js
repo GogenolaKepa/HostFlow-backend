@@ -5,8 +5,8 @@ const FUENTES=Object.freeze([
  {id:'MANUAL',nombre:'Manual',tipo:'MANUAL',disponible:true},
  {id:'BCRA',nombre:'BCRA — estadística de divisas',tipo:'BCRA_TIPO_COTIZACION',disponible:true,
   nota:'Campo tipoCotizacion de Estadísticas Cambiarias; no es compra/venta minorista ni se identifica como A3500. La API informa fecha, sin hora de publicación.'},
- {id:'BNA',nombre:'Banco Nación',disponible:false,urlOficial:'https://www.bna.com.ar/Personas',
-  nota:'Consulta externa en la web oficial: billetes y divisas tienen compra y venta distintas. No se acreditó una API pública autorizada para HostFlow; las condiciones de reproducción restringen la integración automática. No se consulta ni guarda como BNA.'},
+ {id:'BNA',nombre:'Banco Nación — venta reportada por MonedAPI',disponible:true,persistible:false,urlOficial:'https://www.bna.com.ar/Personas',
+  nota:'MonedAPI es un intermediario no oficial. Consulta informativa, sin guardado ni check-in. La categoría billete/divisa no está acreditada por su contrato.'},
 ]);
 class CotizacionService {
  constructor({fetcher=globalThis.fetch,reloj=()=>new Date(),ttl=300000}={}) {this.fetcher=fetcher;this.reloj=reloj;this.ttl=ttl;this.cache=null;this.pendiente=null;}

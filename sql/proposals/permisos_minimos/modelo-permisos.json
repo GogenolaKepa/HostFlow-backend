@@ -223,7 +223,7 @@
       },
       {
         "archivo": "src/config/politicasRutas.js",
-        "sha256": "74018230f27a3d37ba9dc85a696d1f520db585730efface25a845d9b5c12fa22"
+        "sha256": "480f213ec9b384c792f475172dc2708107484e70b8f0473915195164b2dfa0e5"
       },
       {
         "archivo": "src/controllers/AirbnbInboundController.js",
@@ -519,7 +519,7 @@
       },
       {
         "archivo": "src/routes/monedasRoutes.js",
-        "sha256": "2044d86228c637a72c6625abf8909b070c9e92f57538d3cf3c34dc7ebefbb08c"
+        "sha256": "487d879ffe04a3ed8cbfbf7db9929da042bfd77748497376d6f132ea93ce0bea"
       },
       {
         "archivo": "src/routes/notificacionRoutes.js",
@@ -547,7 +547,7 @@
       },
       {
         "archivo": "src/security/erroresSeguros.js",
-        "sha256": "3f03d14643da741aa2780a8e66b1a34a2f4e88f218364a0f5df9a289376c8e79"
+        "sha256": "4df2d5642cafad93c2aa2286d8fb418a347fe773ba0b4af23749b4b8deb828e2"
       },
       {
         "archivo": "src/security/identificadoresRuta.js",
@@ -662,8 +662,12 @@
         "sha256": "ec60d3b112af9053998608c05c218eabaffb50cf398919def144537ac606c737"
       },
       {
+        "archivo": "src/services/CotizacionBnaService.js",
+        "sha256": "0cb3f27cb0672bf32f7580e8aef379d90d880288de41122a2614693e62581cec"
+      },
+      {
         "archivo": "src/services/CotizacionService.js",
-        "sha256": "096e3c879356bcb740f5bd4938b3cde275135a7c7a8b495d891bb395176d15c9"
+        "sha256": "ef5ee8e7c86d8a342e47371575e9f3fc441cd7917fad6ed324f691e00198669c"
       },
       {
         "archivo": "src/services/DashboardService.js",
@@ -4462,6 +4466,11 @@
     {
       "metodo": "POST",
       "path": "/monedas/consultar-bcra",
+      "permiso": "configuracion.modificar"
+    },
+    {
+      "metodo": "POST",
+      "path": "/monedas/consultar-bna",
       "permiso": "configuracion.modificar"
     },
     {

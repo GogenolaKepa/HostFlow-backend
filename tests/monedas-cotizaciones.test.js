@@ -7,7 +7,7 @@ test('BCRA: URL oficial fija, TLS normal, cache y una llamada concurrente; no in
  const [a,b]=await Promise.all([s.consultar(),s.consultar()]);assert.equal(llamadas,1);assert.equal(a.id,b.id);assert.equal(a.horaPublicacion,null);assert.equal(a.fecha,'2026-10-16');
  assert.equal((await s.consultar()).cache,true);assert.equal(llamadas,1);assert.equal(s.vigente(a.id).valor,'1500.00000000');
  ahora=new Date('2026-10-17T15:06:00Z');assert.throws(()=>s.vigente(a.id));await s.consultar();assert.equal(llamadas,2);
- assert.equal(FUENTES.find(f=>f.id==='BNA').disponible,false);
+ assert.equal(FUENTES.find(f=>f.id==='BNA').disponible,true);assert.equal(FUENTES.find(f=>f.id==='BNA').persistible,false);
 });
 test('BCRA: errores/incompletos/no USD/futuro rechazan, sin reemplazo ni bucle de reintento',async()=>{
  for(const fetcher of [async()=>{throw Error('Red ficticia');},async()=>({ok:false}),async()=>({ok:true,text:async()=>JSON.stringify({status:200,results:[]})}),async()=>respuesta(-1),async()=>respuesta(NaN)]){

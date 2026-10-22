@@ -1,6 +1,8 @@
 const router=require('express').Router();
 const servicio=require('../services/MonedasService');
 const acuerdos=require('../services/AcuerdoMonetarioService');
+const {CotizacionBnaService}=require('../services/CotizacionBnaService');
+const cotizacionesBna=new CotizacionBnaService();
 async function ejecutar(req,res,operacion,consultaPermitida=false) {
  res.set('Cache-Control','no-store');
  try {
@@ -18,6 +20,11 @@ router.post('/consultar-bcra',(req,res)=>ejecutar(req,res,async()=>{
  if(!req.body || req.body.confirmar!==true || Object.keys(req.body).length!==1)throw Object.assign(new Error('Confirmá la consulta a BCRA.'),{status:400,codigo:'MONEDAS_CONFIRMACION'});
  try {return {cotizacion:await servicio.cotizaciones.consultar(),persistida:false};}
  catch {throw Object.assign(new Error('La fuente oficial no está disponible. No se usó una cotización de reemplazo.'),{status:503,codigo:'MONEDAS_FUENTE_NO_DISPONIBLE'});}
+}));
+router.post('/consultar-bna',(req,res)=>ejecutar(req,res,async()=>{
+ if(!req.body||req.body.confirmar!==true||Object.keys(req.body).length!==1)throw Object.assign(new Error('Confirmá la consulta a MonedAPI.'),{status:400,codigo:'MONEDAS_CONFIRMACION'});
+ try{return {cotizacion:await cotizacionesBna.consultar(),persistida:false};}
+ catch{throw Object.assign(new Error('MonedAPI no está disponible o devolvió datos incompatibles. No se usó una cotización de reemplazo. Podés contrastar en la web oficial del Banco Nación.'),{status:503,codigo:'MONEDAS_INTERMEDIARIO_NO_DISPONIBLE'});}
 }));
 router.get('/tarifas',(req,res)=>ejecutar(req,res,async()=>({tarifas:await servicio.tarifas()})));
 router.put('/tarifas/:id',(req,res)=>ejecutar(req,res,async()=>({tarifa:await servicio.guardarTarifa(req.usuario,Number(req.params.id),req.body)})));

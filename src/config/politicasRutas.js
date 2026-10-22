@@ -23,7 +23,7 @@ agregar("/configuracion", "configuracion.modificar", { PUT: ["/empresa", "/opera
 agregar("/configuracion", "reservas.crear", { GET: ["/predeterminados-reserva"] });
 agregar('/monedas','propiedades.ver',{GET:['/estado','/tarifas']});
 agregar('/monedas','configuracion.ver',{GET:['/configuracion']});
-agregar('/monedas','configuracion.modificar',{PUT:['/configuracion'],POST:['/consultar-bcra']});
+agregar('/monedas','configuracion.modificar',{PUT:['/configuracion'],POST:['/consultar-bcra','/consultar-bna']});
 agregar('/monedas','propiedades.gestionar',{PUT:['/tarifas/:id']});
 agregar('/monedas','propiedades.gestionar',{POST:['/propiedades']});
 agregar('/monedas','reservas.importes',{GET:['/reservas/:id/acuerdo'],PUT:['/reservas/:id/acuerdo'],POST:['/reservas/:id/fijacion']});
