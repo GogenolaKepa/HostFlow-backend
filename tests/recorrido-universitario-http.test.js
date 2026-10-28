@@ -13,12 +13,12 @@ test('HTTP real aislado: propiedad → huésped → reserva → calendario → e
  const guest=await api.pedir(`/huespedes/${g.idHuesped}`);assert.equal(guest.status,200);assert.equal(guest.data.huesped.historialReservas[0].idReserva,id);
  const renombrar=await api.pedir(`/huespedes/${g.idHuesped}`,'PUT',{nombre:'Persona revisada'});assert.equal(renombrar.status,200);
  const detalle=await api.pedir(`/reservas/${id}`);assert.equal(detalle.data.reserva.huesped,'Persona revisada Universitaria');
- const editar=await api.pedir(`/reservas/${id}`,'PUT',{fechaEgreso:mover(d,3)});assert.equal(editar.status,200);assert.equal(editar.data.reserva.fechaEgreso,mover(d,3));
+ const editar=await api.pedir(`/reservas/${id}`,'PUT',{versionEdicion:detalle.data.reserva.versionEdicion,fechaEgreso:mover(d,3)});assert.equal(editar.status,200);assert.equal(editar.data.reserva.fechaEgreso,mover(d,3));
  const eventos=await api.pedir(`/reservas/${id}/eventos`);assert.equal(eventos.status,200);assert.deepEqual(eventos.data.eventos.map(e=>e.tipo),['RESERVA_CREADA','RESERVA_MODIFICADA']);
- const cancelar=await api.pedir(`/reservas/${id}/cancelar`,'PATCH',{});assert.equal(cancelar.status,200);
+ const cancelar=await api.pedir(`/reservas/${id}/cancelar`,'PATCH',{versionEdicion:editar.data.reserva.versionEdicion});assert.equal(cancelar.status,200);
  const nuevamente=await api.pedir(ruta);assert.equal(nuevamente.status,200);assert.equal(nuevamente.data.propiedades[0].dias.find(x=>x.fecha===d).estado,'Disponible');
  const final=await api.pedir(`/reservas/${id}/eventos`);assert.deepEqual(final.data.eventos.map(e=>e.tipo),['RESERVA_CREADA','RESERVA_MODIFICADA','RESERVA_CANCELADA']);
- assert.equal((await api.pedir(`/reservas/${id}/cancelar`,'PATCH',{})).status,400);assert.equal(api.h.filas.size,1);assert.equal(api.h.eventos.length,3);
+ assert.equal((await api.pedir(`/reservas/${id}/cancelar`,'PATCH',{versionEdicion:cancelar.data.reserva.versionEdicion})).status,400);assert.equal(api.h.filas.size,1);assert.equal(api.h.eventos.length,3);
  const reporte=await api.pedir(`/dashboard/reportes?periodo=personalizado&fechaDesde=${d}&fechaHasta=${mover(d,10)}&idPropiedad=${p.idPropiedad}&canal=Manual`);assert.equal(reporte.status,200);assert.equal(reporte.data.reportes.resumen.totalReservasPeriodo,1);assert.equal(reporte.data.reportes.resumen.totalReservasOperativas,0);assert.deepEqual(reporte.data.reportes.porEstado,[{estado:'Cancelada',cantidad:1,porcentaje:100}]);
 });
 test('HTTP entre módulos: Booking simulado confirmado conserva conflicto, calendario, historial, reporte y ACK sin duplicar',async()=>{

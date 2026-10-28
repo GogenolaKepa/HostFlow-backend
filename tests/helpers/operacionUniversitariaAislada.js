@@ -47,7 +47,7 @@ async function crearApiUniversitaria(){
   }
   if(texto.includes('UPDATE dbo.Huespedes')){
    await h.hooks.huespedActualizar?.(args);if(h.fallos.huespedActualizar)throw h.fallos.huespedActualizar;
-   const id=Number(args.idHuesped),a=h.huespedes.get(id);if(!a)return {recordset:[],rowsAffected:[0]};h.huespedes.set(id,{...a,...copia(args)});return {recordset:[],rowsAffected:[1]};
+   const id=Number(args.idHuesped),a=h.huespedes.get(id);if(!a)return {recordset:[],rowsAffected:[0]};tx.huespedes??=new Map();tx.huespedes.set(id,{...a,...copia(args)});return {recordset:[],rowsAffected:[1]};
   }
   if(texto.includes('FROM dbo.Huespedes')){
    await h.hooks.huespedConsulta?.(args);if(h.fallos.huespedConsulta)throw h.fallos.huespedConsulta;
@@ -57,6 +57,7 @@ async function crearApiUniversitaria(){
    return {recordset:lista.map(g=>{const rs=filas(tx).filter(r=>r.idHuesped===g.idHuesped);return {...copia(g),cantidadReservas:rs.length,tieneReservaActiva:Number(rs.some(r=>operativa(r)&&r.fechaIngreso<=h.hoy&&h.hoy<r.fechaEgreso)),tieneReservaFutura:Number(rs.some(r=>operativa(r)&&r.fechaIngreso>h.hoy))};})};
   }
   if(texto.includes('FROM dbo.Propiedades p')){
+   await h.hooks.propiedadConsulta?.(args);if(h.fallos.propiedadConsulta)throw h.fallos.propiedadConsulta;
    const lista=[...new Map([...h.propiedades,...(tx.propiedades||[])]).values()].filter(p=>args.idPropiedad===undefined||p.idPropiedad===Number(args.idPropiedad));
    return {recordset:lista.map(p=>{const rs=filas(tx).filter(r=>r.idPropiedad===p.idPropiedad);return {...copia(p),cantidadReservas:rs.length,cantidadReservasActivas:rs.filter(operativa).length};})};
   }

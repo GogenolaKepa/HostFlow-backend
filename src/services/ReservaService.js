@@ -1,3 +1,4 @@
+const { versionReserva, comprobarVersionReserva } = require('../security/versionReserva');
 const { rangoReservaValido, idReservaValido, cantidadReserva, montoReserva } = require("../security/validacionReserva");
 const { crearEjecucionSerial } = require("../utils/ejecucionSerial");
 const procesarEntradaSerial = crearEjecucionSerial();
@@ -193,6 +194,7 @@ class ReservaService {
 
       return {
         ...reserva,
+        versionEdicion: versionReserva(reserva),
         finalizacionPendiente: this.esReservaVencida(reserva),
 
         tipoGestion:
@@ -1040,6 +1042,7 @@ class ReservaService {
 
   return {
     ...reserva,
+    versionEdicion: versionReserva(reserva),
     ...(acuerdoMonetario?{acuerdoMonetario}:{}),
     finalizacionPendiente: this.esReservaVencida(reserva),
 
@@ -1334,7 +1337,7 @@ class ReservaService {
   });
 }
 
-  async modificarReserva(idReserva, datos) {
+  async modificarReserva(idReserva, datos, versionEsperada) {
   return ReservaRepository.conEdicionManualAtomica(idReserva, async contexto => {
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
@@ -1344,6 +1347,8 @@ class ReservaService {
     await contexto.obtenerPorId(
       idReserva
     );
+  // La API exige la huella; se contrasta DESPUÉS del applock y del lock de fila.
+  if (versionEsperada !== undefined && reserva) comprobarVersionReserva(reserva, versionEsperada);
   this.validarReservaNoVencida(reserva);
 
   if (!reserva) {
@@ -1644,7 +1649,7 @@ class ReservaService {
   });
 }
 
-  async cancelarReserva(idReserva) {
+  async cancelarReserva(idReserva, versionEsperada) {
   return ReservaRepository.conCancelacionManualAtomica(idReserva, async contexto => {
   // =========================================================
   // OBTENER RESERVA DESDE AZURE SQL
@@ -1654,6 +1659,8 @@ class ReservaService {
     await contexto.obtenerPorId(
       idReserva
     );
+  // La API exige la huella; se contrasta DESPUÉS del applock y del lock de fila.
+  if (versionEsperada !== undefined && reserva) comprobarVersionReserva(reserva, versionEsperada);
   this.validarReservaNoVencida(reserva);
 
   if (!reserva) {

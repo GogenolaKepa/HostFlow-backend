@@ -86,10 +86,11 @@ class HuespedController {
     } catch (error) {
       error = protegerError(error);
       return res
-        .status(400)
+        .status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : error.status || 400)
         .json({
           mensaje:
             error.message,
+          codigo: error.codigo,
         });
     }
   }
@@ -120,10 +121,11 @@ class HuespedController {
     } catch (error) {
       error = protegerError(error);
       return res
-        .status(400)
+        .status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : error.status || 400)
         .json({
           mensaje:
             error.message,
+          codigo: error.codigo,
         });
     }
   }

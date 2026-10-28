@@ -242,6 +242,7 @@ class HuespedService {
     datos
   ) {
     datos=normalizarHuesped(datos,{alta:true});
+    return HuespedRepository.conEscrituraAtomica(async contexto => {
     const {
       nombre,
       apellido,
@@ -262,7 +263,7 @@ class HuespedService {
     }
 
     const emailExistente =
-      await HuespedRepository
+      await contexto
         .obtenerPorEmail(
           email
         );
@@ -274,7 +275,7 @@ class HuespedService {
     }
 
     const nuevoHuesped =
-      await HuespedRepository
+      await contexto
         .crear({
           nombre,
           apellido,
@@ -287,9 +288,11 @@ class HuespedService {
             nacionalidad || null,
         });
 
+    if (!Number.isInteger(nuevoHuesped?.idHuesped) || nuevoHuesped.idHuesped <= 0) throw new Error('No se pudo confirmar el huésped creado.');
     return this.formatearHuesped(
       nuevoHuesped
     );
+    });
   }
 
   // =========================================================
@@ -302,8 +305,9 @@ class HuespedService {
   ) {
     const emailVaciado=Object.hasOwn(datos||{},'email')&&!String(datos.email||'').trim();
     datos=normalizarHuesped(datos);
+    return HuespedRepository.conEscrituraAtomica(async contexto => {
     const huespedActual =
-      await HuespedRepository
+      await contexto
         .obtenerPorId(
           idHuesped
         );
@@ -324,7 +328,7 @@ class HuespedService {
         huespedActual.email
     ) {
       const emailExistente =
-        await HuespedRepository
+        await contexto
           .obtenerPorEmail(
             datos.email
           );
@@ -343,7 +347,7 @@ class HuespedService {
     }
 
     const huespedActualizado =
-      await HuespedRepository
+      await contexto
         .actualizar(
           idHuesped,
           {
@@ -379,9 +383,11 @@ class HuespedService {
           }
         );
 
+    if (huespedActualizado?.idHuesped !== Number(idHuesped)) throw new Error('No se pudo confirmar el huésped actualizado.');
     return this.formatearHuesped(
       huespedActualizado
     );
+    });
   }
 }
 

@@ -13,6 +13,17 @@ async function conexionPropiedad(conexion){
 }
 
 class PropiedadRepository {
+  async conEscrituraAtomica(ejecutar) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    return transaccionOperativa('HostFlow:Operaciones:FinalizacionReservas', tx => ejecutar(Object.freeze({
+      obtenerPorId: id => this.obtenerPorId(id, tx),
+      obtenerEstadoPorNombre: estado => this.obtenerEstadoPorNombre(estado, tx),
+      crear: (datos, estado) => this.crear(datos, estado, tx),
+      actualizar: (id, datos, estado) => this.actualizar(id, datos, estado, tx),
+      cambiarEstado: (id, estado) => this.cambiarEstado(id, estado, tx),
+    })));
+  }
+
   // =========================================================
   // OBTENER TODAS
   // =========================================================
@@ -309,7 +320,7 @@ class PropiedadRepository {
             23
           ) AS proximaFechaEgreso
 
-        FROM dbo.Propiedades p
+        FROM dbo.Propiedades p ${conexion ? 'WITH (UPDLOCK, HOLDLOCK)' : ''}
 
         INNER JOIN dbo.EstadosPropiedad ep
           ON ep.IdEstadoPropiedad =
@@ -560,9 +571,9 @@ class PropiedadRepository {
   async actualizar(
     idPropiedad,
     datos,
-    idEstadoPropiedad
+    idEstadoPropiedad, conexion
   ) {
-    const pool = await poolPromise;
+    const pool = await conexionPropiedad(conexion);
 
     const resultado = await pool
       .request()
@@ -641,7 +652,7 @@ class PropiedadRepository {
       throw new ErrorSeguridad(409,'MONEDAS_PRECIO_AUTORITATIVO','La tarifa declarada se modifica únicamente desde Monedas y cotizaciones. Recargá los datos.');
 
     return this.obtenerPorId(
-      idPropiedad
+      idPropiedad, conexion
     );
   }
 
@@ -651,9 +662,9 @@ class PropiedadRepository {
 
   async cambiarEstado(
     idPropiedad,
-    idEstadoPropiedad
+    idEstadoPropiedad, conexion
   ) {
-    const pool = await poolPromise;
+    const pool = await conexionPropiedad(conexion);
 
     await pool
       .request()
@@ -684,7 +695,7 @@ class PropiedadRepository {
       `);
 
     return this.obtenerPorId(
-      idPropiedad
+      idPropiedad, conexion
     );
   }
 }

@@ -4,7 +4,24 @@ const {
   sql,
 } = require("../config/database");
 
+// Una conexión por unidad; nunca se almacena en el singleton.
+async function conexionPara(conexion) {
+  if (conexion == null) return poolPromise;
+  if (typeof conexion.request !== 'function') throw new TypeError('Contexto de huésped inválido.');
+  return conexion;
+}
 class HuespedRepository {
+  async conEscrituraAtomica(ejecutar) {
+    const { transaccionOperativa } = require('./transaccionOperativa');
+    // Comparte orden/protocolo con el alta Booking y las reservas manuales.
+    return transaccionOperativa('HostFlow:Operaciones:FinalizacionReservas', tx => ejecutar(Object.freeze({
+      obtenerPorId: id => this.obtenerPorId(id, tx),
+      obtenerPorEmail: email => this.obtenerPorEmail(email, tx),
+      crear: datos => this.crear(datos, tx),
+      actualizar: (id, datos) => this.actualizar(id, datos, tx),
+    })));
+  }
+
   // =========================================================
   // OBTENER TODOS
   // =========================================================
@@ -95,11 +112,9 @@ class HuespedRepository {
   // OBTENER POR ID
   // =========================================================
 
-  async obtenerPorId(
-    idHuesped
-  ) {
+  async obtenerPorId(idHuesped, conexion = null) {
     const pool =
-      await poolPromise;
+      await conexionPara(conexion);
 
     const resultado =
       await pool
@@ -119,7 +134,7 @@ class HuespedRepository {
             Documento AS dni,
             Nacionalidad AS nacionalidad,
             OrigenRegistro AS origenRegistro
-          FROM dbo.Huespedes
+          FROM dbo.Huespedes ${conexion ? 'WITH (UPDLOCK, HOLDLOCK)' : ''}
           WHERE IdHuesped = @idHuesped;
         `);
 
@@ -133,11 +148,9 @@ class HuespedRepository {
   // OBTENER POR EMAIL
   // =========================================================
 
-  async obtenerPorEmail(
-    email
-  ) {
+  async obtenerPorEmail(email, conexion = null) {
     const pool =
-      await poolPromise;
+      await conexionPara(conexion);
 
     const resultado =
       await pool
@@ -171,9 +184,9 @@ class HuespedRepository {
   // CREAR
   // =========================================================
 
-  async crear(datos) {
+  async crear(datos, conexion = null) {
     const pool =
-      await poolPromise;
+      await conexionPara(conexion);
 
     const resultado =
       await pool
@@ -253,12 +266,10 @@ class HuespedRepository {
   // ACTUALIZAR
   // =========================================================
 
-  async actualizar(
-    idHuesped,
-    datos
-  ) {
+  async actualizar(idHuesped,
+    datos, conexion = null) {
     const pool =
-      await poolPromise;
+      await conexionPara(conexion);
 
     await pool
       .request()
@@ -309,9 +320,7 @@ class HuespedRepository {
         WHERE IdHuesped = @idHuesped;
       `);
 
-    return this.obtenerPorId(
-      idHuesped
-    );
+    return this.obtenerPorId(idHuesped, conexion);
   }
 }
 

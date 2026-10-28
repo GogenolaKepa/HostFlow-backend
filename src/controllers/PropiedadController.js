@@ -91,7 +91,7 @@ class PropiedadController {
         error
       );
 
-      return res.status(error.status||400).json({
+      return res.status(error.codigo === 'OPERACION_RESULTADO_INCIERTO' ? 500 : (error.status||400)).json({
         mensaje: error.message,
         codigo: error.codigo,
       });
@@ -128,7 +128,7 @@ class PropiedadController {
         error
       );
 
-      return res.status(error.status||400).json({
+      return res.status(error.codigo === 'OPERACION_RESULTADO_INCIERTO' ? 500 : (error.status||400)).json({
         mensaje: error.message,
         codigo: error.codigo,
       });
@@ -166,8 +166,9 @@ class PropiedadController {
         error
       );
 
-      return res.status(400).json({
+      return res.status(error.codigo === 'OPERACION_RESULTADO_INCIERTO' ? 500 : (error.status||400)).json({
         mensaje: error.message,
+        codigo: error.codigo,
       });
     }
   }

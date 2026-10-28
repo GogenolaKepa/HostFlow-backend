@@ -152,8 +152,9 @@ class PropiedadService {
       datosPropiedad
     );
 
+    return PropiedadRepository.conEscrituraAtomica(async repo => {
     const estado =
-      await PropiedadRepository
+      await repo
         .obtenerEstadoPorNombre(
           estadoNormalizado
         );
@@ -164,10 +165,10 @@ class PropiedadService {
       );
     }
 
-    return PropiedadRepository.crear(
-      datosPropiedad,
-      estado.idEstadoPropiedad
-    );
+    const creada = await repo.crear(datosPropiedad, estado.idEstadoPropiedad);
+    if (!Number.isInteger(creada?.idPropiedad) || creada.idPropiedad <= 0) throw new Error('No se pudo verificar la propiedad creada.');
+    return creada;
+    });
   }
 
   // =========================================================
@@ -179,8 +180,9 @@ async modificarPropiedad(
   datos
 ) {
   if(['moneda','monedaBase','tarifaMonetaria'].some(campo=>Object.hasOwn(datos,campo)))throw new ErrorSeguridad(400,'MONEDAS_ENDPOINT','La moneda y la tarifa se revisan desde Monedas y cotizaciones.');
+  const propiedadActualizada = await PropiedadRepository.conEscrituraAtomica(async repo => {
   const propiedadActual =
-    await PropiedadRepository.obtenerPorId(
+    await repo.obtenerPorId(
       idPropiedad
     );
 
@@ -248,7 +250,7 @@ async modificarPropiedad(
   );
 
   const estado =
-    await PropiedadRepository
+    await repo
       .obtenerEstadoPorNombre(
         estadoNormalizado
       );
@@ -266,13 +268,19 @@ async modificarPropiedad(
    * inmediatamente el cambio realizado
    * por el operador.
    */
-  const propiedadActualizada =
-    await PropiedadRepository.actualizar(
+  const actualizada =
+    await repo.actualizar(
       idPropiedad,
       datosActualizados,
       estado.idEstadoPropiedad
     );
 
+  if (!actualizada || Number(actualizada.idPropiedad) !== Number(idPropiedad)) throw new Error('No se pudo verificar la propiedad actualizada.');
+  return actualizada;
+  });
+
+  // La sincronización externa no participa en el commit local.
+  try {
   /*
    * Después intentamos sincronizar el cambio
    * con todos los canales externos donde
@@ -302,6 +310,9 @@ async modificarPropiedad(
     ...propiedadFinal,
     sincronizaciones,
   };
+  } catch {
+    throw Object.assign(new Error('La propiedad fue guardada localmente, pero no se pudo confirmar el estado final de sus canales. Recargá antes de reintentar.'), {status:500, codigo:'PROPIEDAD_SINCRONIZACION_PENDIENTE'});
+  }
 }
 
   // =========================================================
@@ -312,8 +323,9 @@ async modificarPropiedad(
     idPropiedad,
     estado
   ) {
+    return PropiedadRepository.conEscrituraAtomica(async repo => {
     const propiedad =
-      await PropiedadRepository.obtenerPorId(
+      await repo.obtenerPorId(
         idPropiedad
       );
 
@@ -327,7 +339,7 @@ async modificarPropiedad(
       this.normalizarEstado(estado);
 
     const estadoEncontrado =
-      await PropiedadRepository
+      await repo
         .obtenerEstadoPorNombre(
           estadoNormalizado
         );
@@ -338,11 +350,10 @@ async modificarPropiedad(
       );
     }
 
-    return PropiedadRepository
-      .cambiarEstado(
-        idPropiedad,
-        estadoEncontrado.idEstadoPropiedad
-      );
+    const actualizada = await repo.cambiarEstado(idPropiedad, estadoEncontrado.idEstadoPropiedad);
+    if (!actualizada || Number(actualizada.idPropiedad) !== Number(idPropiedad)) throw new Error('No se pudo verificar el estado de la propiedad.');
+    return actualizada;
+    });
   }
 }
 

@@ -33,7 +33,7 @@ function autorizarCampos(req, res, next) {
       campos = ["idPropiedad", "idHuesped", "fechaIngreso", "horaIngreso", "fechaEgreso", "horaEgreso", "cantidadHuespedes", "montoEstimado", "acuerdoMonetario"];
     }
     if (politica.path === "/reservas/:id" && req.method === "PUT") {
-      campos = ["fechaIngreso", "horaIngreso", "fechaEgreso", "horaEgreso"];
+      campos = ["fechaIngreso", "horaIngreso", "fechaEgreso", "horaEgreso", "versionEdicion"];
       if (tienePermiso(req.usuario, "reservas.importes")) campos.push("montoEstimado");
       if (tienePermiso(req.usuario, "reservas.estado")) campos.push("estado");
     }

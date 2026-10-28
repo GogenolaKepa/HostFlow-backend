@@ -1,3 +1,4 @@
+const { exigirVersionReserva } = require('../security/versionReserva');
 const { protegerError, registrarErrorSeguro } = require("../security/erroresSeguros");
 const ReservaService = require("../services/ReservaService");
 
@@ -541,7 +542,8 @@ class ReservaController {
       const reserva =
         await ReservaService.modificarReserva(
           id,
-          req.body
+          req.body,
+          exigirVersionReserva(req.body?.versionEdicion)
         );
 
       return res.status(200).json({
@@ -571,7 +573,8 @@ class ReservaController {
 
       const reserva =
         await ReservaService.cancelarReserva(
-          id
+          id,
+          exigirVersionReserva(req.body?.versionEdicion)
         );
 
       return res.status(200).json({
@@ -586,7 +589,7 @@ class ReservaController {
         error
       );
 
-      return res.status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : 400).json({
+      return res.status(error.codigo === "OPERACION_RESULTADO_INCIERTO" ? 500 : error.status || 400).json({
         mensaje: error.message,
         codigo: error.codigo,
       });

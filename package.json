@@ -16,7 +16,8 @@
     "admin:bootstrap": "node scripts/bootstrapAdministrador.js",
     "test:sql": "node --test tests/integration/sql-seguridad.test.js",
     "test:sql:configuracion": "node --test tests/integration/sql-configuracion.test.js",
-    "test:sql:check": "node scripts/comprobarSQLLocal.js --read-only"
+    "test:sql:check": "node scripts/comprobarSQLLocal.js --read-only",
+    "dev:azure": "node scripts/devAzure.js"
   },
   "keywords": [],
   "author": "Kepa Gogenola",

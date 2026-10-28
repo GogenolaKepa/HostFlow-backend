@@ -1,5 +1,6 @@
 const CODIGOS = new Set(["EREQUEST", "ELOGIN", "ESOCKET", "ETIMEOUT", "ECONNCLOSED", "ENOTOPEN", "ECONNREFUSED", "ENOTFOUND", "ECONNRESET"]);
 const MENSAJES_SEGURIDAD = Object.freeze({
+  PROPIEDAD_SINCRONIZACION_PENDIENTE: 'La propiedad fue guardada en HostFlow, pero no se pudo confirmar el estado final de sus canales. Recargá los datos antes de reintentar.',
   MONEDAS_PENDIENTES: 'La persistencia de monedas está pendiente de aprobación. No se guardaron cambios.',
   MONEDAS_SOLO_LECTURA: 'Monedas está en modo de solo lectura.',
   MONEDAS_MODELO_PENDIENTE: 'El modelo de monedas o la empresa no están preparados.',

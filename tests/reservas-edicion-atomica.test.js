@@ -1,3 +1,4 @@
+const { versionReserva } = require('../src/security/versionReserva');
 // Servicios/repositorios/JWT reales; driver y filas ficticios, sin dotenv o motor SQL.
 const { test, before, beforeEach, after } = require('node:test');
 const assert = require('node:assert/strict');
@@ -193,7 +194,7 @@ test('el repositorio exige contexto y control interno válidos, sin fallback al 
 async function editarHTTP(datos, cuenta = cuentas[0], id = '1') {
   const headers = { 'Content-Type': 'application/json' };
   if (cuenta) headers.Authorization = `Bearer ${jwt.sign({ idUsuario: cuenta.idUsuario, email: cuenta.email }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '5m' })}`;
-  const respuesta = await fetch(`${base}/api/reservas/${id}`, { method: 'PUT', headers, body: JSON.stringify(datos) });
+  const respuesta = await fetch(`${base}/api/reservas/${id}`, { method: 'PUT', headers, body: JSON.stringify({versionEdicion:versionReserva(h.reserva),...datos}) });
   return { respuesta, datos: await respuesta.json() };
 }
 
@@ -237,4 +238,51 @@ test('HTTP: errores del driver siguen sanitizados y no dejan historial ni modifi
   const { respuesta, datos } = await editarHTTP({ montoEstimado: 200 });
   assert.equal(respuesta.status, 503);
   assert.deepEqual(datos, { codigo: 'ERROR_INTERNO', mensaje: 'No se pudo completar la operación. Reintente más tarde.' }); revertida();
+});
+
+
+test('formulario sin versión: 428 antes de BEGIN; tampoco admite una huella inválida', async () => {
+  for(const versionEdicion of [null, '', 'alterada', {}, []]) {
+    const r=await editarHTTP({horaEgreso:'11:00',versionEdicion});
+    assert.equal(r.respuesta.status,428); assert.equal(r.datos.codigo,'RESERVA_VERSION_REQUERIDA');
+  }
+  assert.equal(h.inicios,0); assert.equal(h.updates,0); assert.equal(h.eventos.length,0);
+});
+
+test('dos formularios: HTTP rechaza el segundo estado obsoleto, conserva el primero y su único evento', async () => {
+  const versionEdicion=versionReserva(h.reserva);
+  const primera=await editarHTTP({horaEgreso:'11:00',versionEdicion});
+  assert.equal(primera.respuesta.status,200);
+  assert.notEqual(primera.datos.reserva.versionEdicion,versionEdicion);
+  const segunda=await editarHTTP({horaEgreso:'12:00',versionEdicion});
+  assert.equal(segunda.respuesta.status,409);assert.equal(segunda.datos.codigo,'RESERVA_CONFLICTO_CONCURRENCIA');
+  assert.equal(h.reserva.horaEgreso,'11:00');assert.equal(h.updates,1);assert.equal(h.eventos.length,1);
+  assert.equal(h.commits,1);assert.equal(h.rollbacks,1);assert.equal(h.poolRequests,0);
+  const explicita=await editarHTTP({horaEgreso:'12:00',versionEdicion:primera.datos.reserva.versionEdicion});
+  assert.equal(explicita.respuesta.status,200);assert.equal(h.eventos.length,2);
+});
+
+test('huella obtenida desde GET conserva contrato y permisos; nombre de propiedad no es una revisión de reserva', async () => {
+  h.permitirPool=true;
+  const dto=await servicio.obtenerReservaPorId(1);
+  assert.equal(dto.versionEdicion,versionReserva(h.reserva));
+  assert.equal(versionReserva({...h.reserva,propiedad:'Etiqueta cambiada'}),dto.versionEdicion);
+  assert.notEqual(versionReserva({...h.reserva,idPropiedad:999}),dto.versionEdicion);
+});
+
+test('dos envíos simultáneos de la misma versión: uno espera y luego obtiene conflicto sin otro historial', {timeout:3000},async()=>{
+  const version=versionReserva(h.reserva),entra=senal(),seguir=senal();
+  h.hooks.evento=async tx=>{if(tx.id===1){entra.resolver();await seguir.promise;}};
+  const primero=servicio.modificarReserva(1,{montoEstimado:200},version);await entra.promise;
+  const segundo=servicio.modificarReserva(1,{montoEstimado:300},version);
+  const rechazo=assert.rejects(segundo,esConflicto);seguir.resolver();await Promise.all([primero,rechazo]);
+  assert.equal(h.reserva.montoEstimado,200);assert.equal(h.eventos.length,1);assert.equal(h.updates,1);
+});
+
+test('commit aplicado sin acuse: el reenvío explícito con versión anterior no duplica escritura ni historial',async()=>{
+  const version=versionReserva(h.reserva);h.acusePerdido=true;
+  await assert.rejects(servicio.modificarReserva(1,{montoEstimado:200},version),e=>e.codigo==='OPERACION_RESULTADO_INCIERTO');
+  h.acusePerdido=false;
+  await assert.rejects(servicio.modificarReserva(1,{montoEstimado:200},version),esConflicto);
+  assert.equal(h.updates,1);assert.equal(h.eventos.length,1);
 });

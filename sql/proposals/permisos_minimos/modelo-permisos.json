@@ -271,7 +271,7 @@
       },
       {
         "archivo": "src/controllers/HuespedController.js",
-        "sha256": "923442e6e4bd7e80ba7dce0754c87b10b8ff11b236534d2f370215e20666915c"
+        "sha256": "2ff9c7f782dce99be2cac9fc54b8000116b63bbbccdd7ec0e3d40524d4360442"
       },
       {
         "archivo": "src/controllers/LimpiezaController.js",
@@ -287,7 +287,7 @@
       },
       {
         "archivo": "src/controllers/PropiedadController.js",
-        "sha256": "be26469b7d4a6ee57af8b9d4bb416f8c724564f3cd5c8e834fae4a670dc57527"
+        "sha256": "349e55044d7eb489923b4682b069c6da723a593116a684631ccca1de246f5e73"
       },
       {
         "archivo": "src/controllers/PropiedadImagenController.js",
@@ -299,7 +299,7 @@
       },
       {
         "archivo": "src/controllers/ReservaController.js",
-        "sha256": "ed1f4e21450b6e1eeaf3189097c84cd6ee5beb903134d079f9d325aebee508d8"
+        "sha256": "81c33680e2ebe763ec8c2a8a14a3af35b4ee4389bcde292a650e86c8f87c17ce"
       },
       {
         "archivo": "src/controllers/UsuarioController.js",
@@ -323,7 +323,7 @@
       },
       {
         "archivo": "src/middlewares/autorizacion.js",
-        "sha256": "6935420c3faae9df3e3a5d66231a64524161c1cf94f4e7a726704451238cdd1c"
+        "sha256": "06c54067695a39e48a238b36d0606a39f1c67820dd9c85d651b4ef0d41a5a98d"
       },
       {
         "archivo": "src/middlewares/cambioPasswordObligatorio.js",
@@ -395,7 +395,7 @@
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "sha256": "546d4b3316abad4dddfd49edf8e7ff2be11ac4ff84d2da27e0809464981d006c"
+        "sha256": "3ed708b71d75c9949c736bb27515cbe9ca5a131d38281b96581c71ab7faa2aa8"
       },
       {
         "archivo": "src/repositories/LimpiezaRepository.js",
@@ -427,7 +427,7 @@
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "sha256": "1c26faec810b8f297e501ca7acb44d980bf8d5f5e322e2e6b1249dcb272cda2b"
+        "sha256": "47e9c7605a51b7261b7ca4517ccfc7a27817300029183534b4526f941f607735"
       },
       {
         "archivo": "src/repositories/RecomendacionRepository.js",
@@ -547,7 +547,7 @@
       },
       {
         "archivo": "src/security/erroresSeguros.js",
-        "sha256": "4df2d5642cafad93c2aa2286d8fb418a347fe773ba0b4af23749b4b8deb828e2"
+        "sha256": "a8290a13e42bb4e945098df406dcb9ffd69e8150ea28b6a18818895ca4598a5e"
       },
       {
         "archivo": "src/security/identificadoresRuta.js",
@@ -576,6 +576,10 @@
       {
         "archivo": "src/security/validacionReserva.js",
         "sha256": "9cda425cf2ecdca646e21d7d131edae212e91af97128cf653f819a5519b09e4f"
+      },
+      {
+        "archivo": "src/security/versionReserva.js",
+        "sha256": "86cbc37d27cacea5b84f28c2e3bf3bdd3b06896e73a7645036c1f8fd48b093e8"
       },
       {
         "archivo": "src/server.js",
@@ -675,7 +679,7 @@
       },
       {
         "archivo": "src/services/HuespedService.js",
-        "sha256": "62459951f72f1d7a351277da751db513fae1e0e26c9937391d832a80fd0940b0"
+        "sha256": "04a12650a368c714e5a7a724c23bfeabf43ca5e6a41055a2ae8d20b16ff35d02"
       },
       {
         "archivo": "src/services/IaService.js",
@@ -707,7 +711,7 @@
       },
       {
         "archivo": "src/services/PropiedadService.js",
-        "sha256": "9281487dc0f4beec8c1b221f2bc8fff45f29412c7d05609e719293418dd2c7af"
+        "sha256": "3efe59b39dab10c0c9bc29e77e315e9a1c39c6365476927589956fe7bc0b20b7"
       },
       {
         "archivo": "src/services/RecomendacionService.js",
@@ -715,7 +719,7 @@
       },
       {
         "archivo": "src/services/ReservaService.js",
-        "sha256": "591615bd1f88fad9a98c2bb31fe27969fb9bf2a94c41c5d54612f668f8b2ea15"
+        "sha256": "ddee6de57bb1640db8d76d559df332753954f6477280dea53926aaa39de2a3b8"
       },
       {
         "archivo": "src/services/UsuarioService.js",
@@ -1679,7 +1683,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 66,
+        "linea": 83,
         "metodo": "obtenerTodos",
         "nota": ""
       },
@@ -1687,7 +1691,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 68,
+        "linea": 85,
         "metodo": "obtenerTodos",
         "nota": ""
       },
@@ -1695,7 +1699,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 72,
+        "linea": 89,
         "metodo": "obtenerTodos",
         "nota": ""
       },
@@ -1703,7 +1707,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 122,
+        "linea": 137,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -1711,7 +1715,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 160,
+        "linea": 173,
         "metodo": "obtenerPorEmail",
         "nota": ""
       },
@@ -1719,7 +1723,7 @@
         "tabla": "Huespedes",
         "operacion": "INSERT",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 218,
+        "linea": 231,
         "metodo": "crear",
         "nota": ""
       },
@@ -1727,7 +1731,7 @@
         "tabla": "Huespedes",
         "operacion": "UPDATE",
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 301,
+        "linea": 312,
         "metodo": "actualizar",
         "nota": ""
       },
@@ -2647,7 +2651,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 106,
+        "linea": 117,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2655,7 +2659,7 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 108,
+        "linea": 119,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2663,7 +2667,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 120,
+        "linea": 131,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2671,7 +2675,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 122,
+        "linea": 133,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2679,7 +2683,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 126,
+        "linea": 137,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2687,7 +2691,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 159,
+        "linea": 170,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2695,7 +2699,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 161,
+        "linea": 172,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2703,7 +2707,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 165,
+        "linea": 176,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2711,7 +2715,7 @@
         "tabla": "PropiedadImagenes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 193,
+        "linea": 204,
         "metodo": "obtenerTodas",
         "nota": ""
       },
@@ -2719,7 +2723,7 @@
         "tabla": "Propiedades",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 312,
+        "linea": 323,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2727,7 +2731,7 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 314,
+        "linea": 325,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2735,7 +2739,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 326,
+        "linea": 337,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2743,7 +2747,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 328,
+        "linea": 339,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2751,7 +2755,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 332,
+        "linea": 343,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2759,7 +2763,7 @@
         "tabla": "Reservas",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 365,
+        "linea": 376,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2767,7 +2771,7 @@
         "tabla": "EstadosReserva",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 367,
+        "linea": 378,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2775,7 +2779,7 @@
         "tabla": "Huespedes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 371,
+        "linea": 382,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2783,7 +2787,7 @@
         "tabla": "PropiedadImagenes",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 399,
+        "linea": 410,
         "metodo": "obtenerPorId",
         "nota": ""
       },
@@ -2791,7 +2795,7 @@
         "tabla": "EstadosPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 449,
+        "linea": 460,
         "metodo": "obtenerEstadoPorNombre",
         "nota": ""
       },
@@ -2799,7 +2803,7 @@
         "tabla": "TarifasPropiedad",
         "operacion": "SELECT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 637,
+        "linea": 648,
         "metodo": "actualizar",
         "nota": ""
       },
@@ -2807,7 +2811,7 @@
         "tabla": "Propiedades",
         "operacion": "INSERT",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 518,
+        "linea": 529,
         "metodo": "crear",
         "nota": ""
       },
@@ -2815,7 +2819,7 @@
         "tabla": "Propiedades",
         "operacion": "UPDATE",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 622,
+        "linea": 633,
         "metodo": "actualizar",
         "nota": ""
       },
@@ -2823,7 +2827,7 @@
         "tabla": "Propiedades",
         "operacion": "UPDATE",
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 675,
+        "linea": 686,
         "metodo": "cambiarEstado",
         "nota": ""
       },
@@ -3730,27 +3734,27 @@
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 20,
+        "linea": 37,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 112,
+        "linea": 127,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 150,
+        "linea": 163,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 217,
+        "linea": 230,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/HuespedRepository.js",
-        "linea": 300,
+        "linea": 311,
         "tipo": "query"
       },
       {
@@ -4005,32 +4009,32 @@
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 26,
+        "linea": 37,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 232,
+        "linea": 243,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 438,
+        "linea": 449,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 517,
+        "linea": 528,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 621,
+        "linea": 632,
         "tipo": "query"
       },
       {
         "archivo": "src/repositories/PropiedadRepository.js",
-        "linea": 674,
+        "linea": 685,
         "tipo": "query"
       },
       {

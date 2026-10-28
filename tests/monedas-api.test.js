@@ -5,7 +5,7 @@ const idDB=require.resolve('../src/config/database');let sqlAccesos=0;
 require.cache[idDB]={id:idDB,filename:idDB,loaded:true,exports:{sql:require('mssql'),poolPromise:new Proxy({},{get(){sqlAccesos++;throw Error('Conexion SQL prohibida');}})}};
 const {usuarios}=require('../src/data/mockData');const cuentas=['Administrador','Operador'].map((rol,i)=>({idUsuario:9970+i,nombre:'Prueba monedas',email:`monedas${i}@example.invalid`,estado:'Activo',rol:{nombre:rol}}));usuarios.push(...cuentas);
 const servicio=require('../src/services/MonedasService');let fuentes=0;
-servicio.cotizaciones.fetcher=async()=>{fuentes++;return {ok:true,text:async()=>JSON.stringify({status:200,results:[{fecha:new Date().toISOString().slice(0,10),detalle:[{codigoMoneda:'USD',tipoCotizacion:1000}]}]})};};
+servicio.cotizaciones.fetcher=async()=>{fuentes++;return {ok:true,text:async()=>JSON.stringify({status:200,results:[{fecha:require('../src/domain/monedas').fechaNegocio(),detalle:[{codigoMoneda:'USD',tipoCotizacion:1000}]}]})};};
 const app=require('../src/app');let server,base;
 before(async()=>{server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base=`http://127.0.0.1:${server.address().port}/api/monedas`;});
 after(async()=>{await new Promise(r=>server.close(r));for(const u of cuentas)usuarios.splice(usuarios.indexOf(u),1);for(const [k,v]of Object.entries(antes)){if(v===undefined)delete process.env[k];else process.env[k]=v;}});

@@ -1,3 +1,4 @@
+const { versionReserva } = require('../src/security/versionReserva');
 const { test, before, beforeEach, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { randomBytes } = require('node:crypto');
@@ -179,7 +180,7 @@ test('regresión 2C: una edición ya validada termina antes de que cancelación 
 
 async function cancelarHTTP(cuenta = cuentas[0], id = '1') {
   const headers = cuenta ? { Authorization: `Bearer ${jwt.sign({ idUsuario: cuenta.idUsuario, email: cuenta.email }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '5m' })}` } : {};
-  const respuesta = await fetch(`${base}/api/reservas/${id}/cancelar`, { method: 'PATCH', headers });
+  const respuesta = await fetch(`${base}/api/reservas/${id}/cancelar`, { method: 'PATCH', headers: {...headers,'Content-Type':'application/json'}, body:JSON.stringify({versionEdicion:versionReserva(h.reserva)}) });
   return { respuesta, datos: await respuesta.json() };
 }
 
@@ -209,4 +210,13 @@ test('HTTP: fallo del driver al crear historial se sanitiza y revierte ambas esc
   assert.equal(respuesta.status, 503);
   assert.deepEqual(datos, { codigo: 'ERROR_INTERNO', mensaje: 'No se pudo completar la operación. Reintente más tarde.' });
   sinConfirmacion();
+});
+
+
+test('cancelación con formulario obsoleto rechaza antes del UPDATE y conserva la edición ajena',async()=>{
+  const version=versionReserva(h.reserva);
+  await servicio.modificarReserva(1,{montoEstimado:200});
+  await assert.rejects(servicio.cancelarReserva(1,version),e=>e.codigo==='RESERVA_CONFLICTO_CONCURRENCIA');
+  assert.equal(h.reserva.estado,'Confirmada');assert.equal(h.reserva.montoEstimado,200);
+  assert.equal(h.updates,1);assert.deepEqual(h.eventos.map(e=>e.tipo),['RESERVA_MODIFICADA']);
 });
