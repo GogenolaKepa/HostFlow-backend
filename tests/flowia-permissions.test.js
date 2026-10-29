@@ -27,7 +27,7 @@ const service = require("../src/services/RecomendacionService");
 
 test("FlowIA operativo filtra antes de IA y no consulta históricos ni señales comerciales", async () => {
   comerciales = historicos = 0;
-  const resultado = await service.obtenerRecomendaciones({ incluirComerciales: false });
+  const resultado = await service.obtenerRecomendaciones({ incluirComerciales: false, usarIA: true });
   assert.equal(comerciales, 0);
   assert.equal(historicos, 0);
   assert.deepEqual(new Set(resultado.recomendaciones.map((r) => r.tipo)), new Set(["limpieza_prioritaria", "conflicto_reservas"]));
@@ -64,7 +64,7 @@ test("metadatos económicos anidados se excluyen antes de IA y de su respuesta o
     evidencia: { ...item.evidencia, economia: { ingresos: 123456 }, reservaA: { ...item.evidencia.reservaA, montoEstimado: 123456, horaIngreso: { importe: 123456 } } },
   }));
   try {
-    const datos = await service.obtenerRecomendaciones({ incluirComerciales: false });
+    const datos = await service.obtenerRecomendaciones({ incluirComerciales: false, usarIA: true });
     assert.ok(!JSON.stringify(contextoIA).includes("123456"));
     assert.ok(!JSON.stringify(datos).includes("123456"));
     assert.equal(datos.recomendaciones.find((r) => r.tipo === "conflicto_reservas").evidencia.reservaA.idReserva, 1);
@@ -90,4 +90,32 @@ test("proyección final de FlowIA rechaza comerciales y metadatos económicos en
   assert.equal(operador.resumen.total, 1);
   assert.equal(operador.contexto.iaGenerativa.uso.inputTokens, 10);
   assert.deepEqual(proyectarRespuesta({ path: "/recomendaciones", usuario: { rol: "Administrador" } }, datos), datos);
+});
+
+
+test("FlowIA no llama IA por defecto ni con valores ambiguos; solo true explícito", async () => {
+  for (const usarIA of [undefined, false, 'true', 1, {}]) {
+    contextoIA = undefined;
+    const resultado = await service.obtenerRecomendaciones({ incluirComerciales: false, usarIA });
+    assert.equal(contextoIA, undefined);
+    assert.equal(resultado.recomendaciones.length, 2);
+    assert.ok(resultado.recomendaciones.every(r => r.origen === 'Motor de reglas HostFlow'));
+  }
+  contextoIA = undefined;
+  await service.obtenerRecomendaciones({ incluirComerciales: false, usarIA: true });
+  assert.ok(contextoIA);
+});
+
+test("HTTP FlowIA exige ia=true explícito y conserva el análisis local sin query", async () => {
+  const controller = require('../src/controllers/RecomendacionController');
+  for (const query of [{}, {ia:'false'}, {ia:'1'}, {ia:['true']}, {ia:'true'}]) {
+    contextoIA = undefined;
+    let status, data;
+    await controller.obtenerRecomendaciones({usuario:{rol:'Operador'},query}, {
+      status(value) { status=value; return {json(value){data=value;}}; }
+    });
+    assert.equal(status,200);
+    assert.equal(data.recomendaciones.length,2);
+    assert.equal(Boolean(contextoIA), query.ia === 'true');
+  }
 });

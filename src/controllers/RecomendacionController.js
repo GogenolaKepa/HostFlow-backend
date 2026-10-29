@@ -11,18 +11,8 @@ class RecomendacionController {
     res
   ) {
     try {
-      /*
-       * Por defecto intentamos aplicar la capa generativa.
-       *
-       * Para comparar con el motor determinístico:
-       * GET /api/recomendaciones?ia=false
-       */
-      const usarIA =
-        String(
-          req.query.ia ||
-          "true"
-        ).toLowerCase() !==
-        "false";
+      // La capa externa requiere una petición explícita; navegar no la activa.
+      const usarIA = req.query.ia === "true";
 
       const resultado =
         await RecomendacionService

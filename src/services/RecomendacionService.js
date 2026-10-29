@@ -587,8 +587,8 @@ class RecomendacionService {
     opciones = {}
   ) {
     const usarIA =
-      opciones.usarIA !==
-      false;
+      opciones.usarIA ===
+      true;
 
     const incluirComerciales = opciones.incluirComerciales !== false;
 
