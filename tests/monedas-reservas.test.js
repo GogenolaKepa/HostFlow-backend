@@ -13,6 +13,41 @@ const fijar=p=>monetario.fijar(p.idReserva,actor,{revision:p.acuerdoMonetario.ve
 beforeEach(()=>{h.reset();monetario.cotizaciones=()=>({vigente:id=>{assert.equal(id,'oficial-ficticia');return {fuente:'BCRA',tipo:'BCRA_TIPO_COTIZACION',valor:'1250.12345678',fecha:'2100-01-10'};}});});
 after(()=>{reservas.obtenerFechaActualArgentina=fechaAnterior;monetario.reloj=relojAnterior;monetario.cotizaciones=cotizacionesAnteriores;for(const [k,v]of Object.entries(anterior)){if(v===undefined)delete process.env[k];else process.env[k]=v;}});
 
+for(const falloEvento of [false,true])test(`W3: acuerdo USD sin conversión e historial previo intactos; falloEvento=${falloEvento}`,async()=>{
+ const secretoPrevio=process.env.JWT_SECRET;
+ process.env.JWT_SECRET=require('node:crypto').randomBytes(32).toString('hex');
+ const {versionReserva}=require('../src/security/versionReserva');
+ try {
+  const p=await crear({montoEstimado:200,acuerdoMonetario:{moneda:'USD',importe:'200.00',pagoEquivalenteARS:false,confirmar:true}});
+  const editada=await reservas.modificarReserva(p.idReserva,{fechaEgreso:'2100-01-13'});
+  const acuerdoAntes=structuredClone(h.acuerdos.get(p.idReserva)),eventosAntes=structuredClone(h.eventos),filaAntes=structuredClone(h.filas.get(p.idReserva));
+  const version=versionReserva(editada);assert.match(version,/^[a-f0-9]{64}$/);
+  process.env.HOSTFLOW_MONEDAS_WRITE_ENABLED='0';process.env.HOSTFLOW_CONFIGURACION_READ_ONLY='1';
+  const desde=h.consultas.length;
+  if(falloEvento){
+   h.fallos.evento=Error('Fallo de historial ficticio W3');
+   await assert.rejects(reservas.cancelarReserva(p.idReserva,version));
+   assert.deepEqual(h.filas.get(p.idReserva),filaAntes);assert.deepEqual(h.eventos,eventosAntes);
+  } else {
+   const cancelada=await reservas.cancelarReserva(p.idReserva,version);
+   assert.equal(cancelada.estado,'Cancelada');assert.equal(cancelada.acuerdoMonetario.importe,'200.00');
+   assert.equal(cancelada.acuerdoMonetario.estadoFijacion,'NO_REQUIERE');
+   assert.equal(h.filas.size,1);assert.ok(h.filas.has(p.idReserva),'Sin eliminación física');
+   assert.deepEqual(h.eventos.slice(0,eventosAntes.length),eventosAntes);
+   assert.equal(h.eventos.length,eventosAntes.length+1);assert.equal(h.eventos.at(-1).tipo,'RESERVA_CANCELADA');
+   await assert.rejects(reservas.cancelarReserva(p.idReserva,version),e=>e.codigo==='RESERVA_CONFLICTO_CONCURRENCIA');
+   await assert.rejects(reservas.cancelarReserva(p.idReserva,versionReserva(cancelada)),/ya se encuentra cancelada/);
+   assert.equal(h.eventos.length,eventosAntes.length+1);
+  }
+  assert.deepEqual(structuredClone(h.acuerdos.get(p.idReserva)),acuerdoAntes,'Incluye revisión, autores, fechas y snapshot sin cambios');
+  assert.ok(h.consultas.slice(desde).every(q=>!/\bDELETE\s+FROM\b|\b(?:UPDATE|INSERT\s+INTO)\s+dbo\.AcuerdosMonetariosReserva\b/i.test(q.texto)));
+  assert.equal(h.poolRequests,0);assert.ok(h.consultas.every(q=>q.tx!==null));
+ } finally {
+  process.env.HOSTFLOW_MONEDAS_WRITE_ENABLED='1';process.env.HOSTFLOW_CONFIGURACION_READ_ONLY='0';
+  if(secretoPrevio===undefined)delete process.env.JWT_SECRET;else process.env.JWT_SECRET=secretoPrevio;
+ }
+});
+
 test('Nueva reserva: acuerdo, reserva e historial obligatorios en una transacción, estimado separado del pactado',async()=>{
  const p=await crear();assert.equal(p.montoEstimado,125.5);assert.equal(p.acuerdoMonetario.importe,'100.25');assert.equal(p.acuerdoMonetario.moneda,'USD');assert.equal(p.acuerdoMonetario.monedaPago,'ARS');assert.equal(p.acuerdoMonetario.estadoFijacion,'PENDIENTE');
  assert.equal(h.filas.size,1);assert.equal(h.acuerdos.size,1);assert.equal(h.eventos.length,1);assert.equal(JSON.parse(h.eventos[0].datosJson).acuerdoMonetario.importe,'100.25');

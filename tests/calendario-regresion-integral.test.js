@@ -33,3 +33,13 @@ test('Calendario: conflicto real y propiedad inactiva conservan las señales ope
  const inactiva=calendario.construirCalendarioPropiedad({...propiedad,estado:'Inactiva'},reservas,[],periodo,'2028-02-01');
  assert.equal(inactiva.dias[26].estado,'Conflicto');assert.ok(inactiva.conflictos.some(c=>c.tipo==='PROPIEDAD_NO_DISPONIBLE'));
 });
+
+test('W3: cancelada permanece visible como historial pero deja libre la disponibilidad',()=>{
+ const periodo=calendario.validarYConstruirPeriodo(2028,2);
+ const confirmada={...reservas[0],estado:'Confirmada',bloqueaDisponibilidad:true};
+ const antes=calendario.construirCalendarioPropiedad(propiedad,[confirmada],[],periodo,'2028-02-01');
+ const despues=calendario.construirCalendarioPropiedad(propiedad,[{...confirmada,estado:'Cancelada',bloqueaDisponibilidad:false}],[],periodo,'2028-02-01');
+ assert.equal(antes.dias[26].estado,'Reservada');assert.equal(despues.dias[26].estado,'Disponible');
+ assert.equal(despues.dias[26].reservas[0].estado,'Cancelada');assert.equal(despues.dias[26].reservas[0].bloqueaDisponibilidad,false);
+ assert.equal(despues.dias.some(d=>d.tieneConflicto),false);
+});
