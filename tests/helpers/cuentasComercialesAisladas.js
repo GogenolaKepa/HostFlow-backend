@@ -83,20 +83,23 @@ class CuentasComercialesAisladas extends UsuariosAislados {
     for (const e of this.entregas.values()) {
       if (!e.sobre) continue;
       const d = e.desafioId && this.desafios.get(e.desafioId);
+      if(e.enCuarentena)continue;
+      if(e.intentos>=maxIntentos || e.primerIntentoEn && ahora-e.primerIntentoEn>=23*3600000 || e.expiraEn<=ahora&&e.codigoFallo==='RESULTADO_INCIERTO'){e.enCuarentena=true;e.estado='fallida';continue;}
       if (e.expiraEn <= ahora || (e.desafioId && (!d || d.revocadaEn !== null || d.consumidaEn !== null))) {
         e.estado = "descartada"; e.sobre = null; continue;
       }
       if (e.estado === "entregada" || e.intentos >= maxIntentos || e.proxima > ahora || (e.leaseHasta && e.leaseHasta > ahora)) continue;
-      e.estado = "procesando"; e.intentos++; e.lease = lease; e.leaseHasta = ahora + leaseMs;
+      e.estado = "procesando"; e.intentos++; e.primerIntentoEn??=ahora; e.lease = lease; e.leaseHasta = ahora + leaseMs;
       return structuredClone(e);
     }
     return null;
   }
-  async finalizarEntrega({ id, lease, exito, ahora, reintentoMs, maxIntentos }) {
+  async finalizarEntrega({ id, lease, exito, ahora, reintentoMs, maxIntentos,cuarentena=false,codigo=null }) {
     const e = this.entregas.get(id);
     if (!e || e.lease !== lease || e.leaseHasta <= ahora) return false;
     e.estado = exito ? "entregada" : "fallida"; e.leaseHasta = null; e.proxima = ahora + reintentoMs;
-    if (exito || e.intentos >= maxIntentos) e.sobre = null;
+    e.enCuarentena=!exito&&(cuarentena||e.intentos>=maxIntentos);e.codigoFallo=exito?null:codigo;
+    if (exito) e.sobre = null;
     return true;
   }
 }

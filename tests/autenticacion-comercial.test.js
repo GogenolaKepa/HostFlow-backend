@@ -280,17 +280,18 @@ test("cuotas compartidas entre instancias y destinos, sin bloqueos de cuenta", a
   }
 });
 
-test("proveedor ficticio caído: estado neutral, reintento acotado y eliminación del payload", async () => {
+test("proveedor ficticio caído: estado neutral, backoff acotado y cuarentena con evidencia", async () => {
   const e = await entorno(); let llamadas = 0;
   e.proveedor.enviar = async () => { llamadas++; throw new Error("Fallo con contenido sensible que no debe salir."); };
   const respuesta = await e.servicio.solicitarRecuperacion({ email: e.operador.usuario.email }, contexto);
   for (let n = 0; n < 3; n++) {
     assert.deepEqual(await e.worker.procesarUna(), { estado: "fallida" });
     assert.deepEqual(await e.worker.procesarUna(), { estado: "sin-pendientes" });
-    e.avanzar(60_001);
+    e.avanzar(n===0?60_001:300_001);
   }
   assert.deepEqual(respuesta, RESPUESTA_NEUTRAL); assert.equal(llamadas, 3);
-  assert.equal([...e.repo.entregas.values()][0].sobre, null);
+  assert.ok([...e.repo.entregas.values()][0].sobre);
+  assert.equal([...e.repo.entregas.values()][0].enCuarentena,true);
 });
 
 test("dos workers no entregan en paralelo; idempotencyKey estable y payload borrado al entregar", async () => {

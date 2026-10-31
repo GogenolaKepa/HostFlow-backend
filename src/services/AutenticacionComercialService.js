@@ -19,7 +19,7 @@ function contactoVerificado(u) {
 
 /** Núcleo NO montado en app/routes. Sin SQL, red, .env ni adaptadores por defecto.
  * El puerto repository debe aportar transacciones durables serializables, límites
- * compartidos y outbox atómica. El único adaptador de esta fase está en tests.
+ * compartidos y outbox atómica. Adaptadores explícitos; sin configuración productiva por defecto.
  */
 class AutenticacionComercialService {
   constructor({ repository, protector, indicePrivado, origen, idEmpresa,
@@ -44,10 +44,12 @@ class AutenticacionComercialService {
   async admitir(tx, proposito, destino, ip, ahora) {
     // IP determinada por servidor/proxy confiable, nunca desde el body ni XFF libre.
     if (typeof ip !== "string" || !isIP(ip)) return false;
+    const confirmacion = proposito.startsWith("confirmar-");
+    const validacion = proposito.startsWith("validar-");
     return await tx.admitir({ proposito, ahora, ip: this.indicePrivado("ip", ip),
       destino: this.indicePrivado("destino", destino), ventanaMs: 15 * 60_000,
-      maxIp: 20, maxDestino: proposito.startsWith("confirmar-") ? 5 : 3,
-      maxGlobal: 100, cooldownMs: proposito.startsWith("confirmar-") ? 0 : 60_000 }) === true;
+      maxIp: 20, maxDestino: confirmacion ? 5 : validacion ? 10 : 3,
+      maxGlobal: 100, cooldownMs: confirmacion || validacion ? 0 : 60_000 }) === true;
   }
 
   async administrador(tx, actor) {
@@ -78,23 +80,48 @@ class AutenticacionComercialService {
 
   async solicitarRecuperacion(body, { ip } = {}) {
     // Igual salida para inexistentes/inactivos/no verificados/límites/fallo interno.
-    // NO exponer directamente por HTTP: falta ingreso asíncrono durable contra canal temporal.
+    // NO exponer directamente por HTTP: usar IngresoRecuperacionService durable,
+    // que no busca cuentas durante la solicitud y procesa este núcleo en el worker.
     try {
       validarCampos(body, ["email"]);
       const email = normalizarEmail(body.email);
-      await this.transaccion(async (tx) => {
-        const ahora = this.ahora();
-        if (!await this.admitir(tx, "solicitar-recuperacion", email, ip, ahora)) return;
-        const u = await tx.buscarUsuario(email);
-        if (!this.recuperable(u) || !await tx.empresaActiva(this.idEmpresa)) return;
-        await tx.revocarRecuperaciones(u.idUsuario, ahora);
-        await this.emitir(tx, { proposito: "recuperacion", email, usuarioId: u.idUsuario,
-          versionSesion: u.versionSesion, versionContacto: u.versionContacto,
-          emailVerificadoEn: u.emailVerificadoEn, idEmpresa: this.idEmpresa }, ahora);
-        await tx.auditar({ tipo: "RECUPERACION_SOLICITADA", usuarioId: u.idUsuario, ahora });
-      });
+      await this.transaccion(tx => this.procesarSolicitudRecuperacion(tx, email, ip));
     } catch { /* La futura capa de métricas no debe registrar email, token ni errores del driver. */ }
     return { ...RESPUESTA_NEUTRAL };
+  }
+
+  // Worker interno: misma transacción que consume el ingreso y crea la outbox.
+  // No enmascara errores: un fallo revierte ingreso, desafío, outbox y auditoría juntos.
+  async procesarSolicitudRecuperacion(tx, email, ip) {
+    email = normalizarEmail(email);
+    const ahora = this.ahora();
+    if (!await this.admitir(tx, "solicitar-recuperacion", email, ip, ahora)) return;
+    const u = await tx.buscarUsuario(email);
+    if (!this.recuperable(u) || !await tx.empresaActiva(this.idEmpresa)) return;
+    await tx.revocarRecuperaciones(u.idUsuario, ahora);
+    await this.emitir(tx, { proposito: "recuperacion", email, usuarioId: u.idUsuario,
+      versionSesion: u.versionSesion, versionContacto: u.versionContacto,
+      emailVerificadoEn: u.emailVerificadoEn, idEmpresa: this.idEmpresa }, ahora);
+    await tx.auditar({ tipo: "RECUPERACION_SOLICITADA", usuarioId: u.idUsuario, ahora });
+  }
+
+  async validarEnlace(proposito, token, { ip } = {}) {
+    if (!["recuperacion", "invitacion"].includes(proposito)) throw tokenInvalido();
+    const hash = hashToken(token, proposito);
+    const admitida = await this.transaccion(tx => this.admitir(tx, `validar-${proposito}`, hash || "invalido", ip, this.ahora()));
+    if (!admitida) throw new ErrorSeguridad(429, "LIMITE_SOLICITUDES", "Demasiadas solicitudes. Intente más tarde.");
+    await this.transaccion(tx => this.vigente(tx, hash, proposito, this.ahora()));
+    return { status: 204 }; // Leer un enlace no lo consume ni revela el destino.
+  }
+
+  async listarInvitaciones(actor, { pagina = 1 } = {}) {
+    if (!Number.isSafeInteger(pagina) || pagina < 1 || pagina > 10000) throw new ErrorSeguridad(400, "VALIDACION", "Página no válida.");
+    return this.transaccion(async tx => {
+      await this.administrador(tx, actor);
+      const datos = await tx.invitacionesPorEmpresa(this.idEmpresa, this.ahora(), pagina);
+      return { pagina, hayMas: datos.length > 50, invitaciones: datos.slice(0,50).map(d => ({ id: d.id, nombre: d.nombre, email: d.email, expiraEn: new Date(d.expiraEn).toISOString(),
+        estado: d.consumidaEn !== null ? "Aceptada" : d.revocadaEn !== null ? "Revocada" : d.expiraEn <= this.ahora() ? "Vencida" : "Pendiente" })) };
+    });
   }
 
   async invitar(actor, body, { ip } = {}) {

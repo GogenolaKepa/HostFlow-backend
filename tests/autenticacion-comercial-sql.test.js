@@ -21,6 +21,8 @@ function entorno(opciones = {}) {
       consultas.push({ sql, params: this.params, tx: this.tx });
       if (sql.includes("SELECT DB_NAME")) return { recordset: [{ base: "HostFlow", servidor: "hostflow", modelo: opciones.modelo || "authcom-v1" }] };
       if (sql.includes("sp_getapplock")) return { recordset: [{ resultado: opciones.lock ?? 0 }] };
+      if (sql.includes("HostFlowAuthCorreo")) return { recordset: [{ modelo: 'authcom-correo-v1' }] };
+      if (sql.includes("HostFlowAuthResiliencia")) return { recordset: [{ modelo: 'authcom-resiliencia-v1' }] };
       return responder(sql, this.params);
     }
   }

@@ -1,5 +1,119 @@
 # Autenticación comercial — persistencia propuesta v1
 
+## Dictamen administrativo vigente —31/10/2026
+
+**COMPATIBLE para instalación supervisada; ejecución todavía no autorizada.** Se recuperaron los28
+bloques administrativos completos de SSMS HostFlowAdmin/dbo (VIEW DEFINITION1).
+Las34 columnas, EmailNormalizado persistido, seis CHECK, diez defaults, PK/FK e
+índices de Usuarios/Roles/Empresas son compatibles con el candidato. No hay triggers
+en esas dependencias ni RLS dirigidas a ellas; authcom y su propietario propuesto
+están ausentes. Los bloques de módulos privilegiados/firmas no devolvieron objetos.
+Los permisos efectivos leídos como dbo NO son permisos de hostflow_app.
+
+El complemento15 se completó tras la reconexión personal: diez resultados íntegros,
+sin repetir los28 anteriores. App hereda solo db_datareader/db_datawriter y public;
+sin filas en la consulta de permisos peligrosos. dbo conserva propietario dbo;
+dependencias entrantes solo de CHECK/columna, sin módulos SQL de usuario, sinónimos
+relevantes ni RLS globales. Ninguna incompatibilidad exige cambiar el DDL/DCL.
+Evidencia: complemento-admin.json y CIERRE-DEFINITIVO.json del informe externo.
+
+Se conserva **01→12→13→04→06→08**, propietario SIN LOGIN y DENY dirigido al esquema.
+No cambió el DDL/DCL anterior ni se aplicó en Azure. Ambas autorizaciones separadas
+deben estar aprobadas antes de empezar01, con recuperación vigente, servicios
+detenidos y ventana exclusiva. El aislamiento debe comprobarse antes de reabrir.
+Informe, manifiesto y plan actuales fuera de Git:
+`revision/compatibilidad-admin-authcom-2026-10-31/` del workspace padre.
+Los apartados siguientes conservan checkpoints históricos, no el estado vigente.
+
+## Aislamiento administrativo preparado —31/10/2026, checkpoint posterior
+
+Secuencia vigente propuesta: **01 →12 →13 →04 →06 →08**. El DDL de las siete
+tablas no cambió.12 crea hostflow_authcom_owner SIN LOGIN con autorización DDL;
+13 cambia propietario del esquema y aplica ocho DENY solo a hostflow_app, con
+autorización DCL independiente.14 prepara la aceptación de propiedad/permisos.
+Fuentes bloqueadas con flags0/destinosNULL; ningún paso se aplicó en Azure.
+
+La prueba nueva SQL Server descartable acreditó denegaciones en las siete tablas,
+CRUD ficticio dbo conservado, objetos futuros y excepción de GRANT de columna.
+DENY de esquema solo no evita una cadena con propietario común dbo. El propietario
+separado corta ese puente; NO neutraliza dbo/sysadmin, módulos EXECUTE AS OWNER o
+firmados con autoridad elevada. Revisar esas rutas y permisos de impersonación
+antes de habilitar. Los cuatro pools comerciales no deben ser propietarios.
+
+Lectura administrativa Azure pendiente: al abrir una consulta nueva desde SSMS,
+la conexión automática HostFlowAdmin terminó en timeout. No se ingresó SQL ni se
+automatizó autenticación. Los SELECT app nuevos no reemplazan definiciones completas.
+Plan/evidencia actuales en revision/cierre-bloqueadores-authcom-2026-10-31/ del
+workspace padre. El apartado anterior siguiente conserva el checkpoint previo.
+
+## Candidato de revisión Azure — cierre del31/10/2026
+
+Preflight real completado mediante mssql/Tedious12.7.5: HostFlow/hostflow/Engine5,
+hostflow_app, TLS1.2 con certificado validado, compatibilidad170. Dependencias
+visibles compatibles. **Dictamen administrativo pendiente:** VIEW DEFINITION=0;
+defaults/CHECK/EmailNormalizado ocultos y ausencia global de authcom/RLS no acreditada.
+El timeout documentado más abajo pertenece al checkpoint anterior y fue superado.
+
+**Condición previa al DDL:** hostflow_app tiene db_datareader y db_datawriter.
+Crear tablas amplía automáticamente su alcance al esquema nuevo. Resolver esa
+exposición mediante una decisión DCL específica, sin quitar permisos operativos
+de dbo a ciegas; cuatro identidades nuevas no corrigen ese acceso heredado.
+
+Orden y fuentes DDL se mantienen **01 →04 →06 →08**, sin cambios de DDL en esta
+revisión. Los archivos siguen bloqueados y ninguno fue ejecutado en Azure.
+03/05 precisan los cuatro perfiles; cuentas necesita INSERT Outbox, no SELECT/UPDATE.
+El montaje comprueba SELECT por columna de Usuarios/Roles/Empresas, sin exigir
+lectura de tabla completa; EmailNormalizado es obligatorio y PasswordHash solo
+pertenece al perfil cuentas. Regresión focalizada de cableado aprobada.
+09 agrega visibilidad/collation/dependencias/FK por columna;11 compara cantidades
+de estructura y marcas, complementando el detalle02/09. Referencia estática:
+**7 tablas /57 columnas /14 índices /10 FK /27 CHECK /3 defaults /4 marcas**.
+Igualar cantidades no sustituye comparar las definiciones completas.
+
+El driver operativo Tedious funciona para SELECT de Azure y coincide con la
+interfaz inyectable del adaptador. **No** acredita consumo, rollback o permisos
+comerciales Node→SQL; la prueba local integrada sigue bloqueada por Windows.
+No usar HostFlowAdmin ni hostflow_app como los cuatro pools de producción.
+
+Plan, huellas del candidato, preflight y clasificación de publicación en
+`revision/preparacion-migracion-authcom-2026-10-31/` del workspace padre, fuera de Git.
+No activar HTTP/workers/correo ni interpretar este candidato como autorización.
+
+## Estado actual: resiliencia08 preparada, 31/10/2026
+
+Orden DDL: **01 → 04 → 06 → 08**. 07 es mantenimiento separado y ahora requiere08;
+09 es solo lectura. No se ejecutó nada de esto en Azure. La combinación agrega
+**siete tablas**: las cinco de01, Ingresos de04 e IngresoFallos de08. Se agregan
+leases/Intentos a Ingresos y flags/códigos de cuarentena a Outbox.
+
+El ingreso reserva un lease durable de120s antes del procesamiento; después,
+desafío/outbox/auditoría/consumo se confirman en una única transacción que revalida
+ese lease. Máximo3 claims incluso ante caídas. Backoff solo después de rollback
+confirmado; commit incierto pausa y cierra el montaje. Cuarentena conserva sobres
+y permite continuar con otras entradas. 07 no borra cuarentena ni resultados
+inciertos. Su retención/liberación requiere revisión administrativa independiente.
+
+Solo el perfil ingreso-http evita el applock de gestión de usuarios. Los workers
+y las confirmaciones lo mantienen. El worker de ingreso no selecciona PasswordHash;
+la factoría exige mínimos y rechaza privilegios excesivos. Supervisor explícito,
+sin inicio automático, sin solapamiento y con cierre que espera operaciones en vuelo.
+
+Validación nueva de motor (no repite los siete casos del corte anterior):
+
+```bash
+HOSTFLOW_AUTHCOM_RESILIENCIA_SQL_TEST=1 HOSTFLOW_SQL_TEST_WRITE_APPROVED=YES_LOCAL_DISPOSABLE \
+  node --test tests/integration/sql-resiliencia-comercial.test.js
+```
+
+El recorrido Node→SQL nativo sigue bloqueado por Application Control. La alternativa
+SqlClient.NET pudo leer identidad, pero su harness encontró ExecutionPolicy que
+prohíbe scripts. No se eludió; prototipo no validado fuera de Git en revision/.
+El preflight09 Azure preparado intentó usar la configuración autorizada existente,
+pero terminó en timeout de conexión: no acredita compatibilidad Azure actual.
+
+Los apartados siguientes describen la base de Fase2 y el corte anterior; sus
+garantías de producción siguen sujetas a los límites/validaciones de este estado.
+
 Estado: preparada localmente, **NO migrada ni activada**. No conectar al servicio operativo.
 Fase 1 conservada. No se modifica Usuarios/Roles/Empresas al aplicar el DDL propuesto,
 no hay backfill de correos verificados, permisos aplicados ni endpoints nuevos.
@@ -81,9 +195,11 @@ Usuarios sigue global y esta base solo permite una organización por instalació
 
 ## Outbox, idempotencia y retención
 
-Lease de 120s, máximo tres intentos, reintento a 60s, asignación condicionada en SQL.
+Lease de 120s, máximo tres intentos, backoff60s/300s y Retry-After acotado, asignación condicionada en SQL.
 Reloj SQL para lease/expiración. Sobres expirados/revocados/consumidos y agotados
-sin lease activo se descartan; tras entrega/agotar intentos se elimina el sobre.
+sin lease activo se descartan solo cuando no representan incertidumbre; tras
+aceptación del proveedor se elimina el sobre. Agotamiento/resultado incierto pasa
+a cuarentena con ciphertext conservado, según08; sin purga automática.
 Finalizar exige ID y lease todavía vigente. El proveedor recibe el mismo ID
 idempotente; caída tras enviar puede generar repetición si el proveedor/adaptador
 no deduplica. No se promete exactly-once de email. Una revocación durante envío
@@ -112,7 +228,7 @@ no habilitar HTTP sin límites de ingreso, presupuesto global y retención.
    rollback, corte de red durante commit, pérdida tras correo y clocks distintos.
    Debe ganar un único consumo, sin estado parcial ni fuga de error sensible.
 5. Comparar estado/hashes de cuentas y login antes/después, sin backfill. Verificar
-   que solo las cinco tablas nuevas y marca aparezcan; definir manifiesto de
+   que aparezcan solo las tablas previstas (cinco de01; siete con04/08) y sus marcas; definir manifiesto de
    permisos por identidad revisado. El script 03 no concede nada.
 6. Solo entonces: nueva autorización Azure, respaldo/recuperación y ventana vigente,
    destino exacto, ejecución administrativa única, verificación 02 y grants mínimos
@@ -144,3 +260,46 @@ transacciones, guardas, respuestas a errores, CAS, cuotas y leases. Las 25 prueb
 de dominio Fase 1 siguen pasando. No validan sintaxis T-SQL en un motor ni bloqueos,
 RLS, latencia, collation, FK, defaults, triggers o durabilidad de Azure.
 El adaptador es candidato de revisión, no autorización de integración operativa.
+# Continuación comercial local, 31/10/2026
+
+Las propuestas01/04 agregan seis tablas;06 agrega `Outbox.PrimerIntentoEn`
+y la marca `HostFlowAuthCorreo=authcom-correo-v1`, requerida ahora por el worker.
+06 exige outbox vacía; si ya tiene filas, detenerse y diseñar la transición.
+07 es mantenimiento acotado, cerrado por defecto y con autorización de retención
+independiente: elimina ciphertext vencido y cuotas de más de48h; conserva usuarios,
+desafíos, auditoría e historial. Ningún script se ejecuta al arrancar HostFlow.
+
+La composición `IntegracionComercialPreparada` exige dependencias explícitas,
+cuatro pools de perfiles mínimos, claves independientes y acreditaciones previas;
+revalida modelos/permisos en el servidor. No está importada por app/server, no
+monta HTTP ni abre conexiones o timers por sí sola. El worker se pausa ante un
+error de procesamiento; requiere inspeccionar el ingreso pendiente antes de
+reconstruir la composición. No existe reintento ciego de resultados inciertos.
+
+Proveedor preparado: Resend por HTTPS, inactivo, sin SDK adicional. El worker
+reserva presupuesto durable (100 intentos/24h por defecto), lease de120s y hasta
+tres intentos. Solo reenvía dentro de23h desde el primer intento, con UUID estable,
+dejando margen a las24h de deduplicación del proveedor. La aceptación de la API
+no acredita entrega en bandeja. Congelar remitente, origen y versión de plantillas
+mientras haya envíos pendientes; no reutilizar un ID con un payload cambiado.
+
+Pruebas de motor local opt-in (Git Bash):
+
+```bash
+HOSTFLOW_AUTHCOM_SQL_TEST=1 HOSTFLOW_SQL_TEST_WRITE_APPROVED=YES_LOCAL_DISPOSABLE \
+  node --test tests/integration/sql-authcom-sqlcmd.test.js
+```
+
+Solo usa `lpc:localhost`, Windows integrado y `HostFlow_Test_Seguridad` vacía,
+marcada y de PC-Escritorio. No crea bases; verifica propiedad de fixtures antes de
+limpiarlos. La prueba `sql-autenticacion-comercial.test.js` está preparada para
+los adaptadores Node, pero el driver msnodesqlv8 fue bloqueado por Application
+Control en esta PC. No desactivar esa protección: resolver mediante un runtime
+autorizado. Las pruebas SQLCMD acreditan motor/DDL/consultas críticas; no el recorrido
+completo Node→SQL ni permisos de identidades restringidas ni Azure.
+El runner de adaptadores usa `HOSTFLOW_AUTHCOM_ADAPTER_SQL_TEST=1` y la misma
+aprobación de escritura local; ejecutarlo por separado del runner SQLCMD.
+
+Plan de activación, secretos, DNS, permisos y riesgos en el informe externo de
+`revision/autenticacion-comercial-cierre-2026-10-31/`. No habilitar HTTP con un flag
+frontend ni interpretar estas pruebas como autorización para migrar Azure.

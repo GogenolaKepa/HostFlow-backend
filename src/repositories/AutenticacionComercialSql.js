@@ -1,14 +1,15 @@
-const { ErrorSeguridad, RECURSO_BLOQUEO } = require("../security/seguridadUsuarios");
+const { ErrorSeguridad, RECURSO_BLOQUEO, numerosErrorSQL } = require("../security/seguridadUsuarios");
 const fecha = ms => new Date(ms);
 const ms = valor => valor == null ? null : new Date(valor).getTime();
 
 // Sin pool, .env, database.js, singletons ni activación operativa implícitos.
 class AutenticacionComercialSql {
-  constructor({ pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado = false } = {}) {
+  constructor({ pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado = false, perfil='cuentas' } = {}) {
     if (!pool || !driver || !baseEsperada || !servidorEsperado || !Number.isSafeInteger(idEmpresa) || idEmpresa <= 0) {
       throw new TypeError("Pool, driver, destino y empresa explícitos obligatorios.");
     }
-    Object.assign(this, { pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado });
+    if(!['cuentas','ingreso-http','worker-ingreso'].includes(perfil))throw new TypeError('Perfil SQL no válido.');
+    Object.assign(this, { pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado, perfil });
   }
   async transaccion(callback) {
     if (this.habilitado !== true) throw new ErrorSeguridad(503, "AUTH_COMERCIAL_INACTIVA", "Persistencia comercial desactivada.");
@@ -16,16 +17,18 @@ class AutenticacionComercialSql {
     let iniciada = false, commitIntentado = false;
     try {
       await t.begin(this.driver.ISOLATION_LEVEL.SERIALIZABLE); iniciada = true;
-      const tx = new AlcanceSql(t, this.driver, this.idEmpresa);
+      const tx = new AlcanceSql(t, this.driver, this.idEmpresa,this.perfil);
       const r = await tx.q(`SELECT DB_NAME() AS base, CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor,
         (SELECT CONVERT(nvarchar(80),value) FROM sys.extended_properties
          WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthModelo') AS modelo;`);
       if (r.recordset[0]?.base !== this.baseEsperada || r.recordset[0]?.servidor !== this.servidorEsperado || r.recordset[0]?.modelo !== "authcom-v1") {
         throw new Error("Destino/modelo incompatible.");
       }
+      if(this.perfil!=='ingreso-http') {
       const lock = await tx.q(`DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=@recurso,
         @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000,@DbPrincipal='public'; SELECT @r AS resultado;`, { recurso: RECURSO_BLOQUEO });
       if (![0, 1].includes(lock.recordset[0]?.resultado)) throw new Error("Bloqueo no obtenido.");
+      }
       const resultado = await callback(tx);
       commitIntentado = true; await t.commit(); iniciada = false;
       return resultado;
@@ -33,13 +36,17 @@ class AutenticacionComercialSql {
       let rollbackConfirmado = false;
       if (iniciada) { try { await t.rollback(); rollbackConfirmado = true; } catch { /* resultado incierto, sin reintento */ } }
       if (!commitIntentado && rollbackConfirmado && error instanceof ErrorSeguridad) throw error;
+      if(!commitIntentado && rollbackConfirmado && numerosErrorSQL(error).includes(1205)) {
+        const revertida=new ErrorSeguridad(503,'AUTH_TRANSACCION_REVERTIDA','La transacción fue revertida.');
+        revertida.reintentable=true;throw revertida;
+      }
       throw new ErrorSeguridad(503, "CUENTAS_RESULTADO_INCIERTO", "No se pudo confirmar la operación. No la reenvíe automáticamente.");
     }
   }
 }
 
 class AlcanceSql {
-  constructor(transaction, driver, idEmpresa) { Object.assign(this, { transaction, driver, idEmpresa }); }
+  constructor(transaction, driver, idEmpresa,perfil) { Object.assign(this, { transaction, driver, idEmpresa,perfil }); }
   q(texto, parametros = {}) {
     const r = new this.driver.Request(this.transaction);
     for (const [nombre, valor] of Object.entries(parametros)) {
@@ -53,7 +60,7 @@ class AlcanceSql {
     return (await this.q("SELECT IdEmpresa FROM dbo.Empresas WITH (UPDLOCK,HOLDLOCK) WHERE IdEmpresa=@id AND Activo=1;", { id })).recordset.length === 1;
   }
   async leerUsuario(filtro, parametros) {
-    const r = await this.q(`SELECT u.IdUsuario AS idUsuario,u.Nombre AS nombre,u.Email AS email,u.PasswordHash AS passwordHash,
+    const r = await this.q(`SELECT u.IdUsuario AS idUsuario,u.Nombre AS nombre,u.Email AS email,${this.perfil==='worker-ingreso'?'NULL':'u.PasswordHash'} AS passwordHash,
       u.Estado AS estado,u.DebeCambiarPassword AS debeCambiarPassword,u.VersionSesion AS versionSesion,
       u.VersionRegistro AS versionRegistro,r.Nombre AS rol,r.Activo AS rolActivo,
       c.VerificadoEn AS verificado,c.VersionContacto AS versionContacto
@@ -162,23 +169,34 @@ class AlcanceSql {
   }
   async reservarEntrega({ lease, leaseMs, maxIntentos }) {
     if (maxIntentos !== 3 || leaseMs !== 120000) throw new Error("Política de entrega incompatible.");
+    const marca=await this.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthCorreo';");
+    if(marca.recordset[0]?.modelo!=='authcom-correo-v1') throw new Error('Política SQL de correo no validada.');
+    const resiliencia=await this.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthResiliencia';");
+    if(resiliencia.recordset[0]?.modelo!=='authcom-resiliencia-v1')throw Error('Resiliencia de correo no validada.');
+    await this.q(`UPDATE authcom.Outbox SET Estado='fallida',EnCuarentena=1,CodigoFallo=CASE WHEN Intentos>=3 THEN 'INTENTOS_AGOTADOS' ELSE 'VENTANA_CERRADA' END,Lease=NULL,LeaseHasta=NULL
+      WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND (Intentos>=3 OR PrimerIntentoEn<=DATEADD(hour,-23,SYSUTCDATETIME()) OR ExpiraEn<=SYSUTCDATETIME() AND CodigoFallo='RESULTADO_INCIERTO')
+       AND (LeaseHasta IS NULL OR LeaseHasta<=SYSUTCDATETIME());`);
     await this.q(`UPDATE o SET Sobre=NULL,Estado='descartada',Lease=NULL,LeaseHasta=NULL FROM authcom.Outbox o
-      WHERE Sobre IS NOT NULL AND (o.ExpiraEn<=SYSUTCDATETIME() OR o.Intentos>=3 AND (o.LeaseHasta IS NULL OR o.LeaseHasta<=SYSUTCDATETIME())
+      WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND (o.ExpiraEn<=SYSUTCDATETIME()
         OR EXISTS(SELECT 1 FROM authcom.Desafios d WHERE d.Id=o.DesafioId AND (d.ConsumidaEn IS NOT NULL OR d.RevocadaEn IS NOT NULL)));
       `);
     const r = await this.q(`;WITH siguiente AS (SELECT TOP(1) * FROM authcom.Outbox WITH (UPDLOCK,HOLDLOCK)
-      WHERE Sobre IS NOT NULL AND ExpiraEn>SYSUTCDATETIME() AND Intentos<3 AND Proxima<=SYSUTCDATETIME()
+      WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND ExpiraEn>SYSUTCDATETIME() AND Intentos<3 AND Proxima<=SYSUTCDATETIME()
+       AND (PrimerIntentoEn IS NULL OR PrimerIntentoEn>DATEADD(hour,-23,SYSUTCDATETIME()))
        AND (LeaseHasta IS NULL OR LeaseHasta<=SYSUTCDATETIME()) ORDER BY Proxima,Id)
-      UPDATE siguiente SET Estado='procesando',Intentos=Intentos+1,Lease=@lease,LeaseHasta=DATEADD(second,120,SYSUTCDATETIME())
-      OUTPUT inserted.Id AS id,inserted.Sobre AS sobre;`, { lease });
-    const e = r.recordset[0]; return e ? { id: e.id, sobre: JSON.parse(e.sobre) } : null;
+      UPDATE siguiente SET Estado='procesando',Intentos=Intentos+1,PrimerIntentoEn=COALESCE(PrimerIntentoEn,SYSUTCDATETIME()),Lease=@lease,LeaseHasta=DATEADD(second,120,SYSUTCDATETIME())
+      OUTPUT inserted.Id AS id,inserted.Sobre AS sobre,inserted.Intentos AS intentos;`, { lease });
+    const e = r.recordset[0]; return e ? { id: e.id, sobre: JSON.parse(e.sobre),intentos:e.intentos } : null;
   }
-  async finalizarEntrega({ id, lease, exito, reintentoMs, maxIntentos }) {
-    if (reintentoMs !== 60000 || maxIntentos !== 3) throw new Error("Política de entrega incompatible.");
-    const r = await this.q(`UPDATE authcom.Outbox SET Estado=@estado,Proxima=DATEADD(second,60,SYSUTCDATETIME()),
-      Sobre=CASE WHEN @exito=1 OR Intentos>=3 THEN NULL ELSE Sobre END,Lease=NULL,LeaseHasta=NULL
+  async finalizarEntrega({ id, lease, exito, reintentoMs, maxIntentos,cuarentena=false,codigo=null }) {
+    if (!Number.isInteger(reintentoMs)||reintentoMs<60000||reintentoMs>900000||maxIntentos !== 3 ||
+      ![null,'TRANSITORIO','RESULTADO_INCIERTO','PROVEEDOR_PERMANENTE','CONFIGURACION','SOBRE_INVALIDO'].includes(codigo)) throw new Error("Política de entrega incompatible.");
+    const r = await this.q(`UPDATE authcom.Outbox SET Estado=@estado,Proxima=DATEADD(second,@segundos,SYSUTCDATETIME()),
+      Sobre=CASE WHEN @exito=1 THEN NULL ELSE Sobre END,
+      EnCuarentena=CASE WHEN @exito=1 THEN 0 WHEN @cuarentena=1 OR Intentos>=3 THEN 1 ELSE 0 END,
+      CodigoFallo=CASE WHEN @exito=1 THEN NULL WHEN Intentos>=3 AND @codigo IS NULL THEN 'INTENTOS_AGOTADOS' ELSE @codigo END,Lease=NULL,LeaseHasta=NULL
       WHERE Id=@id AND Lease=@lease AND LeaseHasta>SYSUTCDATETIME() AND Estado='procesando';`,
-    { id, lease, exito, estado: exito ? "entregada" : "fallida" });
+    { id, lease, exito, estado: exito ? "entregada" : "fallida",segundos:Math.ceil(reintentoMs/1000),cuarentena,codigo });
     return r.rowsAffected[0] === 1;
   }
 }

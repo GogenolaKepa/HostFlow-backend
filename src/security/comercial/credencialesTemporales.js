@@ -1,6 +1,9 @@
 const { randomBytes, createHash, createHmac, createCipheriv, createDecipheriv } = require("node:crypto");
 
 const PROPOSITOS = Object.freeze(["recuperacion", "invitacion"]);
+class ErrorSobreCorreo extends Error {
+  constructor(codigo) { super('No se pudo abrir el sobre de seguridad.'); this.codigo=codigo; }
+}
 function hashToken(token, proposito) {
   if (!PROPOSITOS.includes(proposito) || typeof token !== "string" ||
       !/^[A-Za-z0-9_-]{43}$/.test(token) || Buffer.from(token, "base64url").toString("base64url") !== token) return null;
@@ -35,12 +38,14 @@ function crearProtectorCorreo({ clave, keyId }) {
       return { keyId, iv: iv.toString("base64url"), tag: cipher.getAuthTag().toString("base64url"), contenido: contenido.toString("base64url") };
     },
     abrir(sobre, idEntrega) {
-      if (sobre?.keyId !== keyId) throw new Error("Clave de entrega no disponible.");
+      if (sobre?.keyId !== keyId) throw new ErrorSobreCorreo('CLAVE_CORREO_NO_DISPONIBLE');
+      try {
       const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(sobre.iv, "base64url"));
       decipher.setAAD(Buffer.from(`HostFlow:correo:${idEntrega}`));
       decipher.setAuthTag(Buffer.from(sobre.tag, "base64url"));
       return JSON.parse(Buffer.concat([decipher.update(Buffer.from(sobre.contenido, "base64url")), decipher.final()]).toString("utf8"));
+      }catch{throw new ErrorSobreCorreo('SOBRE_CORREO_INVALIDO');}
     },
   });
 }
-module.exports = { crearToken, hashToken, crearIndicePrivado, crearProtectorCorreo };
+module.exports = { crearToken, hashToken, crearIndicePrivado, crearProtectorCorreo, ErrorSobreCorreo };
