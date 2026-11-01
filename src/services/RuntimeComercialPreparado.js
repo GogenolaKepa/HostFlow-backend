@@ -12,7 +12,9 @@ async function prepararRuntimeComercial({configuracion={habilitado:false},driver
       iniciarWorker:()=>integracion.iniciarWorker(),desactivar:()=>{activo=false;integracion.desactivar();},cerrar,
       consultar:()=>({disponible:activo,contactos:integracion.contactosHabilitados===true,pools:conexiones.consultar(),worker:integracion.consultarWorker()})});
   }catch(error){
-    try{await cerrar();}catch{throw Error('Runtime comercial detenido con cierre SQL pendiente de inspección.');}
+    let cierrePendiente=error?.codigo==='CIERRE_INCOMPLETO';
+    try{await cerrar();}catch{cierrePendiente=true;}
+    if(cierrePendiente){const salida=Error('Runtime comercial detenido con cierre SQL pendiente de inspección.');salida.codigo='CIERRE_INCOMPLETO';throw salida;}
     const salida=Error('Runtime comercial no acreditado; HTTP y workers no disponibles.');
     const d=error?.diagnostico;
     if(error?.codigo==='PERMISO_COMERCIAL_FALTANTE'&&['cuentas','ingresoHttp','workerIngreso','correo'].includes(d?.perfil)&&

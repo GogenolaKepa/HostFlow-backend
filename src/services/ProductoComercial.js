@@ -21,12 +21,12 @@ async function prepararProductoComercial({env={},aprobacion=false,dependencias,
     const montaje=crearMontajeComercial({activacionAprobada:true,runtime,origen:configuracion.correo.origen});
     return Object.freeze({estado:'preparado',montaje,proxiesComerciales:proxies,iniciarWorker:()=>runtime.iniciarWorker(),
       consultar:()=>runtime.consultar(),desactivar:()=>runtime.desactivar(),cerrar:()=>runtime.cerrar()});
-  }catch{
-    let cierrePendiente=false;
+  }catch(error){
+    let cierrePendiente=error?.codigo==='CIERRE_INCOMPLETO';
     try { await runtime?.cerrar(); } catch { cierrePendiente=true; }
     // No propagar detalles de credenciales ni inutilizar el login tradicional.
     return Object.freeze({...inactivo,estado:cierrePendiente?'cierre-pendiente':'no-disponible',
-      cerrar:runtime?()=>runtime.cerrar():inactivo.cerrar});
+      cerrar:runtime?()=>runtime.cerrar():cierrePendiente?async()=>{throw Error('Cierre SQL pendiente de inspección.');}:inactivo.cerrar});
   }
 }
 module.exports={prepararProductoComercial};
