@@ -29,3 +29,12 @@ test('correlación conflictiva rechazada; replay de la misma correlación aplica
   const r=new EventosCorreoSql({...e,habilitado:true});const a=await r.vincularAceptacion({outboxId,proveedorId});assert.deepEqual(a,{estado:'vinculado',aplicados:100,hayMas:true});
   await assert.rejects(r.vincularAceptacion({outboxId,proveedorId:randomUUID()}),{codigo:'CORRELACION_INCOMPATIBLE'});
 });
+test('preparar correlación acredita lease/destino; la marca de incertidumbre corresponde al worker común',async()=>{
+  const outboxId=randomUUID(),lease=randomUUID(),destino=Buffer.alloc(32,7);
+  const e=entorno(q=>q.startsWith('SELECT Id FROM authcom.Outbox')?[{Id:outboxId}]:[]),r=new EventosCorreoSql({...e,habilitado:true});
+  assert.equal((await r.prepararMensaje({outboxId,lease,destino})).estado,'preparado');
+  assert.equal(e.transacciones(),1);
+  assert.ok(e.consultas.some(c=>c.q.startsWith('INSERT authcom.CorreoMensajes')));
+  assert.ok(!e.consultas.some(c=>c.q.startsWith('UPDATE authcom.Outbox')));
+  assert.ok(!JSON.stringify(e.consultas).includes('@email'));
+});

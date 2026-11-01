@@ -10,8 +10,10 @@ const {ResendCorreo}=require('../security/comercial/ResendCorreo');
 const {SupervisorComercial}=require('./SupervisorComercial');
 const {ErrorSeguridad}=require('../security/seguridadUsuarios');
 const {consultaFronteraUsuarios}=require('../security/comercial/FronteraSqlComercial');
+const {ContactosVerificadosSql}=require('../repositories/ContactosVerificadosSql');
+const {VerificacionContactoService}=require('./VerificacionContactoService');
 
-// Factoría de composición SIN IMPORTAR desde app/server operativos. No abre pools,
+// Factoría de composición inactiva por defecto. Importarla no abre pools,
 // no lee .env y no monta rutas ni inicia timers. Un flag de Vite nunca la habilita.
 async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,correo,autenticar,acreditacion}={}) {
   if(habilitado!==true)return Object.freeze({estado:'inactiva'});
@@ -107,12 +109,41 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
   const proveedor=new ResendCorreo({...correo,habilitado:true});
   const opciones={protector,indicePrivado,idEmpresa:sql.idEmpresa,origen:correo.origen};
   const cuentas=new AutenticacionComercialService({...opciones,repository:repos.cuentas});
+  let contactos=null;
+  if(sql.verificacionContactos===true){
+    const repository=new ContactosVerificadosSql({habilitado:true,repository:repos.cuentas});
+    await repository.transaccion(async tx=>{
+      for(const columna of ['Email','VersionContacto','VerificadoEn','RevocadoEn']){
+        const r=await tx.q("SELECT HAS_PERMS_BY_NAME(N'authcom.Contactos','OBJECT','UPDATE',@columna,'COLUMN') AS permitido;",{columna});
+        if(r.recordset[0]?.permitido!==1)throw Error('Permiso de verificación no acreditado.');
+      }
+    });
+    contactos=new VerificacionContactoService({...opciones,repository,habilitado:true});
+  }
   const trabajadorCuentas=new AutenticacionComercialService({...opciones,repository:repos.workerIngreso});
   const ingreso=new IngresoRecuperacionService({repository:repos.ingresoHttp,protector,indicePrivado,cuentas:trabajadorCuentas});
   const workerIngreso=new IngresoRecuperacionService({repository:repos.workerIngreso,protector,indicePrivado,cuentas:trabajadorCuentas});
-  const workerCorreo=new EntregaCorreoSeguridad({repository:repos.correo,protector,proveedor,limiteDiario:correo.limiteDiario});
+  if(correo.eventos){
+    // Propuesta19 y permisos adicionales requieren acreditación independiente.
+    if(correo.eventos.persistencia!=='sql-durable'||typeof correo.eventos.transaccion!=='function')throw TypeError('Persistencia de eventos no acreditada.');
+    await correo.eventos.transaccion(async tx=>{
+      const requeridos={
+        'authcom.CorreoMensajes':['SELECT','INSERT','UPDATE'],
+        'authcom.CorreoEventos':['SELECT','UPDATE'],
+        'authcom.CorreoBloqueos':['SELECT','INSERT'],
+      };
+      for(const [objeto,permisos] of Object.entries(requeridos)){
+        for(const permiso of permisos){
+          const r=await tx.q("SELECT HAS_PERMS_BY_NAME(@objeto,'OBJECT',@permiso) AS permitido;",{objeto,permiso});
+          if(r.recordset[0]?.permitido!==1)throw Error('Perfil de eventos no acreditado.');
+        }
+      }
+    });
+  }
+  const workerCorreo=new EntregaCorreoSeguridad({repository:repos.correo,protector,proveedor,limiteDiario:correo.limiteDiario,
+    eventos:correo.eventos||null,indiceDestino:email=>Buffer.from(indicePrivado('correo-destino',email),'hex')});
   let activa=true,ocupado=false,pausado=false,enCurso=Promise.resolve();
-  const router=crearRouterCuentasComerciales({cuentas,ingreso,autenticar});
+  const router=crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos});
   // Middleware exterior obligatorio: desactivar cierra estas rutas, nunca el login JWT.
   const handler=(req,res,next)=>activa?router(req,res,next):res.status(503).set('Cache-Control','no-store').json({codigo:'CUENTAS_INACTIVAS'});
   async function procesarUna(){
@@ -132,7 +163,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
       finally{ocupado=false;terminar();}
   }
   const supervisor=new SupervisorComercial({procesar:procesarUna});
-  return Object.freeze({estado:'preparada',handler,procesarUna,
+  return Object.freeze({estado:'preparada',handler,procesarUna,contactosHabilitados:contactos!==null,
     desactivar(){activa=false;pausado=true;},
     iniciarWorker(){if(!activa)throw Error('Montaje inactivo.');return supervisor.iniciar().finally(()=>{if(supervisor.consultar().estado==='pausado'){activa=false;pausado=true;}});},
     async cerrar(){activa=false;pausado=true;await supervisor.detener();await enCurso;},

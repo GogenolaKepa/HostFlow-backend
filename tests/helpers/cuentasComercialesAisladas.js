@@ -112,5 +112,10 @@ class CuentasComercialesAisladas extends UsuariosAislados {
     if (exito) e.sobre = null;
     return true;
   }
+  async marcarEntregaEnCurso({id,lease,ahora}){
+    const e=this.entregas.get(id);
+    if(e?.lease!==lease||e.estado!=='procesando'||e.enCuarentena||e.leaseHasta<=ahora+30000||e.expiraEn<=ahora)return false;
+    e.codigoFallo='RESULTADO_INCIERTO';return true;
+  }
 }
 module.exports = { CuentasComercialesAisladas };

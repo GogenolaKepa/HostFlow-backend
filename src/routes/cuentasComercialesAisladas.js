@@ -2,7 +2,7 @@ const express=require('express');
 const {validarCampos,ErrorSeguridad}=require('../security/seguridadUsuarios');
 
 // FACTORY SIN MONTAJE OPERATIVO. Todos los puertos son obligatorios.
-function crearRouterCuentasComerciales({cuentas,ingreso,autenticar}={}) {
+function crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos=null}={}) {
   if(!cuentas || !ingreso?.limitar || typeof autenticar!=='function')throw new TypeError('Faltan puertos HTTP explícitos.');
   const router=express.Router();
   router.use((_req,res,next)=>{res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'});next();});
@@ -21,6 +21,11 @@ function crearRouterCuentasComerciales({cuentas,ingreso,autenticar}={}) {
   }
   // El autenticador inyectado debe validar JWT y releer usuario/VersionSesion.
   const auth=(req,res,next)=>Promise.resolve().then(()=>autenticar(req,res,next)).catch(next);
+  if(contactos?.habilitado===true){
+    for(const accion of ['solicitar','validar','confirmar'])router.post('/contacto/'+accion,auth,envolver(async(req,res)=>{
+      await contactos[accion](req.usuario,req.body,{ip:req.ip});res.sendStatus(204);
+    }));
+  }
   router.get('/invitaciones',auth,envolver(async(req,res)=>res.json(await cuentas.listarInvitaciones(req.usuario,{pagina:req.query.pagina?Number(req.query.pagina):1}))));
   router.post('/invitaciones',auth,envolver(async(req,res)=>{const r=await cuentas.invitar(req.usuario,req.body,{ip:req.ip});res.status(202).json({mensaje:r.mensaje});}));
   router.post('/invitaciones/:id/revocar',auth,envolver(async(req,res)=>{validarCampos(req.body,[]);await cuentas.revocarInvitacion(req.usuario,req.params.id);res.sendStatus(204);}));

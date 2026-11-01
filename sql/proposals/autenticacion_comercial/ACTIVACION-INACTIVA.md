@@ -1,8 +1,8 @@
 # Montaje comercial preparado — todavía inactivo
 
-Los scripts01–15 y el manifiesto de instalación se conservan sin cambios. Instalar
-01→12→13→04→06→08 necesita las dos aprobaciones originales y su ventana vigente.
-Nada de lo siguiente se ejecuta al iniciar HostFlow.
+La instalación Azure original 01→12→13→04→06→08 ya fue aceptada: NO repetirla.
+Sus fuentes bloqueadas se conservan sin cambios. La integración del producto está
+cableada, pero deshabilitada por defecto. Nada comercial se activa con npm run dev.
 
 ## Identidades: otra autorización, posterior a aceptar la instalación
 
@@ -57,31 +57,53 @@ WORKER_INGRESO,CUENTAS,CORREO}_PRINCIPAL y HOSTFLOW_AUTHCOM_SQL_AUTH=sql|entra.
 El resto del parser existente usa HOSTFLOW_AUTH_COMERCIAL_ENABLED/ORIGEN/REMITENTE/
 DOMINIO/LIMITE_DIARIO y el destino/empresa actuales. No definir secretos en Vite.
 
-## Inserción futura, no realizada
+## Cableado incorporado, activación pendiente
 
 1. Tras aceptar infraestructura, construir RuntimeComercialPreparado con configuración,
    cuatro identidades, callback seguro, claves de cifrado/HMAC independientes,
    proveedor, autenticador JWT existente y acreditaciones documentadas.
-2. En app.js, colocar el router de crearMontajeComercial bajo /api/cuentas-comerciales
-   **después de CORS y antes del JWT global**, sin reemplazar login ni su middleware.
-   La fábrica retorna null por defecto; exige otra aprobación de activación.
+2. ProductoComercial/servidor.iniciar({comercial}) ya componen el runtime y pasan el
+   router a crearApp, **después de CORS y antes del JWT global**. Requiere aprobacion,
+   configuración válida y dependencias explícitas. Sin ellas no hay router comercial.
+   Un fallo comercial deja disponible el login y expone solo estado sanitizado.
 3. Iniciar explícitamente runtime.iniciarWorker() bajo supervisión. No esperar esa
    promesa para iniciar HTTP: dura hasta detener el supervisor. Capturar rechazo y
    desactivar. Capacidades/HTTP permanecen cerrados sin cuatro pools conectados y
    worker activo; HTTPS y origen se comprueban en cada petición.
-4. En frontend, retirar el fragmento del enlace mediante prepararEntradaComercial
-   antes de React/telemetría; cargar luego EntradaComercialPreparada. El enlace de
-   Login solo se muestra con capacidades obtenidas del servidor. En Usuarios, usar
-   la entrada gestion con usuario/permisos y bearer solo en las rutas administrativas.
+4. main/App ya retiran el fragmento antes de React y manejan enlaces reabiertos;
+   Login, Usuarios y Mi cuenta están conectados a capacidades del servidor. No se
+   muestran controles comerciales si falta esa acreditación. Bearer solo en
+   administración y verificación autenticada de contacto, nunca recuperación pública.
    Cliente y correo deben compartir un origen HTTPS con /api encaminada al backend.
 5. Configurar proxy confiable explícito; no aceptar X-Forwarded-Proto de cualquiera.
    Validar CORS, CSP/referrer del HTML, límites del borde y tiempos anti-enumeración
    bajo carga antes de aprobar producción. Las cabeceras del router JSON no protegen
    por sí solas el HTML que entregue el hosting.
 
-App/server/Login/Usuarios/main NO se modificaron: estos puntos de inserción requieren
-la activación futura autorizada. No hay todavía un comando que habilite comercial
-en Azure de forma segura. No habilitarlo con una bandera frontend.
+App/server/Login/Usuarios/main ya tienen puntos de inserción inactivos. No hay un
+comando seguro que complete por sí solo identidad/secretos/acreditación. No habilitar
+comercial con una bandera frontend. El host debe aportar proxiesComerciales con IPs
+exactas del borde que reemplaza headers, o TLS directo acreditado; no trust proxy=true.
+servidor.comercial.iniciarWorker() es explícito y no debe esperarse como arranque finito;
+servidor.cerrarHostFlow() drena comercial antes de cerrar el listener propio.
+
+## Verificación de contactos existentes
+
+20 es un DDL posterior bloqueado: amplía tres CHECK para propósito contacto y su
+auditoría, sin nuevas tablas ni backfill.21 es DCL separado: solo UPDATE de Email,
+VersionContacto,VerificadoEn,RevocadoEn para el perfil cuentas previamente acreditado.
+No cambia IdUsuario ni hostflow_app. Ambos se ensayaron solo con SQLCMD local;
+no acreditan aún el recorrido Node/Tedious→motor.
+
+Activar sql.verificacionContactos=true exige modelo20 y permisos21 comprobados.
+El Operador autenticado reintroduce su contraseña; el enlace prueba su correo
+actual y vuelve a exigir sesión vigente de esa misma cuenta. Consumo, contacto,
+revocación de recuperaciones previas y auditoría son una transacción. El enlace
+de contacto no es un token de recuperación ni de invitación. No cambia email/password.
+Cambiar email/estado/sesión invalida el enlace. No hay recuperación autónoma Admin.
+Un usuario legacy sin contraseña/sesión necesita un procedimiento administrativo
+separado de identidad y recuperación, no auto-verificación por copiar su email.
+Nuevos Operadores verifican el contacto al consumir la invitación, sin20/21.
 
 Parada futura: cerrar ingreso externo → runtime.desactivar() → await runtime.cerrar()
 → cerrar listener propio. Conservar outbox/cuarentena y claves previas para descifrar;
@@ -102,8 +124,10 @@ presupuesto e integración con outbox. La ventana local de23h conserva margen fr
 a las24h de idempotencia del proveedor. No reenviar después de incertidumbre sin
 inspección. [Idempotencia oficial](https://resend.com/docs/dashboard/emails/idempotency-keys).
 
-API aceptada no equivale a entrega en bandeja. Rebotes/quejas siguen pendientes de
-correlación durable y deduplicación de eventos. No se creó webhook público: necesitará
+API aceptada no equivale a entrega en bandeja. EntregaCorreoSeguridad ya permite
+conectar EventosCorreoSql: HMAC de destino antes del POST, supresión, correlación
+del ID aceptado y pausa sin reenvío si no se acredita el vínculo. Requiere19 y DCL
+de eventos aparte, aún pendientes. No se creó webhook público: necesitará
 cuerpo crudo, firma verificada, control de replay y persistencia adecuada revisada;
 ninguna migración adicional está autorizada. El primer piloto puede observarse de
 forma supervisada en proveedor/bandeja, sin declarar resuelto el manejo de rebotes.
@@ -123,6 +147,10 @@ obtener el secreto y antes de iniciar el transporte. Previene envíos que quedar
 obsoletos durante esas esperas. No vuelve atómicos SQL y una red externa: una
 revocación posterior a la última comprobación no puede retirar un correo en vuelo;
 el enlace se vuelve a validar al confirmar y nunca otorga una sesión por sí mismo.
+Antes de todo POST el worker común registra RESULTADO_INCIERTO bajo lease, incluso
+sin eventos opcionales. La finalización conocida sustituye esa marca; ante caída,
+vencimiento o revocación no se elimina el sobre como si no se hubiera enviado.
+La ampliación utiliza CodigoFallo de08 ya instalado, sin DDL nuevo.
 Un resultado incierto previo conserva su evidencia. Estado interno entregada de la
 outbox significa aceptación API en el contrato actual, NO llegada a bandeja.
 

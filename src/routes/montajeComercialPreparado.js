@@ -18,7 +18,8 @@ function crearMontajeComercial({activacionAprobada=false,runtime,origen}={}){
   const activo=()=>{const v=runtime.consultar();return v?.disponible===true&&v.worker?.estado==='activo'&&v.pools?.pools?.length===4&&v.pools.pools.every(p=>p.conectado===true);};
   router.get('/capacidades',(req,res)=>{
     if(Object.keys(req.query).length)return res.status(400).json({codigo:'SOLICITUD_INVALIDA'});
-    const disponible=activo();res.json({version:1,recuperacion:disponible,invitaciones:disponible});
+    const disponible=activo();res.json({version:1,recuperacion:disponible,invitaciones:disponible,
+      ...(runtime.consultar()?.contactos===true?{contactos:disponible}:{})});
   });
   router.use((req,res,next)=>activo()?runtime.handler(req,res,next):res.status(503).json({codigo:'CUENTAS_INACTIVAS'}));
   return router;

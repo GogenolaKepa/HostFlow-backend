@@ -17,7 +17,7 @@ function contactoVerificado(u) {
     typeof u.emailVerificadoEn === "string" && Number.isFinite(Date.parse(u.emailVerificadoEn)));
 }
 
-/** Núcleo NO montado en app/routes. Sin SQL, red, .env ni adaptadores por defecto.
+/** Núcleo de montaje explícito. Sin SQL, red, .env ni adaptadores por defecto.
  * El puerto repository debe aportar transacciones durables serializables, límites
  * compartidos y outbox atómica. Adaptadores explícitos; sin configuración productiva por defecto.
  */

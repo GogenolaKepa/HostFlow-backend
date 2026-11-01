@@ -119,6 +119,16 @@ test('cableado prepara puertos y pausa/desactiva sin montar rutas; permisos falt
     faltaColumna=columna;await assert.rejects(prepararIntegracionComercial(config));
   }
   faltaColumna=undefined;
+  const permisosEventos=[];let falloEvento=false;
+  config.correo.eventos={persistencia:'sql-durable',prepararMensaje:async()=>({estado:'preparado'}),vincularAceptacion:async()=>({estado:'vinculado'}),
+    transaccion:fn=>fn({q:async(_q,p)=>{
+      permisosEventos.push(p);
+      return {recordset:[{permitido:p.objeto==='authcom.CorreoEventos'&&(p.permiso==='INSERT'||falloEvento&&p.permiso==='UPDATE')?0:1}]};
+    }})};
+  const conEventos=await prepararIntegracionComercial(config);await conEventos.cerrar();
+  assert.equal(permisosEventos.length,7);assert.ok(!permisosEventos.some(p=>p.objeto==='authcom.CorreoEventos'&&p.permiso==='INSERT'));
+  falloEvento=true;await assert.rejects(prepararIntegracionComercial(config),/Perfil de eventos no acreditado/);
+  delete config.correo.eventos;
   permiso=0;await assert.rejects(prepararIntegracionComercial(config),e=>e.codigo==='PERMISO_COMERCIAL_FALTANTE'&&e.diagnostico.perfil==='cuentas'&&e.diagnostico.objeto==='authcom.Contactos'&&e.diagnostico.resultado==='denegado');
   permiso=null;await assert.rejects(prepararIntegracionComercial(config),e=>e.codigo==='PERMISO_COMERCIAL_FALTANTE'&&e.diagnostico.resultado==='no-acreditado');
   assert.ok(consultas.some(q=>q.includes('HAS_PERMS_BY_NAME')));

@@ -217,6 +217,12 @@ class AlcanceSql {
        AND EnCuarentena=0 AND (CodigoFallo IS NULL OR CodigoFallo<>'RESULTADO_INCIERTO');`,{id,lease});
     return false;
   }
+  async marcarEntregaEnCurso({id,lease}){
+    const r=await this.q(`UPDATE authcom.Outbox SET CodigoFallo='RESULTADO_INCIERTO'
+      WHERE Id=@id AND Lease=@lease AND Estado='procesando' AND EnCuarentena=0
+        AND LeaseHasta>DATEADD(second,30,SYSUTCDATETIME()) AND ExpiraEn>SYSUTCDATETIME();`,{id,lease});
+    return r.rowsAffected[0]===1;
+  }
   async finalizarEntrega({ id, lease, exito, reintentoMs, maxIntentos,cuarentena=false,codigo=null }) {
     if (!Number.isInteger(reintentoMs)||reintentoMs<60000||reintentoMs>900000||maxIntentos !== 3 ||
       ![null,'TRANSITORIO','RESULTADO_INCIERTO','PROVEEDOR_PERMANENTE','CONFIGURACION','SOBRE_INVALIDO'].includes(codigo)) throw new Error("Política de entrega incompatible.");

@@ -1,6 +1,6 @@
 const {abrirPoolsComerciales}=require('./PoolsComercialesPreparados');
 const {ensamblarComercial}=require('./ConfiguracionComercialPreparada');
-// Punto de ensamblado futuro. No se importa desde app/server ni inicia workers.
+// Ensamblado explícito del producto. Importarlo no abre pools ni inicia workers.
 async function prepararRuntimeComercial({configuracion={habilitado:false},driver,identidades,obtenerCredencial,dependencias}={}){
   if(configuracion.habilitado!==true)return Object.freeze({estado:'inactivo'});
   let conexiones,integracion,cierre,activo=true;
@@ -10,7 +10,7 @@ async function prepararRuntimeComercial({configuracion={habilitado:false},driver
     integracion=await ensamblarComercial({configuracion,dependencias:{...dependencias,pools:conexiones.pools,sql:{...dependencias?.sql,driver}}});
     return Object.freeze({estado:'preparado',handler:integracion.handler,
       iniciarWorker:()=>integracion.iniciarWorker(),desactivar:()=>{activo=false;integracion.desactivar();},cerrar,
-      consultar:()=>({disponible:activo,pools:conexiones.consultar(),worker:integracion.consultarWorker()})});
+      consultar:()=>({disponible:activo,contactos:integracion.contactosHabilitados===true,pools:conexiones.consultar(),worker:integracion.consultarWorker()})});
   }catch(error){
     try{await cerrar();}catch{throw Error('Runtime comercial detenido con cierre SQL pendiente de inspección.');}
     const salida=Error('Runtime comercial no acreditado; HTTP y workers no disponibles.');

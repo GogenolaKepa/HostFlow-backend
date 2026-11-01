@@ -78,7 +78,15 @@ const calendarioRoutes = require(
 );
 
 
+function crearApp({ montajeComercial = null, proxiesComerciales = [] } = {}) {
 const app = express();
+if(!Array.isArray(proxiesComerciales)||proxiesComerciales.length>4||proxiesComerciales.some(ip=>!require('node:net').isIP(ip)))throw TypeError('Proxies comerciales no acreditados.');
+if(proxiesComerciales.length){
+  if(montajeComercial===null)throw TypeError('Proxy comercial sin montaje.');
+  const confiables=new Set(proxiesComerciales);
+  // Solo IPs concretas del borde acreditado; no true, comodines ni headers libres.
+  app.set('trust proxy',ip=>confiables.has(ip)||ip.startsWith('::ffff:')&&confiables.has(ip.slice(7)));
+}
 
 
 // =========================================================
@@ -87,6 +95,13 @@ const app = express();
 
 app.use(respuestasSeguras);
 app.use(corsSeguro());
+
+// Solo el ensamblado administrativo acreditado puede proporcionar este router.
+// No hay rutas comerciales ni pools por el mero hecho de importar la aplicación.
+if (montajeComercial !== null) {
+  if (typeof montajeComercial !== 'function') throw TypeError('Montaje comercial inválido.');
+  app.use('/api/cuentas-comerciales', montajeComercial);
+}
 
 // CORS responde a OPTIONS antes de exigir autenticación.
 // Login es público; /auth/me verifica la sesión dentro de authRoutes.
@@ -259,5 +274,8 @@ app.use((error, _req, res, next) => {
   return manejarErrorSeguro(error, _req, res, next);
 });
 
-module.exports =
-  app;
+return app;
+}
+
+module.exports = crearApp();
+module.exports.crearApp = crearApp;

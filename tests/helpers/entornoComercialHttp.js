@@ -38,8 +38,16 @@ async function crearEntornoComercialHttp({relojReal=false}={}){
   let sesionAdmin=await auth.login(admin.usuario.email,admin.password),sesionOperador=await auth.login(operador.usuario.email,operador.password);
   async function autenticar(req,res,next){try{const token=req.get('Authorization')?.replace(/^Bearer /,'');const p=jwt.verify(token,secret,{algorithms:['HS256']});const u=await auth.obtenerUsuarioSesion(p.idUsuario,p);if(!u)return res.status(401).json({mensaje:'Sesión inválida'});req.usuario=u;next();}catch{return res.status(401).json({mensaje:'Sesión inválida'});}}
   const app=express();app.disable('x-powered-by');app.set('trust proxy',false);
-  app.use('/api/cuentas-comerciales',crearRouterCuentasComerciales({cuentas,ingreso,autenticar}));
-  return {app,repository,cuentas,ingreso,entrega,auth,correos,admin,operador,autenticar,
+  const router=crearRouterCuentasComerciales({cuentas,ingreso,autenticar});
+  app.use('/api/cuentas-comerciales',router);
+  return {app,router,repository,cuentas,ingreso,entrega,auth,correos,admin,operador,autenticar,
+    // Solo para el E2E del producto: JWT efímero compartido con el middleware REAL.
+    conectarAutenticacionProducto(){
+      process.env.JWT_SECRET=secret;
+      const singleton=require('../../src/services/AuthService');
+      Object.assign(singleton,{origen:auth.origen,repository,cuentas:auth.cuentas});
+      for(const metodo of ['login','obtenerUsuarioSesion','perfil'])singleton[metodo]=auth[metodo].bind(auth);
+    },
     tokenAdmin:()=>sesionAdmin.token,tokenOperador:()=>sesionOperador.token,
     avanzar:ms=>{if(relojReal)desfase+=ms;else tiempo+=ms;},fallarCorreo:v=>{falloCorreo=v;},
     async procesar(){await ingreso.procesarUna();for(let n=0;n<5;n++){const r=await entrega.procesarUna();if(r.estado==='sin-pendientes')break;}},

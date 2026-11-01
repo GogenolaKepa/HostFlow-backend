@@ -1,6 +1,6 @@
 const { randomBytes, createHash, createHmac, createCipheriv, createDecipheriv } = require("node:crypto");
 
-const PROPOSITOS = Object.freeze(["recuperacion", "invitacion"]);
+const PROPOSITOS = Object.freeze(["recuperacion", "invitacion", "contacto"]);
 class ErrorSobreCorreo extends Error {
   constructor(codigo) { super('No se pudo abrir el sobre de seguridad.'); this.codigo=codigo; }
 }

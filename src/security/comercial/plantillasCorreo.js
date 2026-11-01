@@ -9,7 +9,7 @@ function crearPlantillaCorreo(payload, origen) {
   const base = new URL(origen);
   if(base.protocol!=='https:' || base.origin!==origen || base.username || base.password) throw Error('Origen no válido.');
   let titulo, descripcion, accion, enlace;
-  if(['recuperacion','invitacion'].includes(payload.plantilla)) {
+  if(['recuperacion','invitacion','contacto'].includes(payload.plantilla)) {
     const u = new URL(payload.enlace);
     const campos = new URLSearchParams(u.hash.slice(1));
     if(u.origin!==origen || u.pathname!==`/cuenta/${payload.plantilla}` || u.search || u.username || u.password ||
@@ -20,6 +20,11 @@ function crearPlantillaCorreo(payload, origen) {
       ? 'Recibimos una solicitud para restablecer tu contraseña. El enlace es temporal y se puede utilizar una sola vez.'
       : 'Te invitaron a trabajar como Operador. Elegí tu contraseña desde este enlace temporal de un solo uso.';
     accion=payload.plantilla==='recuperacion'?'Establecer nueva contraseña':'Aceptar invitación';
+    if(payload.plantilla==='contacto'){
+      titulo='Verificá tu correo de HostFlow';
+      descripcion='Solicitaste verificar el correo de tu cuenta. Abrí el enlace con tu sesión iniciada. No cambia tu contraseña ni tu dirección de correo.';
+      accion='Verificar mi correo';
+    }
   } else if(payload.plantilla==='seguridad-cuenta' && ['recuperacion','invitacion'].includes(payload.evento)) {
     titulo=payload.evento==='recuperacion'?'Tu contraseña de HostFlow cambió':'Tu cuenta de HostFlow está lista';
     descripcion=payload.evento==='recuperacion'

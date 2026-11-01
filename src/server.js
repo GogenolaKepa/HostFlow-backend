@@ -12,7 +12,7 @@ const {
   "./config/database"
 );
 
-const app = require(
+const { crearApp } = require(
   "./app"
 );
 
@@ -26,10 +26,18 @@ const HOST =
 
 const AuthService = require("./services/AuthService");
 
-async function iniciar() {
+async function iniciar({ comercial } = {}) {
   // SQL nunca se habilita si faltan esquema, permisos, roles o primer Admin.
   await AuthService.comprobarPreparacionSQL();
-  return app.listen(
+  const {prepararProductoComercial}=require('./services/ProductoComercial');
+  const producto=await prepararProductoComercial({...comercial,env:process.env,
+    autenticar:require('./middlewares/autenticacion')});
+  const app=crearApp({montajeComercial:producto.montaje,
+    proxiesComerciales:producto.proxiesComerciales||[]});
+  // El supervisor requiere un arranque explícito posterior del host acreditado.
+  // No se inicia por npm run dev ni por una bandera de entorno.
+  app.locals.comercial=producto;
+  const servidor = app.listen(
   PORT,
   HOST,
   () => {
@@ -42,10 +50,18 @@ async function iniciar() {
     );
   }
 );
+  servidor.comercial=producto;
+  servidor.once('error',()=>{producto.cerrar().catch(()=>console.error('Cierre comercial pendiente de inspección.'));});
+  servidor.cerrarHostFlow=async()=>{
+    await producto.cerrar();
+    await new Promise((resolve,reject)=>servidor.close(error=>error?reject(error):resolve()));
+  };
+  return servidor;
 }
 
-iniciar().catch(async () => {
+if (require.main === module) iniciar().catch(async () => {
   console.error("No se inició HostFlow: revisar la preparación de autenticación SQL.");
   try { (await poolPromise).close(); } catch { /* Sin detalles de conexión. */ }
   process.exitCode = 1;
 });
+module.exports={iniciar};

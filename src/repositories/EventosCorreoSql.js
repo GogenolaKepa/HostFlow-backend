@@ -30,6 +30,7 @@ class EventosCorreoSql{
       const previo=await tx.q('SELECT Destino FROM authcom.CorreoMensajes WITH(UPDLOCK,HOLDLOCK) WHERE OutboxId=@outboxId;',{outboxId});
       if(previo.recordset.length){if(!Buffer.isBuffer(previo.recordset[0].Destino)||!previo.recordset[0].Destino.equals(destino))throw fallo('CORRELACION_INCOMPATIBLE');}
       else await tx.q('INSERT authcom.CorreoMensajes(OutboxId,Destino) VALUES(@outboxId,@destino);',{outboxId,destino});
+      // La marca durable preenvío pertenece al worker común, también sin eventos.
       return {estado:'preparado'};
     });
   }
