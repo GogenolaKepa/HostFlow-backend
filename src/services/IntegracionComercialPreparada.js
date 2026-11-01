@@ -8,6 +8,8 @@ const {crearAnilloClavesCorreo}=require('../security/comercial/AnilloClavesCorre
 const {crearIndicePrivado}=require('../security/comercial/credencialesTemporales');
 const {ResendCorreo}=require('../security/comercial/ResendCorreo');
 const {SupervisorComercial}=require('./SupervisorComercial');
+const {ErrorSeguridad}=require('../security/seguridadUsuarios');
+const {consultaFronteraUsuarios}=require('../security/comercial/FronteraSqlComercial');
 
 // Factoría de composición SIN IMPORTAR desde app/server operativos. No abre pools,
 // no lee .env y no monta rutas ni inicia timers. Un flag de Vite nunca la habilita.
@@ -20,7 +22,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
   if(claves.cifrado.claves.some(v=>v.clave.equals(claves.indice)))throw TypeError('Cifrado y HMAC requieren claves independientes.');
   const repos={};
   const permisos={
-    cuentas:[['authcom.Contactos','SELECT'],['authcom.Contactos','INSERT'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT'],['dbo.Usuarios','INSERT']],
+    cuentas:[['authcom.Contactos','SELECT'],['authcom.Contactos','INSERT'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT'],sql.altaOperadorRestringida===true?['authcom.CrearOperadorInvitado','EXECUTE']:['dbo.Usuarios','INSERT']],
     ingresoHttp:[['authcom.Ingresos','INSERT']],
     workerIngreso:[['authcom.Ingresos','SELECT'],['authcom.Ingresos','UPDATE'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Contactos','SELECT'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT']],
     correo:[['authcom.Outbox','SELECT'],['authcom.Outbox','UPDATE'],['authcom.Desafios','SELECT']],
@@ -30,13 +32,22 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
     const base=new AutenticacionComercialSql({...sql,pool:pools[perfil],habilitado:true,perfil:perfil==='ingresoHttp'?'ingreso-http':perfil==='workerIngreso'?'worker-ingreso':'cuentas'});
     // Verificación real de marcas y permisos efectivos antes de entregar el router.
     await base.transaccion(async tx=>{
+      if(perfil==='cuentas'&&sql.altaOperadorRestringida===true){
+        const marca=await tx.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthAlta';");
+        const directo=await tx.q("SELECT HAS_PERMS_BY_NAME(N'dbo.Usuarios','OBJECT','INSERT') AS excesivo;");
+        if(marca.recordset[0]?.modelo!=='authcom-operador-v1'||directo.recordset[0]?.excesivo!==0)throw new ErrorSeguridad(503,'ALTA_SQL_NO_ACREDITADA','Alta restringida no acreditada.');
+      }
       for(const [nombre,valor] of [['HostFlowAuthIngreso','authcom-ingreso-v1'],['HostFlowAuthCorreo','authcom-correo-v1'],['HostFlowAuthResiliencia','authcom-resiliencia-v1']]) {
         const r=await tx.q('SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N\'authcom\') AND name=@nombre;',{nombre});
         if(r.recordset[0]?.modelo!==valor)throw Error('Modelo comercial no acreditado.');
       }
       const requeridos=[...permisos[perfil],...['SELECT','INSERT','UPDATE'].map(p=>['authcom.Cuotas',p])];
       if(perfil==='workerIngreso')requeridos.push(...['SELECT','INSERT','UPDATE'].map(p=>['authcom.IngresoFallos',p]));
-      for(const [objeto,permiso] of requeridos){const r=await tx.q("SELECT HAS_PERMS_BY_NAME(@objeto,'OBJECT',@permiso) AS permitido;",{objeto,permiso});if(r.recordset[0]?.permitido!==1)throw Error('Permisos comerciales insuficientes.');}
+      for(const [objeto,permiso] of requeridos){const r=await tx.q("SELECT HAS_PERMS_BY_NAME(@objeto,'OBJECT',@permiso) AS permitido;",{objeto,permiso});if(r.recordset[0]?.permitido!==1){
+        const error=new ErrorSeguridad(503,'PERMISO_COMERCIAL_FALTANTE','Permisos comerciales insuficientes.');
+        // Solo contrato estático; nunca principal, email, SQL completo o driver.
+        error.diagnostico=Object.freeze({perfil,objeto,permiso,resultado:r.recordset[0]?.permitido===0?'denegado':'no-acreditado'});throw error;
+      }}
       if(perfil==='cuentas'||perfil==='workerIngreso'){
         // Aceptar GRANT de columnas mínimas, sin exigir SELECT sobre toda la tabla.
         // EmailNormalizado también se usa al buscar por email, no solo al leer por ID.
@@ -51,9 +62,24 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
         }
       }
       // No aceptar por accidente cuatro pools del mismo principal sobredimensionado.
-      for(const rol of ['db_owner','db_datawriter','db_ddladmin','db_securityadmin']){
+      for(const rol of ['db_owner','db_datareader','db_datawriter','db_ddladmin','db_securityadmin']){
         const r=await tx.q('SELECT IS_ROLEMEMBER(@rol) AS excesivo;',{rol});if(r.recordset[0]?.excesivo!==0)throw Error('Perfil comercial con privilegios excesivos o no acreditados.');
       }
+      const autoridad=await tx.q(`SELECT CASE WHEN EXISTS(SELECT 1 FROM(VALUES
+        (N'authcom',N'SCHEMA',N'CONTROL'),(N'authcom',N'SCHEMA',N'ALTER'),
+        (N'dbo',N'SCHEMA',N'CONTROL'),(N'dbo',N'SCHEMA',N'ALTER'),
+        (N'dbo',N'USER',N'IMPERSONATE'),(N'hostflow_authcom_owner',N'USER',N'IMPERSONATE'),
+        (N'authcom.Contactos',N'OBJECT',N'DELETE'),(N'authcom.Desafios',N'OBJECT',N'DELETE'),
+        (N'authcom.Cuotas',N'OBJECT',N'DELETE'),(N'authcom.Outbox',N'OBJECT',N'DELETE'),
+        (N'authcom.Auditoria',N'OBJECT',N'DELETE'),(N'authcom.Ingresos',N'OBJECT',N'DELETE'),
+        (N'authcom.IngresoFallos',N'OBJECT',N'DELETE'))v(Objeto,Clase,Permiso)
+        WHERE ISNULL(HAS_PERMS_BY_NAME(Objeto,Clase,Permiso),1)<>0)
+        OR EXISTS(SELECT 1 FROM(VALUES(N'CONTROL'),(N'ALTER ANY USER'),(N'ALTER ANY ROLE'),(N'ALTER ANY SCHEMA'))v(Permiso)
+          WHERE ISNULL(HAS_PERMS_BY_NAME(DB_NAME(),N'DATABASE',Permiso),1)<>0)
+        THEN 1 ELSE 0 END AS excesivo;`);
+      if(autoridad.recordset[0]?.excesivo!==0)throw Error('Autoridad SQL comercial excesiva o no acreditada.');
+      const modificacion=await tx.q(consultaFronteraUsuarios(perfil));
+      if(modificacion.recordset[0]?.excesivo!==0)throw Error('Perfil comercial puede modificar columnas ajenas al contrato.');
       if(perfil!=='cuentas'){
         const insercion=await tx.q("SELECT HAS_PERMS_BY_NAME(N'dbo.Usuarios','OBJECT','INSERT') AS excesivo;");
         if(insercion.recordset[0]?.excesivo!==0)throw Error('Worker/ingreso no debe crear usuarios.');

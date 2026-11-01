@@ -84,8 +84,9 @@ class CuentasComercialesAisladas extends UsuariosAislados {
       if (!e.sobre) continue;
       const d = e.desafioId && this.desafios.get(e.desafioId);
       if(e.enCuarentena)continue;
-      if(e.intentos>=maxIntentos || e.primerIntentoEn && ahora-e.primerIntentoEn>=23*3600000 || e.expiraEn<=ahora&&e.codigoFallo==='RESULTADO_INCIERTO'){e.enCuarentena=true;e.estado='fallida';continue;}
-      if (e.expiraEn <= ahora || (e.desafioId && (!d || d.revocadaEn !== null || d.consumidaEn !== null))) {
+      const desafioNoVigente=e.desafioId&&(!d||d.revocadaEn!==null||d.consumidaEn!==null||d.expiraEn<=ahora);
+      if(e.intentos>=maxIntentos || e.primerIntentoEn && ahora-e.primerIntentoEn>=23*3600000 || (e.expiraEn<=ahora||desafioNoVigente)&&e.codigoFallo==='RESULTADO_INCIERTO'){e.enCuarentena=true;e.estado='fallida';continue;}
+      if (e.expiraEn <= ahora || desafioNoVigente) {
         e.estado = "descartada"; e.sobre = null; continue;
       }
       if (e.estado === "entregada" || e.intentos >= maxIntentos || e.proxima > ahora || (e.leaseHasta && e.leaseHasta > ahora)) continue;
@@ -93,6 +94,15 @@ class CuentasComercialesAisladas extends UsuariosAislados {
       return structuredClone(e);
     }
     return null;
+  }
+  async entregaVigente({id,lease,ahora}){
+    const e=this.entregas.get(id),d=e?.desafioId&&this.desafios.get(e.desafioId);
+    if(e?.lease===lease&&e.estado==='procesando'&&!e.enCuarentena&&e.leaseHasta>ahora+30000&&e.expiraEn>ahora&&
+      (!e.desafioId||d&&d.expiraEn>ahora&&d.revocadaEn===null&&d.consumidaEn===null))return true;
+    if(e?.lease===lease&&e.leaseHasta>ahora&&!e.enCuarentena&&e.codigoFallo!=='RESULTADO_INCIERTO'){
+      Object.assign(e,{estado:'descartada',sobre:null,lease:null,leaseHasta:null});
+    }
+    return false;
   }
   async finalizarEntrega({ id, lease, exito, ahora, reintentoMs, maxIntentos,cuarentena=false,codigo=null }) {
     const e = this.entregas.get(id);

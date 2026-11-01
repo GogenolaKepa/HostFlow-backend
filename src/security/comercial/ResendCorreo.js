@@ -12,7 +12,7 @@ class ResendCorreo {
     if(u.protocol!=='https:' || u.origin!==origen || u.username || u.password) throw TypeError('Origen HTTPS fijo obligatorio.');
     Object.assign(this,{habilitado,obtenerSecreto,remitente:email,origen,transportar,timeoutMs});
   }
-  async enviar(payload) {
+  async enviar(payload,{antesDeEnviar}={}) {
     if(this.habilitado!==true) throw new ErrorCorreo('CORREO_INACTIVO',{politica:'cuarentena'});
     if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(payload?.idempotencyKey||'')) throw new ErrorCorreo('CORREO_INVALIDO',{politica:'cuarentena'});
     const controller=new AbortController();
@@ -25,6 +25,13 @@ class ResendCorreo {
           clave=await this.obtenerSecreto({signal:controller.signal});
           if(controller.signal.aborted||typeof clave!=='string'||!clave.trim()||/[\r\n\s]/.test(clave))throw Error();
         }catch{throw new ErrorCorreo('CONFIGURACION_CORREO_INVALIDA',{politica:'cuarentena'});}
+        if(antesDeEnviar){
+          let vigente;
+          try{if(typeof antesDeEnviar!=='function')throw Error();vigente=await antesDeEnviar();}
+          catch{throw new ErrorCorreo('VIGENCIA_NO_ACREDITADA',{politica:'cuarentena'});}
+          if(vigente!==true)throw new ErrorCorreo('ENTREGA_OBSOLETA',{politica:'cuarentena'});
+          if(controller.signal.aborted)throw new ErrorCorreo('ENTREGA_OBSOLETA',{politica:'cuarentena'});
+        }
         envioIniciado=true;
         const r=await this.transportar('https://api.resend.com/emails',{
           method:'POST',redirect:'error',signal:controller.signal,

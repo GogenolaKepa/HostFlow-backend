@@ -25,8 +25,8 @@ async function laboratorioSqlcmd(fn,{soloModeloInicial=false}={}){
     return await fn({ejecutar,runId,propuesta:n=>propuesta(n,runId)});
   }finally{
     if(validado){
-      const orden=['authcom.Outbox','authcom.Auditoria','authcom.Desafios','authcom.Contactos','authcom.Cuotas','authcom.IngresoFallos','authcom.Ingresos','dbo.Empresas','dbo.Usuarios','dbo.Roles'];
-      await ejecutar(`SET XACT_ABORT ON;BEGIN TRY BEGIN TRANSACTION;${orden.map(n=>`IF OBJECT_ID(N'${n}',N'U') IS NOT NULL DROP TABLE ${n};`).join('\n')} IF SCHEMA_ID(N'authcom') IS NOT NULL EXEC(N'DROP SCHEMA authcom;');COMMIT;END TRY BEGIN CATCH IF XACT_STATE()<>0 ROLLBACK;THROW;END CATCH;`);
+      const orden=['authcom.CorreoBloqueos','authcom.CorreoEventos','authcom.CorreoMensajes','authcom.Outbox','authcom.Auditoria','authcom.Desafios','authcom.Contactos','authcom.Cuotas','authcom.IngresoFallos','authcom.Ingresos','dbo.Empresas','dbo.Usuarios','dbo.Roles'];
+      await ejecutar(`SET XACT_ABORT ON;BEGIN TRY BEGIN TRANSACTION;IF OBJECT_ID(N'authcom.CrearOperadorInvitado',N'P') IS NOT NULL DROP PROCEDURE authcom.CrearOperadorInvitado;${orden.map(n=>`IF OBJECT_ID(N'${n}',N'U') IS NOT NULL DROP TABLE ${n};`).join('\n')} IF SCHEMA_ID(N'authcom') IS NOT NULL EXEC(N'DROP SCHEMA authcom;');COMMIT;END TRY BEGIN CATCH IF XACT_STATE()<>0 ROLLBACK;THROW;END CATCH;`);
       await ejecutar("IF EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0) OR SCHEMA_ID(N'authcom') IS NOT NULL THROW 51890,'Limpieza no acreditada.',1;");
     }
     if(path.dirname(path.resolve(temp))!==path.resolve(os.tmpdir())||!path.basename(temp).startsWith('hf-authcom-resiliencia-'))throw Error('Temporal inválido.');

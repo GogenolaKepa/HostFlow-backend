@@ -28,9 +28,13 @@ class EntregaCorreoSeguridad {
     let reintentoMs=entrega.intentos>=2?300000:60000;
     try {
       const payload = this.protector.abrir(entrega.sobre, entrega.id);
-      await this.proveedor.enviar({ ...payload, idempotencyKey: entrega.id });
+      const antesDeEnviar=()=>this.repository.transaccion(tx=>tx.entregaVigente({id:entrega.id,lease,ahora:this.ahora()}));
+      if(!await antesDeEnviar())return {estado:'no-enviada'};
+      await this.proveedor.enviar({ ...payload, idempotencyKey: entrega.id },{antesDeEnviar});
       exito = true;
     } catch(e) {
+      if(['CUENTAS_RESULTADO_INCIERTO','AUTH_TRANSACCION_REVERTIDA','VIGENCIA_NO_ACREDITADA'].includes(e.codigo))return {estado:'resultado-incierto'};
+      if(e.codigo==='ENTREGA_OBSOLETA')return {estado:'no-enviada'};
       // Clasificación cerrada. Nunca guardar mensajes del proveedor ni payload.
       cuarentena=e.politica==='cuarentena'||['SOBRE_CORREO_INVALIDO','CLAVE_CORREO_NO_DISPONIBLE'].includes(e.codigo);
       codigo=e.codigo==='SOBRE_CORREO_INVALIDO'?'SOBRE_INVALIDO':e.codigo==='CLAVE_CORREO_NO_DISPONIBLE'||['CORREO_INACTIVO','CONFIGURACION_CORREO_INVALIDA'].includes(e.codigo)?'CONFIGURACION':

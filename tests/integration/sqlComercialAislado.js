@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path');
 const base=require('./sqlAislado');
-const TABLAS=['dbo.Roles','dbo.Usuarios','dbo.Empresas','authcom.Contactos','authcom.Desafios','authcom.Cuotas','authcom.Outbox','authcom.Auditoria','authcom.Ingresos','authcom.IngresoFallos'];
-const nombres=TABLAS.map(n=>`ISNULL(OBJECT_ID(N'${n}',N'U'),-1)`).join(',');
+const TABLAS=['dbo.Roles','dbo.Usuarios','dbo.Empresas','authcom.Contactos','authcom.Desafios','authcom.Cuotas','authcom.Outbox','authcom.Auditoria','authcom.Ingresos','authcom.IngresoFallos','authcom.CorreoMensajes','authcom.CorreoEventos','authcom.CorreoBloqueos'];
+const nombres=TABLAS.map(n=>`ISNULL(OBJECT_ID(N'${n}',N'U'),-1)`).concat("ISNULL(OBJECT_ID(N'authcom.CrearOperadorInvitado',N'P'),-1)").join(',');
 function guardas(runId){
   base.validarTablas([],{runId});
   return `IF DB_NAME() COLLATE Latin1_General_100_BIN2<>N'${base.BASE}' OR DATALENGTH(DB_NAME())<>DATALENGTH(N'${base.BASE}')
@@ -14,6 +14,8 @@ function guardas(runId){
     IF EXISTS(SELECT 1 FROM sys.objects WHERE is_ms_shipped=0 AND parent_object_id=0 AND object_id NOT IN (${nombres})) THROW 51882,'Objetos ajenos: detener.',1;
     IF EXISTS(SELECT 1 FROM sys.tables t LEFT JOIN sys.extended_properties p ON p.class=1 AND p.major_id=t.object_id AND p.minor_id=0 AND p.name=N'HostFlowTestRun'
       WHERE t.is_ms_shipped=0 AND ISNULL(CONVERT(nvarchar(100),p.value),N'') COLLATE Latin1_General_100_BIN2<>N'${runId}') THROW 51883,'Tablas ajenas: no modificar.',1;
+    IF OBJECT_ID(N'authcom.CrearOperadorInvitado',N'P') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=1
+      AND major_id=OBJECT_ID(N'authcom.CrearOperadorInvitado') AND name=N'HostFlowTestRun' AND CONVERT(nvarchar(100),value)=N'${runId}') THROW 51883,'Módulo ajeno: no modificar.',1;
     IF SCHEMA_ID(N'authcom') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowTestRun' AND CONVERT(nvarchar(100),value)=N'${runId}') THROW 51884,'Esquema ajeno.',1;
     SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON;
     SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF;\n`;
@@ -28,9 +30,10 @@ function propuesta(nombre,runId){
     sql=sql.replace('@RetencionAprobada bit=0','@RetencionAprobada bit=1');
   }
   let marcas='';
-  if(nombre.startsWith('01'))marcas=TABLAS.filter(n=>n.startsWith('authcom.')&&!['authcom.Ingresos','authcom.IngresoFallos'].includes(n)).map(n=>marcar(n,runId)).join('\n')+`\nEXEC sys.sp_addextendedproperty @name=N'HostFlowTestRun',@value=N'${runId}',@level0type=N'SCHEMA',@level0name=N'authcom';`;
+  if(nombre.startsWith('01'))marcas=['authcom.Contactos','authcom.Desafios','authcom.Cuotas','authcom.Outbox','authcom.Auditoria'].map(n=>marcar(n,runId)).join('\n')+`\nEXEC sys.sp_addextendedproperty @name=N'HostFlowTestRun',@value=N'${runId}',@level0type=N'SCHEMA',@level0name=N'authcom';`;
   if(nombre.startsWith('04'))marcas=marcar('authcom.Ingresos',runId);
   if(nombre.startsWith('08'))marcas=marcar('authcom.IngresoFallos',runId);
+  if(nombre.startsWith('19'))marcas=['authcom.CorreoMensajes','authcom.CorreoEventos','authcom.CorreoBloqueos'].map(n=>marcar(n,runId)).join('\n');
   if(sql.split(' COMMIT;').length!==2)throw Error('Cambió la transacción de la propuesta.');
   return sql.replace(' COMMIT;',marcas+'\n COMMIT;');
 }

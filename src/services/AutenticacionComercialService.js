@@ -187,7 +187,8 @@ class AutenticacionComercialService {
       } else {
         usuarioId = await tx.crearInvitado({ nombre: d.nombre, email: d.email, rol: d.rol,
           passwordHash, emailVerificadoEn: new Date(ahora).toISOString(), versionContacto: 1,
-          estado: "Activo", debeCambiarPassword: false, versionSesion: 1, actorId: d.invitadorId });
+          estado: "Activo", debeCambiarPassword: false, versionSesion: 1, actorId: d.invitadorId,
+          desafioId:d.id,consumidaEn:ahora });
         if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) throw indisponible();
       }
       const id = randomUUID();

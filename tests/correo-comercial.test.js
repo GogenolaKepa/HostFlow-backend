@@ -67,7 +67,7 @@ test('composición inactiva sin side effects y activación exige acreditaciones 
   for(const f of ['app.js','server.js','routes/authRoutes.js'])assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'../src',f),'utf8'),/IntegracionComercialPreparada|ResendCorreo|cuentasComercialesAisladas/);
 });
 test('cableado prepara puertos y pausa/desactiva sin montar rutas; permisos faltantes bloquean',async()=>{
-  const consultas=[];let permiso=1,secretos=0,falloWorker=false,excesivo=0,puerta,inicio,faltaColumna;
+  const consultas=[];let permiso=1,secretos=0,falloWorker=false,excesivo=0,puerta,inicio,faltaColumna,rolExcesivo,autoridadIncierta=false,fronteraIncierta=false;
   class Transaction{async begin(){}async commit(){}async rollback(){}}
   class Request{
     constructor(){this.params={};}
@@ -79,6 +79,9 @@ test('cableado prepara puertos y pausa/desactiva sin montar rutas; permisos falt
       if(q.includes('SELECT DB_NAME'))return{recordset:[{base:'Test',servidor:'test',modelo:'authcom-v1'}]};
       if(q.includes('sp_getapplock'))return{recordset:[{resultado:0}]};
       if(q.includes('name=@nombre'))return{recordset:[{modelo:this.params.nombre==='HostFlowAuthIngreso'?'authcom-ingreso-v1':this.params.nombre==='HostFlowAuthResiliencia'?'authcom-resiliencia-v1':'authcom-correo-v1'}]};
+      if(q.includes('IS_ROLEMEMBER')&&this.params.rol===rolExcesivo)return{recordset:[{excesivo:1}]};
+      if(q.includes('CASE WHEN EXISTS')&&autoridadIncierta)return{recordset:[{excesivo:null}]};
+      if(q.includes('CASE WHEN OBJECT_ID')&&fronteraIncierta)return{recordset:[{excesivo:null}]};
       if(q.includes('AS excesivo'))return{recordset:[{excesivo}]};
       if(q.includes('HAS_PERMS_BY_NAME')){
         // Perfiles mínimos: SELECT de columnas, SIN SELECT de tabla completo.
@@ -109,9 +112,14 @@ test('cableado prepara puertos y pausa/desactiva sin montar rutas; permisos falt
   const operacion=conCierre.procesarUna();await esperada;let cerro=false;const cierre=conCierre.cerrar().then(()=>{cerro=true;});
   await Promise.resolve();assert.equal(cerro,false);liberar();assert.equal((await operacion).correo.estado,'pausada');await cierre;puerta=null;
   excesivo=1;await assert.rejects(prepararIntegracionComercial(config));excesivo=0;
+  rolExcesivo='db_datareader';await assert.rejects(prepararIntegracionComercial(config));rolExcesivo=undefined;
+  autoridadIncierta=true;await assert.rejects(prepararIntegracionComercial(config));autoridadIncierta=false;
+  fronteraIncierta=true;await assert.rejects(prepararIntegracionComercial(config));fronteraIncierta=false;
   for(const columna of ['EmailNormalizado','PasswordHash','Nombre','Activo','IdEmpresa']){
     faltaColumna=columna;await assert.rejects(prepararIntegracionComercial(config));
   }
   faltaColumna=undefined;
-  permiso=0;await assert.rejects(prepararIntegracionComercial(config));assert.ok(consultas.some(q=>q.includes('HAS_PERMS_BY_NAME')));
+  permiso=0;await assert.rejects(prepararIntegracionComercial(config),e=>e.codigo==='PERMISO_COMERCIAL_FALTANTE'&&e.diagnostico.perfil==='cuentas'&&e.diagnostico.objeto==='authcom.Contactos'&&e.diagnostico.resultado==='denegado');
+  permiso=null;await assert.rejects(prepararIntegracionComercial(config),e=>e.codigo==='PERMISO_COMERCIAL_FALTANTE'&&e.diagnostico.resultado==='no-acreditado');
+  assert.ok(consultas.some(q=>q.includes('HAS_PERMS_BY_NAME')));
 });
