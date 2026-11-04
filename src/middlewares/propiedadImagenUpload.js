@@ -1,6 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const {archivoImagenPermitido}=require('./imagenesPublicas');
 
 // =========================================================
 // CARPETA BASE
@@ -90,20 +91,10 @@ const fileFilter = (
   file,
   callback
 ) => {
-  const tiposPermitidos = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ];
-
-  if (
-    !tiposPermitidos.includes(
-      file.mimetype
-    )
-  ) {
+  if (!archivoImagenPermitido(file)) {
     return callback(
       new Error(
-        "Solo se permiten imágenes JPG, PNG o WEBP."
+        "Solo se permiten imágenes JPG, PNG o WEBP con su extensión correspondiente."
       )
     );
   }

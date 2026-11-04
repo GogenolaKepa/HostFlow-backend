@@ -5,9 +5,7 @@ const express = require(
 const corsSeguro = require("./middlewares/corsSeguro");
 const { respuestasSeguras, manejarErrorSeguro } = require("./security/erroresSeguros");
 
-const path = require(
-  "path"
-);
+const {crearImagenesPublicas}=require('./middlewares/imagenesPublicas');
 
 const authRoutes = require(
   "./routes/authRoutes"
@@ -139,12 +137,7 @@ app.use(
 
 app.use(
   "/uploads",
-  express.static(
-    path.join(
-      process.cwd(),
-      "uploads"
-    )
-  )
+  crearImagenesPublicas()
 );
 
 

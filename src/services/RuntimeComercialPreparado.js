@@ -6,8 +6,9 @@ async function prepararRuntimeComercial({configuracion={habilitado:false},driver
   let conexiones,integracion,cierre,activo=true;
   const cerrar=()=>{activo=false;return cierre??=(async()=>{try{await integracion?.cerrar();}finally{await conexiones?.cerrar();}})();};
   try{
-    conexiones=await abrirPoolsComerciales({habilitado:true,driver,identidades,obtenerCredencial});
-    integracion=await ensamblarComercial({configuracion,dependencias:{...dependencias,pools:conexiones.pools,sql:{...dependencias?.sql,driver}}});
+    if(configuracion.sql?.altaOperadorRestringida===false||dependencias?.sql?.altaOperadorRestringida===false)throw TypeError('Alta directa no permitida.');
+    conexiones=await abrirPoolsComerciales({habilitado:true,driver,identidades,obtenerCredencial,timeoutMs:30000});
+    integracion=await ensamblarComercial({configuracion,dependencias:{...dependencias,pools:conexiones.pools,sql:{...dependencias?.sql,driver,altaOperadorRestringida:true}}});
     return Object.freeze({estado:'preparado',handler:integracion.handler,
       iniciarWorker:()=>integracion.iniciarWorker(),desactivar:()=>{activo=false;integracion.desactivar();},cerrar,
       consultar:()=>({disponible:activo,contactos:integracion.contactosHabilitados===true,pools:conexiones.consultar(),worker:integracion.consultarWorker()})});

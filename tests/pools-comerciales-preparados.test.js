@@ -80,11 +80,12 @@ test('runtime completo prepara contratos existentes, no inicia correo/worker y d
       correo:{obtenerSecreto:()=>{secretos++;assert.fail('No leer API key al preparar');},transportar:()=>assert.fail('Sin red')},
       autenticar:()=>{},acreditacion:{referencia:'SOLO-FICTICIO',sqlValidado:true,dominioVerificado:true,recuperacionVerificada:true,seguridadHttpVerificada:true}}};
   const r=await prepararRuntimeComercial(opciones);
+  assert.equal(e.creados.length,4);assert.ok(e.creados.every(p=>p.config.connectionTimeout===30000));
   assert.equal(r.estado,'preparado');assert.equal(r.consultar().worker.estado,'detenido');assert.equal(secretos,0);
   r.desactivar();assert.equal(r.consultar().disponible,false);await Promise.all([r.cerrar(),r.cerrar()]);assert.ok(e.creados.every(p=>p.cierres===1));
   opciones.configuracion.sql.altaOperadorRestringida=true;
   const restringido=await prepararRuntimeComercial(opciones);await restringido.cerrar();
-  marcaAlta=null;await assert.rejects(prepararRuntimeComercial(opciones));marcaAlta='authcom-operador-v1';opciones.configuracion.sql.altaOperadorRestringida=false;
+  marcaAlta=null;await assert.rejects(prepararRuntimeComercial(opciones));marcaAlta='authcom-operador-v1';
   permiso=0;await assert.rejects(prepararRuntimeComercial(opciones),error=>error.codigo==='PERMISO_COMERCIAL_FALTANTE'&&error.diagnostico.objeto==='authcom.Contactos'&&!JSON.stringify(error.diagnostico).includes('ficticio'));
   assert.ok(e.creados.every(p=>p.cierres===1));
 });

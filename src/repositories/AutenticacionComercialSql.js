@@ -4,7 +4,7 @@ const ms = valor => valor == null ? null : new Date(valor).getTime();
 
 // Sin pool, .env, database.js, singletons ni activación operativa implícitos.
 class AutenticacionComercialSql {
-  constructor({ pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado = false, perfil='cuentas', altaOperadorRestringida=false } = {}) {
+  constructor({ pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado = false, perfil='cuentas', altaOperadorRestringida=true } = {}) {
     if (!pool || !driver || !baseEsperada || !servidorEsperado || !Number.isSafeInteger(idEmpresa) || idEmpresa <= 0) {
       throw new TypeError("Pool, driver, destino y empresa explícitos obligatorios.");
     }
@@ -155,16 +155,7 @@ class AlcanceSql {
       if(!Number.isSafeInteger(id)||id<=0)throw Error('Alta restringida no acreditada.');
       this.altaAuditada=id;return id;
     }
-    const r = await this.q(`INSERT dbo.Usuarios(Nombre,Email,PasswordHash,IdRol,DebeCambiarPassword,IdUsuarioCreacion,IdUsuarioActualizacion)
-      OUTPUT inserted.IdUsuario AS id
-      SELECT @nombre,@email,@hash,IdRol,0,@actor,@actor FROM dbo.Roles WITH (HOLDLOCK)
-      WHERE Nombre COLLATE Latin1_General_100_BIN2=N'Operador' AND Activo=1;`,
-    { nombre: v.nombre, email: v.email, hash: v.passwordHash, actor: v.actorId });
-    if (r.recordset.length !== 1) throw new Error("Rol no disponible.");
-    const id = r.recordset[0].id;
-    await this.q("INSERT authcom.Contactos(IdUsuario,Email,VersionContacto,VerificadoEn) VALUES(@id,@email,1,@fecha);",
-      { id, email: v.email, fecha: new Date(v.emailVerificadoEn) });
-    return id;
+    throw new ErrorSeguridad(503,'ALTA_SQL_NO_ACREDITADA','Alta restringida no acreditada.');
   }
   encolar(v) {
     // Lista cerrada: no conservar campos arbitrarios ni enlace/token en texto plano.

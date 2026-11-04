@@ -17,6 +17,7 @@ const {VerificacionContactoService}=require('./VerificacionContactoService');
 // no lee .env y no monta rutas ni inicia timers. Un flag de Vite nunca la habilita.
 async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,correo,autenticar,acreditacion}={}) {
   if(habilitado!==true)return Object.freeze({estado:'inactiva'});
+  if(sql?.altaOperadorRestringida!==true)throw TypeError('El producto comercial requiere el alta restringida SQL18.');
   if(!acreditacion?.referencia || !['sqlValidado','dominioVerificado','recuperacionVerificada','seguridadHttpVerificada'].every(k=>acreditacion[k]===true))throw Error('Falta acreditación de infraestructura.');
   if(typeof autenticar!=='function'||!sql||!pools||!correo)throw TypeError('Faltan dependencias explícitas.');
   const protector=crearAnilloClavesCorreo(claves?.cifrado);
@@ -24,7 +25,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
   if(claves.cifrado.claves.some(v=>v.clave.equals(claves.indice)))throw TypeError('Cifrado y HMAC requieren claves independientes.');
   const repos={};
   const permisos={
-    cuentas:[['authcom.Contactos','SELECT'],['authcom.Contactos','INSERT'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT'],sql.altaOperadorRestringida===true?['authcom.CrearOperadorInvitado','EXECUTE']:['dbo.Usuarios','INSERT']],
+    cuentas:[['authcom.Contactos','SELECT'],['authcom.Contactos','INSERT'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT'],['authcom.CrearOperadorInvitado','EXECUTE']],
     ingresoHttp:[['authcom.Ingresos','INSERT']],
     workerIngreso:[['authcom.Ingresos','SELECT'],['authcom.Ingresos','UPDATE'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Contactos','SELECT'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT']],
     correo:[['authcom.Outbox','SELECT'],['authcom.Outbox','UPDATE'],['authcom.Desafios','SELECT']],

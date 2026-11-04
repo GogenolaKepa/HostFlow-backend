@@ -7,6 +7,7 @@ function entero(env, nombre, defecto, maximo) {
 }
 
 function configuracionHttp(env = process.env) {
+  require('./publicacionCloudflare').validarPublicacionCloudflare(env);
   const produccion = env.NODE_ENV === "production";
   const origenes = (env.HOSTFLOW_CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean).map((origen) => {
     let url;

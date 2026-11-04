@@ -1,0 +1,14 @@
+# PLANTILLA INACTIVA. Sin túnel, DNS ni credenciales creados.
+# No sustituir por un Quick Tunnel. No instalar como servicio automático.
+tunnel: UUID_PENDIENTE_DE_AUTORIZACION
+credentials-file: C:/RUTA_PRIVADA_PENDIENTE/UUID_PENDIENTE.json
+
+ingress:
+  - hostname: api.hostflow.com.ar
+    service: http_status:503
+  - service: http_status:404
+
+# Todas las solicitudes quedan bloqueadas. La futura configuración revisada
+# sólo admitirá /api/... y /uploads/... hacia http://127.0.0.1:4000,
+# con catch-all 404. No noTLSVerify, no puertos públicos, no comodines DNS.
+# No habilitar el destino local antes de acreditar el backend de producción.

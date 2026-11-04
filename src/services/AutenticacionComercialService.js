@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const { randomUUID } = require("node:crypto");
 const { isIP } = require("node:net");
 const { crearToken, hashToken } = require("../security/comercial/credencialesTemporales");
+const {origenPublico}=require('../security/comercial/origenPublico');
 const { ErrorSeguridad, validarCampos, normalizarEmail, texto, validarPassword,
   esUsuarioHabilitado, comprobarPassword } = require("../security/seguridadUsuarios");
 
@@ -28,11 +29,7 @@ class AutenticacionComercialService {
     if (typeof repository?.transaccion !== "function" || typeof protector?.sellar !== "function" ||
         typeof indicePrivado !== "function" || !Number.isSafeInteger(idEmpresa) || idEmpresa <= 0 ||
         typeof ahora !== "function" || typeof hashPassword !== "function") throw new TypeError("Faltan adaptadores de seguridad explícitos.");
-    const url = new URL(origen);
-    if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
-      throw new TypeError("El origen de los enlaces debe ser HTTPS fijo, sin ruta ni credenciales.");
-    }
-    Object.assign(this, { repository, protector, indicePrivado, origen: url.origin, idEmpresa, ahora, hashPassword });
+    Object.assign(this, { repository, protector, indicePrivado, origen: origenPublico(origen), idEmpresa, ahora, hashPassword });
     this.duraciones = { recuperacion: ttl(recuperacionMs, 60_000, 60 * 60_000), invitacion: ttl(invitacionMs, 60_000, 7 * 86400_000) };
   }
 

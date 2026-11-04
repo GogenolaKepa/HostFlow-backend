@@ -78,6 +78,7 @@ test('cableado prepara puertos y pausa/desactiva sin montar rutas; permisos falt
       if(puerta&&q.includes(';WITH siguiente AS')&&q.includes('authcom.Ingresos')){inicio();await puerta;}
       if(q.includes('SELECT DB_NAME'))return{recordset:[{base:'Test',servidor:'test',modelo:'authcom-v1'}]};
       if(q.includes('sp_getapplock'))return{recordset:[{resultado:0}]};
+      if(q.includes('HostFlowAuthAlta'))return{recordset:[{modelo:'authcom-operador-v1'}]};
       if(q.includes('name=@nombre'))return{recordset:[{modelo:this.params.nombre==='HostFlowAuthIngreso'?'authcom-ingreso-v1':this.params.nombre==='HostFlowAuthResiliencia'?'authcom-resiliencia-v1':'authcom-correo-v1'}]};
       if(q.includes('IS_ROLEMEMBER')&&this.params.rol===rolExcesivo)return{recordset:[{excesivo:1}]};
       if(q.includes('CASE WHEN EXISTS')&&autoridadIncierta)return{recordset:[{excesivo:null}]};
@@ -95,7 +96,7 @@ test('cableado prepara puertos y pausa/desactiva sin montar rutas; permisos falt
       return{recordset:[],rowsAffected:[0]};
     }
   }
-  const config={habilitado:true,sql:{driver:{Transaction,Request,DateTime2:()=>{},ISOLATION_LEVEL:{SERIALIZABLE:1}},baseEsperada:'Test',servidorEsperado:'test',idEmpresa:1},
+  const config={habilitado:true,sql:{driver:{Transaction,Request,DateTime2:()=>{},ISOLATION_LEVEL:{SERIALIZABLE:1}},baseEsperada:'Test',servidorEsperado:'test',idEmpresa:1,altaOperadorRestringida:true},
     pools:{cuentas:{},ingresoHttp:{},workerIngreso:{},correo:{}},claves:{cifrado:{activa:'activa',claves:[{keyId:'activa',clave:randomBytes(32)}]},indice:randomBytes(32)},
     correo:{origen,remitente:'cuentas@example.invalid',dominioVerificado:'example.invalid',obtenerSecreto:()=>{secretos++;return randomBytes(24).toString('hex');},transportar:()=>assert.fail('Sin entregas no debe existir red')},
     autenticar:()=>{},acreditacion:{referencia:'prueba-ficticia',sqlValidado:true,dominioVerificado:true,recuperacionVerificada:true,seguridadHttpVerificada:true}};

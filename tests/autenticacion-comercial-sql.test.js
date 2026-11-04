@@ -133,18 +133,21 @@ test("proyección SQL: documento no reemplaza ID/estado/empresa relacionales", a
     assert.equal(d.consumidaEn, ahora.getTime()); assert.equal(d.versionSesion, 4);
   });
 });
-test("alta por invitación usa Operador resuelto y contacto en la misma transacción; fallo revierte", async () => {
+test("alta SQL18 y correo comparten transacción; un fallo posterior revierte sin INSERT directo", async () => {
   const e = entorno({ responder: sql => {
-    if (sql.includes("INSERT dbo.Usuarios")) return { recordset: [{ id: 123 }] };
-    if (sql.includes("INSERT authcom.Contactos")) throw Error("fallo ficticio");
+    if (sql.includes("EXEC authcom.CrearOperadorInvitado")) return { recordset: [{ id: 123 }] };
+    if (sql.includes("INSERT authcom.Outbox")) throw Error("fallo ficticio");
     return { recordset: [] };
   } });
-  await assert.rejects(e.repo.transaccion(tx => tx.crearInvitado({ nombre: "Ficticio", email: "alta@example.invalid", passwordHash: "ficticio", rol: "Operador", actorId: 12, emailVerificadoEn: new Date().toISOString() })), { codigo: "CUENTAS_RESULTADO_INCIERTO" });
+  await assert.rejects(e.repo.transaccion(async tx => {
+    assert.equal(await tx.crearInvitado({ desafioId:'ficticio',consumidaEn:Date.now(),passwordHash:'ficticio',rol:'Operador' }),123);
+    await tx.encolar({id:'ficticio',expiraEn:Date.now()+1000,sobre:{keyId:'k',iv:'i',tag:'t',contenido:'ficticio'}});
+  }), { codigo: "CUENTAS_RESULTADO_INCIERTO" });
   assert.equal(e.eventos.at(-1)[0], "rollback");
   assert.ok(!e.eventos.some(e => e[0] === "commit"));
   assert.equal(e.consultas[2].tx, e.consultas[3].tx);
-  assert.match(e.consultas[2].sql, /N'Operador' AND Activo=1/);
-  assert.equal(e.consultas[3].params.id, 123);
+  assert.match(e.consultas[2].sql, /EXEC authcom.CrearOperadorInvitado/);
+  assert.ok(e.consultas.every(c=>!/INSERT dbo\.Usuarios|INSERT authcom\.Contactos/.test(c.sql)));
 });
 test("lease perdido informa false; revocar queda ligado a propósito/empresa y nunca DELETE", async () => {
   const e = entorno({ responder: () => ({ recordset: [], rowsAffected: [0] }) });

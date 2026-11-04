@@ -1,5 +1,6 @@
 const {normalizarEmail} = require('../seguridadUsuarios');
 const {crearPlantillaCorreo} = require('./plantillasCorreo');
+const {origenPublico}=require('./origenPublico');
 class ErrorCorreo extends Error {
   constructor(codigo,{politica='reintentar',demoraMs=60000}={}) {super('No se pudo acreditar la entrega del correo.');Object.assign(this,{codigo,politica,demoraMs});}
 }
@@ -8,8 +9,7 @@ class ResendCorreo {
     if(typeof obtenerSecreto!=='function' || typeof transportar!=='function' || !Number.isInteger(timeoutMs) || timeoutMs<100 || timeoutMs>30000) throw TypeError('Faltan dependencias de correo explícitas.');
     const email=normalizarEmail(remitente);
     if(typeof dominioVerificado!=='string' || email.split('@')[1]!==dominioVerificado.toLowerCase() || /[\r\n]/.test(remitente)) throw TypeError('Remitente no acreditado.');
-    const u=new URL(origen);
-    if(u.protocol!=='https:' || u.origin!==origen || u.username || u.password) throw TypeError('Origen HTTPS fijo obligatorio.');
+    origenPublico(origen);
     Object.assign(this,{habilitado,obtenerSecreto,remitente:email,origen,transportar,timeoutMs});
   }
   async enviar(payload,{antesDeEnviar}={}) {

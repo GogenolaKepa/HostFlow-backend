@@ -1,4 +1,5 @@
 require("dotenv").config();
+const {once}=require('node:events');
 // Validar configuracion antes de abrir cualquier conexion.
 require("./config/autenticacion").origenAutenticacion();
 require("./config/httpSeguridad").configuracionHttp();
@@ -51,15 +52,26 @@ async function iniciar({ comercial } = {}) {
   }
 );
   servidor.comercial=producto;
-  servidor.once('error',()=>{producto.cerrar().catch(()=>console.error('Cierre comercial pendiente de inspección.'));});
-  servidor.cerrarHostFlow=async()=>{
-    await producto.cerrar();
-    await new Promise((resolve,reject)=>servidor.close(error=>error?reject(error):resolve()));
-  };
+  let cierre;
+  servidor.cerrarHostFlow=()=>cierre??=(async()=>{
+    producto.desactivar();
+    if(servidor.listening)await new Promise((resolve,reject)=>servidor.close(error=>error?reject(Error('Cierre HTTP no acreditado.')):resolve()));
+    let fallo=false;
+    try{await producto.cerrar();}catch{fallo=true;}
+    try{await(await poolPromise).close();}catch{fallo=true;}
+    if(fallo)throw Error('Cierre SQL no acreditado; inspección necesaria.');
+  })();
+  servidor.on('error',()=>{servidor.cerrarHostFlow().catch(()=>console.error('Cierre del host pendiente de inspección.'));});
+  // No anunciar un host disponible ni iniciar el worker antes de escuchar.
+  try{if(!servidor.listening)await once(servidor,'listening');}
+  catch{try{await servidor.cerrarHostFlow();}catch{}throw Error('HostFlow no pudo abrir el puerto; cierre pendiente de verificar.');}
   return servidor;
 }
 
-if (require.main === module) iniciar().catch(async () => {
+if (require.main === module) iniciar().then(servidor=>{
+  const cerrar=()=>{servidor.cerrarHostFlow().then(()=>console.log('HostFlow cerrado; conexiones finalizadas.')).catch(()=>{console.error('Cierre no acreditado; inspección necesaria.');process.exitCode=1;});};
+  process.once('SIGINT',cerrar);process.once('SIGTERM',cerrar);
+}).catch(async () => {
   console.error("No se inició HostFlow: revisar la preparación de autenticación SQL.");
   try { (await poolPromise).close(); } catch { /* Sin detalles de conexión. */ }
   process.exitCode = 1;
