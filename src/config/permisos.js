@@ -1,3 +1,4 @@
+const {esCuentaPiloto}=require('../security/pilotoAutenticacion');
 // Roles fijos. Cada acción se define una sola vez; las rutas y la UI consumen
 // los permisos efectivos del servidor, nunca un rol enviado por el cliente.
 // true concede la acción al Operador; Administrador dispone de todo el catálogo.
@@ -71,7 +72,9 @@ function permisosDelRol(rol) {
 }
 
 function tienePermiso(usuario, permiso) {
-  return permisosDelRol(usuario?.rol).includes(permiso);
+  return permisosUsuario(usuario).includes(permiso);
 }
 
-module.exports = { CATALOGO_PERMISOS, PERMISOS_POR_ROL, permisosDelRol, tienePermiso };
+const PERMISOS_PILOTO=Object.freeze(['cuenta.ver','cuenta.password']);
+function permisosUsuario(usuario){return esCuentaPiloto(usuario)?PERMISOS_PILOTO:permisosDelRol(usuario?.rol);}
+module.exports = { CATALOGO_PERMISOS, PERMISOS_POR_ROL, permisosDelRol, permisosUsuario, tienePermiso };

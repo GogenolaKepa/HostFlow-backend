@@ -1,13 +1,15 @@
 const {abrirPoolsComerciales}=require('./PoolsComercialesPreparados');
 const {ensamblarComercial}=require('./ConfiguracionComercialPreparada');
+const {diagnostico}=require('../security/comercial/diagnosticoArranque');
 // Ensamblado explícito del producto. Importarlo no abre pools ni inicia workers.
 async function prepararRuntimeComercial({configuracion={habilitado:false},driver,identidades,obtenerCredencial,dependencias}={}){
   if(configuracion.habilitado!==true)return Object.freeze({estado:'inactivo'});
-  let conexiones,integracion,cierre,activo=true;
+  let conexiones,integracion,cierre,activo=true,etapa='ABRIR_POOLS_COMERCIALES';
   const cerrar=()=>{activo=false;return cierre??=(async()=>{try{await integracion?.cerrar();}finally{await conexiones?.cerrar();}})();};
   try{
     if(configuracion.sql?.altaOperadorRestringida===false||dependencias?.sql?.altaOperadorRestringida===false)throw TypeError('Alta directa no permitida.');
     conexiones=await abrirPoolsComerciales({habilitado:true,driver,identidades,obtenerCredencial,timeoutMs:30000});
+    etapa='ENSAMBLAR_COMERCIAL';
     integracion=await ensamblarComercial({configuracion,dependencias:{...dependencias,pools:conexiones.pools,sql:{...dependencias?.sql,driver,altaOperadorRestringida:true}}});
     return Object.freeze({estado:'preparado',handler:integracion.handler,
       iniciarWorker:()=>integracion.iniciarWorker(),desactivar:()=>{activo=false;integracion.desactivar();},cerrar,
@@ -15,8 +17,9 @@ async function prepararRuntimeComercial({configuracion={habilitado:false},driver
   }catch(error){
     let cierrePendiente=error?.codigo==='CIERRE_INCOMPLETO';
     try{await cerrar();}catch{cierrePendiente=true;}
-    if(cierrePendiente){const salida=Error('Runtime comercial detenido con cierre SQL pendiente de inspección.');salida.codigo='CIERRE_INCOMPLETO';throw salida;}
+    if(cierrePendiente){const salida=Error('Runtime comercial detenido con cierre SQL pendiente de inspección.');salida.codigo='CIERRE_INCOMPLETO';salida.diagnosticoArranque=diagnostico(etapa,error);throw salida;}
     const salida=Error('Runtime comercial no acreditado; HTTP y workers no disponibles.');
+    salida.diagnosticoArranque=diagnostico(etapa,error);
     const d=error?.diagnostico;
     if(error?.codigo==='PERMISO_COMERCIAL_FALTANTE'&&['cuentas','ingresoHttp','workerIngreso','correo'].includes(d?.perfil)&&
       /^(authcom\.(Contactos|Desafios|Outbox|Auditoria|Ingresos|IngresoFallos|Cuotas|CrearOperadorInvitado)|dbo\.Usuarios)$/.test(d.objeto)&&

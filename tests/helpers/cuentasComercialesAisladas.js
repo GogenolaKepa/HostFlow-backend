@@ -69,7 +69,9 @@ class CuentasComercialesAisladas extends UsuariosAislados {
   }
   async revocarInvitacion(id, idEmpresa, ahora) {
     const d = this.desafios.get(id);
-    if (d?.proposito === "invitacion" && d.idEmpresa === idEmpresa && d.consumidaEn === null) d.revocadaEn = ahora;
+    if (d?.proposito !== "invitacion" || d.idEmpresa !== idEmpresa || d.consumidaEn !== null || d.revocadaEn !== null) return false;
+    d.revocadaEn = ahora;
+    return true;
   }
   async auditar(evento) {
     if (this.fallarAuditoria) throw new Error("Fallo simulado, no exponer.");

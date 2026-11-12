@@ -1,16 +1,16 @@
-const {normalizarEmail} = require('../seguridadUsuarios');
+const {validarRemitente,formatearRemitente} = require('./configuracionCorreo');
 const {crearPlantillaCorreo} = require('./plantillasCorreo');
 const {origenPublico}=require('./origenPublico');
 class ErrorCorreo extends Error {
   constructor(codigo,{politica='reintentar',demoraMs=60000}={}) {super('No se pudo acreditar la entrega del correo.');Object.assign(this,{codigo,politica,demoraMs});}
 }
 class ResendCorreo {
-  constructor({habilitado=false,obtenerSecreto,remitente,dominioVerificado,origen,transportar,timeoutMs=10000}={}) {
+  constructor({habilitado=false,obtenerSecreto,remitente,dominioVerificado,origen,transportar,timeoutMs=10000,plantilla=crearPlantillaCorreo}={}) {
     if(typeof obtenerSecreto!=='function' || typeof transportar!=='function' || !Number.isInteger(timeoutMs) || timeoutMs<100 || timeoutMs>30000) throw TypeError('Faltan dependencias de correo explícitas.');
-    const email=normalizarEmail(remitente);
-    if(typeof dominioVerificado!=='string' || email.split('@')[1]!==dominioVerificado.toLowerCase() || /[\r\n]/.test(remitente)) throw TypeError('Remitente no acreditado.');
+    const {remitente:email}=validarRemitente(remitente,dominioVerificado);
     origenPublico(origen);
-    Object.assign(this,{habilitado,obtenerSecreto,remitente:email,origen,transportar,timeoutMs});
+    if(typeof plantilla!=='function')throw TypeError('Plantilla no acreditada.');
+    Object.assign(this,{habilitado,obtenerSecreto,remitente:email,from:formatearRemitente(email,dominioVerificado),origen,transportar,timeoutMs,plantilla});
   }
   async enviar(payload,{antesDeEnviar}={}) {
     if(this.habilitado!==true) throw new ErrorCorreo('CORREO_INACTIVO',{politica:'cuarentena'});
@@ -21,7 +21,7 @@ class ResendCorreo {
       let correo,clave;
       try {
         try{
-          correo=crearPlantillaCorreo(payload,this.origen);
+          correo=this.plantilla(payload,this.origen);
           clave=await this.obtenerSecreto({signal:controller.signal});
           if(controller.signal.aborted||typeof clave!=='string'||!clave.trim()||/[\r\n\s]/.test(clave))throw Error();
         }catch{throw new ErrorCorreo('CONFIGURACION_CORREO_INVALIDA',{politica:'cuarentena'});}
@@ -36,7 +36,7 @@ class ResendCorreo {
         const r=await this.transportar('https://api.resend.com/emails',{
           method:'POST',redirect:'error',signal:controller.signal,
           headers:{Authorization:`Bearer ${clave}`,'Content-Type':'application/json','Idempotency-Key':`hostflow/${payload.idempotencyKey}`},
-          body:JSON.stringify({from:`HostFlow <${this.remitente}>`,to:[correo.destinatario],subject:correo.subject,html:correo.html,text:correo.text}),
+          body:JSON.stringify({from:this.from,to:[correo.destinatario],subject:correo.subject,html:correo.html,text:correo.text}),
         });
         if(r.status!==200 && r.status!==201){
           const demora=Number(r.headers?.get?.('retry-after'));

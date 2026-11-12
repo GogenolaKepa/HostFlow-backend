@@ -12,10 +12,14 @@ const {ErrorSeguridad}=require('../security/seguridadUsuarios');
 const {consultaFronteraUsuarios}=require('../security/comercial/FronteraSqlComercial');
 const {ContactosVerificadosSql}=require('../repositories/ContactosVerificadosSql');
 const {VerificacionContactoService}=require('./VerificacionContactoService');
+function debePausarPiloto(fase,resultado){
+  const admitidos=fase==='ingreso'?['procesada','sin-pendientes']:fase==='correo'?['entregada','sin-pendientes']:[];
+  return !admitidos.includes(resultado?.estado);
+}
 
 // Factoría de composición inactiva por defecto. Importarla no abre pools,
 // no lee .env y no monta rutas ni inicia timers. Un flag de Vite nunca la habilita.
-async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,correo,autenticar,acreditacion}={}) {
+async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,correo,autenticar,acreditacion,politicaPiloto=false}={}) {
   if(habilitado!==true)return Object.freeze({estado:'inactiva'});
   if(sql?.altaOperadorRestringida!==true)throw TypeError('El producto comercial requiere el alta restringida SQL18.');
   if(!acreditacion?.referencia || !['sqlValidado','dominioVerificado','recuperacionVerificada','seguridadHttpVerificada'].every(k=>acreditacion[k]===true))throw Error('Falta acreditación de infraestructura.');
@@ -108,7 +112,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
     repos[perfil]=new IngresoComercialSql({repository:base,habilitado:true});
   }
   const proveedor=new ResendCorreo({...correo,habilitado:true});
-  const opciones={protector,indicePrivado,idEmpresa:sql.idEmpresa,origen:correo.origen};
+  const opciones={protector,indicePrivado,idEmpresa:sql.idEmpresa,origen:correo.origen,politicaPiloto:politicaPiloto===true};
   const cuentas=new AutenticacionComercialService({...opciones,repository:repos.cuentas});
   let contactos=null;
   if(sql.verificacionContactos===true){
@@ -144,7 +148,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
   const workerCorreo=new EntregaCorreoSeguridad({repository:repos.correo,protector,proveedor,limiteDiario:correo.limiteDiario,
     eventos:correo.eventos||null,indiceDestino:email=>Buffer.from(indicePrivado('correo-destino',email),'hex')});
   let activa=true,ocupado=false,pausado=false,enCurso=Promise.resolve();
-  const router=crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos});
+  const router=crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos,politicaPiloto});
   // Middleware exterior obligatorio: desactivar cierra estas rutas, nunca el login JWT.
   const handler=(req,res,next)=>activa?router(req,res,next):res.status(503).set('Cache-Control','no-store').json({codigo:'CUENTAS_INACTIVAS'});
   async function procesarUna(){
@@ -154,9 +158,11 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
       let terminar;enCurso=new Promise(resolve=>{terminar=resolve;});
       try{
         const ingreso=await workerIngreso.procesarUna();
+        if(politicaPiloto&&debePausarPiloto('ingreso',ingreso)){activa=false;pausado=true;return{estado:'pausada-por-error',ingreso,correo:{estado:'pausada'}};}
         if(ingreso.estado==='resultado-incierto'){activa=false;pausado=true;}
         if(!activa)return {ingreso,correo:{estado:'pausada'}};
         const correo=await workerCorreo.procesarUna();
+        if(politicaPiloto&&debePausarPiloto('correo',correo)){activa=false;pausado=true;return{estado:'pausada-por-error',ingreso,correo};}
         if(['resultado-incierto','pausada-configuracion'].includes(correo.estado)){pausado=true;activa=false;}
         return {ingreso,correo};
       }
@@ -171,4 +177,4 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
     consultarWorker:()=>supervisor.consultar(),
   });
 }
-module.exports={prepararIntegracionComercial};
+module.exports={prepararIntegracionComercial,debePausarPiloto};

@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const {esCuentaPiloto}=require('../security/pilotoAutenticacion');
 const { ErrorSeguridad, validarCampos, texto, normalizarEmail, validarRol, validarPassword,
   validarRevision, revisionDe, verificarRevision, esUsuarioHabilitado, perfilSeguro,
   sesionInvalida, comprobarPassword } = require("../security/seguridadUsuarios");
@@ -45,6 +46,7 @@ class UsuarioService {
     const nombre = texto(body.nombre, "El nombre", 120);
     const email = normalizarEmail(body.email);
     const rol = validarRol(body.rol);
+    if(esCuentaPiloto({email})&&rol!=='Operador')throw new ErrorSeguridad(403,'IDENTIDAD_ENSAYO_PROTEGIDA','La identidad de ensayo solo admite autenticación de Operador.');
     const hash = await bcrypt.hash(validarPassword(body.passwordTemporal), this.cost);
     return this.repository.transaccionSeguridad(async (tx) => {
       await this.revalidarActor(tx, actor, { admin: true });
@@ -59,9 +61,11 @@ class UsuarioService {
     const email = normalizarEmail(body.email);
     const rol = validarRol(body.rol);
     const revision = validarRevision(body.versionRegistro);
+    if(esCuentaPiloto({email})&&rol!=='Operador')throw new ErrorSeguridad(403,'IDENTIDAD_ENSAYO_PROTEGIDA','La identidad de ensayo solo admite autenticación de Operador.');
     return this.repository.transaccionSeguridad(async (tx) => {
       await this.revalidarActor(tx, actor, { admin: true });
       const usuario = await this.destino(tx, id, revision);
+      if(esCuentaPiloto(usuario)&&(email!==usuario.email||rol!=='Operador'))throw new ErrorSeguridad(403,'IDENTIDAD_ENSAYO_PROTEGIDA','No se puede retirar el aislamiento de la identidad de ensayo.');
       const rolSQL = await this.rol(tx, rol);
       await this.protegerUltimoAdministrador(tx, usuario, rol, usuario.estado);
       const revocar = email !== usuario.email || rol !== usuario.rol;

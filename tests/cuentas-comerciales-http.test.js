@@ -49,6 +49,9 @@ test('revocación y expiración de enlaces rechazan sin cambiar cuentas existent
   await pedir('/invitaciones',{nombre:'Persona',email:'revocada@example.invalid'},e.tokenAdmin());await e.procesar();const token=e.tokenCorreo(),id=[...e.repository.desafios.keys()][0];
   assert.equal((await pedir(`/invitaciones/${id}/revocar`,{},e.tokenOperador())).status,403);
   assert.equal((await pedir(`/invitaciones/${id}/revocar`,{},e.tokenAdmin())).status,204);
+  assert.equal((await pedir(`/invitaciones/${id}/revocar`,{},e.tokenAdmin())).status,400);
+  assert.equal((await pedir('/invitaciones/00000000-0000-0000-0000-000000000000/revocar',{},e.tokenAdmin())).status,400);
+  assert.equal(e.repository.auditoria.filter(a=>a.tipo==='INVITACION_REVOCADA').length,1);
   assert.equal((await pedir('/invitaciones/validar',{token})).status,400);
   await pedir('/recuperacion/solicitar',{email:e.operador.usuario.email});await e.procesar();const otro=e.tokenCorreo();e.avanzar(900000);
   assert.equal((await pedir('/recuperacion/validar',{token:otro})).status,400);assert.equal(e.repository.filas.size,2);

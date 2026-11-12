@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
-const { permisosDelRol } = require("../config/permisos");
+const { permisosUsuario } = require("../config/permisos");
+const {esCuentaPiloto}=require('./pilotoAutenticacion');
 
 const ROLES_ASIGNABLES = Object.freeze(["Administrador", "Operador"]);
 const RECURSO_BLOQUEO = "HostFlow:Seguridad:AdministradoresActivos";
@@ -82,7 +83,8 @@ function perfilSeguro(usuario, origen = "sql") {
     nombre: usuario.nombre,
     email: usuario.email,
     rol: usuario.rol,
-    permisos: permisosDelRol(usuario.rol),
+    permisos: permisosUsuario(usuario),
+    ...(esCuentaPiloto(usuario)?{alcanceAutenticacion:'solo-autenticacion'}:{}),
     origenAutenticacion: origen,
     gestionCuentasDisponible: origen === "sql",
     debeCambiarPassword: origen === "sql" && Boolean(usuario.debeCambiarPassword),

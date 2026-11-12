@@ -21,31 +21,46 @@ function claveValida(clave) {
 }
 function crearIndicePrivado(clave) {
   const key = claveValida(clave);
-  return (tipo, valor) => createHmac("sha256", key).update(`${tipo}\0${valor}`).digest("hex");
+  let cerrado=false;
+  const indice=(tipo,valor)=>{if(cerrado)throw new ErrorSobreCorreo('CLAVE_CORREO_NO_DISPONIBLE');return createHmac("sha256",key).update(`${tipo}\0${valor}`).digest("hex");};
+  indice.liberar=()=>{cerrado=true;key.fill(0);};return indice;
 }
 
 // Solo la outbox necesita recuperar el enlace; los desafíos guardan únicamente su hash.
 // AAD impide trasladar un sobre cifrado a otra entrega. Claves inyectadas, nunca JWT_SECRET.
+function aadCorreo(idEntrega) {
+  if (typeof idEntrega !== "string") throw new ErrorSobreCorreo('SOBRE_CORREO_INVALIDO');
+  // SQL uniqueidentifier no distingue mayúsculas. Tedious devuelve mayúsculas;
+  // randomUUID produce minúsculas. Vincular GCM a una única representación.
+  // Identificadores opacos que no sean UUID mantienen su AAD exacto.
+  const id = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(idEntrega)
+    ? idEntrega.toLowerCase() : idEntrega;
+  return Buffer.from(`HostFlow:correo:${id}`);
+}
 function crearProtectorCorreo({ clave, keyId }) {
   const key = claveValida(clave);
+  let cerrado=false;
   if (typeof keyId !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(keyId)) throw new TypeError("keyId no válido.");
   return Object.freeze({
     sellar(payload, idEntrega) {
+      if(cerrado)throw new ErrorSobreCorreo('CLAVE_CORREO_NO_DISPONIBLE');
       const iv = randomBytes(12);
       const cipher = createCipheriv("aes-256-gcm", key, iv);
-      cipher.setAAD(Buffer.from(`HostFlow:correo:${idEntrega}`));
+      cipher.setAAD(aadCorreo(idEntrega));
       const contenido = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
       return { keyId, iv: iv.toString("base64url"), tag: cipher.getAuthTag().toString("base64url"), contenido: contenido.toString("base64url") };
     },
     abrir(sobre, idEntrega) {
+      if(cerrado)throw new ErrorSobreCorreo('CLAVE_CORREO_NO_DISPONIBLE');
       if (sobre?.keyId !== keyId) throw new ErrorSobreCorreo('CLAVE_CORREO_NO_DISPONIBLE');
       try {
       const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(sobre.iv, "base64url"));
-      decipher.setAAD(Buffer.from(`HostFlow:correo:${idEntrega}`));
+      decipher.setAAD(aadCorreo(idEntrega));
       decipher.setAuthTag(Buffer.from(sobre.tag, "base64url"));
       return JSON.parse(Buffer.concat([decipher.update(Buffer.from(sobre.contenido, "base64url")), decipher.final()]).toString("utf8"));
       }catch{throw new ErrorSobreCorreo('SOBRE_CORREO_INVALIDO');}
     },
+    liberar(){cerrado=true;key.fill(0);},
   });
 }
 module.exports = { crearToken, hashToken, crearIndicePrivado, crearProtectorCorreo, ErrorSobreCorreo };

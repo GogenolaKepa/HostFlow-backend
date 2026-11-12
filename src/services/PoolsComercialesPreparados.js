@@ -1,6 +1,7 @@
 // No importa database.js/.env. Solo abre conexiones mediante activación explícita.
 const PERFILES=Object.freeze(['ingresoHttp','workerIngreso','cuentas','correo']);
 const PROHIBIDOS=new Set(['dbo','sa','guest','public','hostflowadmin','hostflow_app','hostflow_authcom_owner']);
+const {diagnostico}=require('../security/comercial/diagnosticoArranque');
 class ErrorPoolsComerciales extends Error {
   constructor(codigo){super('No se pudo acreditar el runtime SQL comercial.');this.codigo=codigo;}
 }
@@ -13,13 +14,14 @@ async function abrirPoolsComerciales({habilitado=false,driver,identidades,obtene
     nombres.add(i.principal.toLowerCase());
     perfiles[perfil]=Object.freeze({tipo:i.tipo,principal:i.principal});
   }
-  const abiertos=[],pools={};let cerrando;
+  const abiertos=[],pools={};let cerrando,perfilActual;
   function cerrar(){return cerrando??=(async()=>{
     const r=await Promise.allSettled(abiertos.map(p=>p.close()));
     if(r.some(x=>x.status==='rejected'))throw new ErrorPoolsComerciales('CIERRE_INCOMPLETO');
   })();}
   try{
     for(const perfil of PERFILES){
+      perfilActual=perfil;
       const i=perfiles[perfil],controller=new AbortController();let timer,credencial;
       try{
         credencial=await Promise.race([
@@ -49,8 +51,8 @@ async function abrirPoolsComerciales({habilitado=false,driver,identidades,obtene
     return Object.freeze({estado:'preparados',pools:Object.freeze(pools),cerrar,
       consultar:()=>Object.freeze({estado:cerrando?'cerrado-o-cerrando':'preparado',pools:PERFILES.map(perfil=>({perfil,conectado:!!pools[perfil].connected}))})});
   }catch(error){
-    try{await cerrar();}catch{throw new ErrorPoolsComerciales('CIERRE_INCOMPLETO');}
-    throw new ErrorPoolsComerciales(error instanceof ErrorPoolsComerciales?error.codigo:'SQL_NO_DISPONIBLE');
+    try{await cerrar();}catch{const e=new ErrorPoolsComerciales('CIERRE_INCOMPLETO');e.diagnosticoArranque=diagnostico('CIERRE',error,perfilActual);throw e;}
+    const e=new ErrorPoolsComerciales(error instanceof ErrorPoolsComerciales?error.codigo:'SQL_NO_DISPONIBLE');e.diagnosticoArranque=diagnostico('ABRIR_POOLS_COMERCIALES',error,perfilActual);throw e;
   }
 }
 module.exports={abrirPoolsComerciales,PERFILES,ErrorPoolsComerciales};

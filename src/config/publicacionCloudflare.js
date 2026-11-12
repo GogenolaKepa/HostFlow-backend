@@ -13,7 +13,10 @@ function validarPublicacionCloudflare(env={}) {
   if(env.HOSTFLOW_AUTH_COMERCIAL_ENABLED==='1'){
     if(env.HOSTFLOW_AUTH_COMERCIAL_ORIGEN!=='https://hostflow.com.ar')throw Error('Los enlaces comerciales deben abrir el frontend.');
     const proxies=(env.HOSTFLOW_AUTH_COMERCIAL_PROXIES??'').split(',');
-    if(!proxies.includes('127.0.0.1')||proxies.some(ip=>!['127.0.0.1','::1'].includes(ip))||new Set(proxies).size!==proxies.length)throw Error('Se requiere el proxy loopback exacto del túnel local.');
+    // HTTPS directo no necesita trust proxy: req.secure depende del socket TLS.
+    // Si se declara un proxy, conservar la lista loopback estricta existente.
+    // Con HTTP y sin proxy, el montaje comercial sigue respondiendo 426.
+    if((env.HOSTFLOW_AUTH_COMERCIAL_PROXIES??'')!==''&&(!proxies.includes('127.0.0.1')||proxies.some(ip=>!['127.0.0.1','::1'].includes(ip))||new Set(proxies).size!==proxies.length))throw Error('Se requiere el proxy loopback exacto del túnel local.');
   }
   return Object.freeze({estado:'preparado',frontend:'https://hostflow.com.ar',api:'https://api.hostflow.com.ar/api',puerto:4000});
 }

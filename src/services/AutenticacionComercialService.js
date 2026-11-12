@@ -3,6 +3,7 @@ const { randomUUID } = require("node:crypto");
 const { isIP } = require("node:net");
 const { crearToken, hashToken } = require("../security/comercial/credencialesTemporales");
 const {origenPublico}=require('../security/comercial/origenPublico');
+const {esCuentaPiloto}=require('../security/pilotoAutenticacion');
 const { ErrorSeguridad, validarCampos, normalizarEmail, texto, validarPassword,
   esUsuarioHabilitado, comprobarPassword } = require("../security/seguridadUsuarios");
 
@@ -25,10 +26,11 @@ function contactoVerificado(u) {
 class AutenticacionComercialService {
   constructor({ repository, protector, indicePrivado, origen, idEmpresa,
     ahora = Date.now, hashPassword = (p) => bcrypt.hash(p, 12),
-    recuperacionMs = 15 * 60_000, invitacionMs = 24 * 60 * 60_000 } = {}) {
+    recuperacionMs = 15 * 60_000, invitacionMs = 24 * 60 * 60_000, politicaPiloto = false } = {}) {
     if (typeof repository?.transaccion !== "function" || typeof protector?.sellar !== "function" ||
         typeof indicePrivado !== "function" || !Number.isSafeInteger(idEmpresa) || idEmpresa <= 0 ||
-        typeof ahora !== "function" || typeof hashPassword !== "function") throw new TypeError("Faltan adaptadores de seguridad explícitos.");
+        typeof ahora !== "function" || typeof hashPassword !== "function" || typeof politicaPiloto !== 'boolean') throw new TypeError("Faltan adaptadores de seguridad explícitos.");
+    this.politicaPiloto = politicaPiloto;
     Object.assign(this, { repository, protector, indicePrivado, origen: origenPublico(origen), idEmpresa, ahora, hashPassword });
     this.duraciones = { recuperacion: ttl(recuperacionMs, 60_000, 60 * 60_000), invitacion: ttl(invitacionMs, 60_000, 7 * 86400_000) };
   }
@@ -60,10 +62,11 @@ class AutenticacionComercialService {
 
   recuperable(u) {
     // Administradores requieren una política de recuperación reforzada, aún no aprobada.
-    return esUsuarioHabilitado(u) && u.rol === "Operador" && contactoVerificado(u);
+    return esUsuarioHabilitado(u) && u.rol === "Operador" && contactoVerificado(u) && (!this.politicaPiloto || esCuentaPiloto(u));
   }
 
   async emitir(tx, datos, ahora) {
+    if(this.politicaPiloto&&!esCuentaPiloto(datos))throw tokenInvalido();
     const { token, hash } = crearToken(datos.proposito);
     const desafio = { ...datos, id: randomUUID(), hash, creadaEn: ahora,
       expiraEn: ahora + this.duraciones[datos.proposito], consumidaEn: null, revocadaEn: null };
@@ -142,7 +145,7 @@ class AutenticacionComercialService {
 
   async vigente(tx, hash, proposito, ahora) {
     const d = hash && await tx.desafio(hash, proposito);
-    if (!d || d.proposito !== proposito || d.idEmpresa !== this.idEmpresa || d.consumidaEn !== null ||
+    if (!d || this.politicaPiloto&&!esCuentaPiloto(d) || d.proposito !== proposito || d.idEmpresa !== this.idEmpresa || d.consumidaEn !== null ||
         d.revocadaEn !== null || d.expiraEn <= ahora || !await tx.empresaActiva(this.idEmpresa)) throw tokenInvalido();
     if (proposito === "recuperacion") {
       const u = await tx.usuario(d.usuarioId);
@@ -200,11 +203,14 @@ class AutenticacionComercialService {
   aceptarInvitacion(body, contexto) { return this.confirmar("invitacion", body, contexto); }
 
   async revocarInvitacion(actor, id) {
-    if (typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id)) throw tokenInvalido();
+    if(this.politicaPiloto)throw new ErrorSeguridad(403,'SIN_PERMISO','La revocación no forma parte del piloto.');
+    if (typeof id !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id)) throw tokenInvalido();
     return this.transaccion(async (tx) => {
       await this.administrador(tx, actor);
-      await tx.revocarInvitacion(id, this.idEmpresa, this.ahora());
-      await tx.auditar({ tipo: "INVITACION_REVOCADA", actorId: actor.idUsuario, desafioId: id, idEmpresa: this.idEmpresa, ahora: this.ahora() });
+      const ahora = this.ahora();
+      // No inventar una revocación ante un ID ajeno, inexistente o ya resuelto.
+      if (await tx.revocarInvitacion(id, this.idEmpresa, ahora) !== true) throw tokenInvalido();
+      await tx.auditar({ tipo: "INVITACION_REVOCADA", actorId: actor.idUsuario, desafioId: id, idEmpresa: this.idEmpresa, ahora });
       return { status: 204 };
     });
   }

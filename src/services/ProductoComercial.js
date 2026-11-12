@@ -1,12 +1,13 @@
 const {leerConfiguracionComercial}=require('./ConfiguracionComercialPreparada');
 const {prepararRuntimeComercial}=require('./RuntimeComercialPreparado');
 const {crearMontajeComercial}=require('../routes/montajeComercialPreparado');
+const {diagnostico}=require('../security/comercial/diagnosticoArranque');
 
 // Punto único de activación del producto. Un flag aislado no alcanza: el host
 // debe inyectar identidades, secretos, acreditación y autorización de montaje.
 // Nunca carga un módulo arbitrario indicado en env ni inicia workers al importar.
 async function prepararProductoComercial({env={},aprobacion=false,dependencias,
-  autenticar,proxiesComerciales=[],preparar=prepararRuntimeComercial}={}) {
+  autenticar,proxiesComerciales=[],alcancePublico=null,preparar=prepararRuntimeComercial}={}) {
   const inactivo=Object.freeze({estado:'inactivo',montaje:null,iniciarWorker:null,desactivar:()=>{},cerrar:async()=>{}});
   if(aprobacion!==true)return inactivo;
   let runtime;
@@ -18,7 +19,7 @@ async function prepararProductoComercial({env={},aprobacion=false,dependencias,
     if(!dependencias||typeof autenticar!=='function')throw TypeError('Falta autorización del host.');
     runtime=await preparar({...dependencias,configuracion,
       dependencias:{...dependencias.dependencias,autenticar}});
-    const montaje=crearMontajeComercial({activacionAprobada:true,runtime,origen:configuracion.correo.origen});
+    const montaje=crearMontajeComercial({activacionAprobada:true,runtime,origen:configuracion.correo.origen,alcancePublico});
     return Object.freeze({estado:'preparado',montaje,proxiesComerciales:proxies,iniciarWorker:()=>runtime.iniciarWorker(),
       consultar:()=>runtime.consultar(),desactivar:()=>runtime.desactivar(),cerrar:()=>runtime.cerrar()});
   }catch(error){
@@ -26,6 +27,7 @@ async function prepararProductoComercial({env={},aprobacion=false,dependencias,
     try { await runtime?.cerrar(); } catch { cierrePendiente=true; }
     // No propagar detalles de credenciales ni inutilizar el login tradicional.
     return Object.freeze({...inactivo,estado:cierrePendiente?'cierre-pendiente':'no-disponible',
+      diagnosticoArranque:diagnostico('PREPARACION_COMERCIAL',error),
       cerrar:runtime?()=>runtime.cerrar():cierrePendiente?async()=>{throw Error('Cierre SQL pendiente de inspección.');}:inactivo.cerrar});
   }
 }

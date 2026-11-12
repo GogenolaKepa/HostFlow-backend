@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const AuthService = require("../services/AuthService");
 const { responderError, sesionInvalida } = require("../security/seguridadUsuarios");
 const { secretoJWTValido } = require("../config/autenticacion");
+const {esCuentaPiloto,rutaPilotoPermitida}=require('../security/pilotoAutenticacion');
 
 async function autenticacion(req, res, next) {
   const coincidencia = /^Bearer\s+([^\s]+)$/i.exec(req.get("Authorization") || "");
@@ -21,6 +22,7 @@ async function autenticacion(req, res, next) {
     if (!usuario || usuario.email !== payload.email) return responderError(res, sesionInvalida());
     req.usuario = usuario;
     req.expiraEn = payload.exp;
+    if(esCuentaPiloto(usuario)&&!rutaPilotoPermitida(req))return res.status(403).json({codigo:'CUENTA_SOLO_AUTENTICACION',mensaje:'Esta cuenta de ensayo no tiene acceso a datos operativos.'});
     return next();
   } catch (error) { return responderError(res, error); }
 }

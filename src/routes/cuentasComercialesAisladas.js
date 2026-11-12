@@ -2,7 +2,7 @@ const express=require('express');
 const {validarCampos,ErrorSeguridad}=require('../security/seguridadUsuarios');
 
 // FACTORY SIN MONTAJE OPERATIVO. Todos los puertos son obligatorios.
-function crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos=null}={}) {
+function crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos=null,politicaPiloto=false}={}) {
   if(!cuentas || !ingreso?.limitar || typeof autenticar!=='function')throw new TypeError('Faltan puertos HTTP explícitos.');
   const router=express.Router();
   router.use((_req,res,next)=>{res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'});next();});
@@ -14,7 +14,9 @@ function crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos=nul
   const envolver=fn=>(req,res,next)=>Promise.resolve().then(()=>fn(req,res)).catch(next);
   router.use((req,_res,next)=>Promise.resolve().then(()=>ingreso.limitar(req.ip)).then(()=>next(),next));
   router.use(express.json({limit:'8kb',strict:true}));
-  router.post('/recuperacion/solicitar',envolver(async(req,res)=>{const r=await ingreso.solicitar(req.body,{ip:req.ip});res.status(202).json({mensaje:r.mensaje});}));
+  router.post('/recuperacion/solicitar',envolver(async(req,res)=>{
+    if(politicaPiloto&&!require('../security/pilotoAutenticacion').esCuentaPiloto(req.body))return res.status(202).json({mensaje:require('../services/AutenticacionComercialService').RESPUESTA_NEUTRAL.mensaje});
+    const r=await ingreso.solicitar(req.body,{ip:req.ip});res.status(202).json({mensaje:r.mensaje});}));
   for(const [url,proposito] of [['recuperacion','recuperacion'],['invitaciones','invitacion']]) {
     router.post(`/${url}/validar`,envolver(async(req,res)=>{validarCampos(req.body,['token']);await cuentas.validarEnlace(proposito,req.body.token,{ip:req.ip});res.sendStatus(204);}));
     router.post(`/${url}/confirmar`,envolver(async(req,res)=>{await (proposito==='recuperacion'?cuentas.confirmarRecuperacion(req.body,{ip:req.ip}):cuentas.aceptarInvitacion(req.body,{ip:req.ip}));res.sendStatus(204);}));
@@ -23,11 +25,17 @@ function crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos=nul
   const auth=(req,res,next)=>Promise.resolve().then(()=>autenticar(req,res,next)).catch(next);
   if(contactos?.habilitado===true){
     for(const accion of ['solicitar','validar','confirmar'])router.post('/contacto/'+accion,auth,envolver(async(req,res)=>{
+      if(politicaPiloto&&!require('../security/pilotoAutenticacion').esCuentaPiloto(req.usuario))throw new ErrorSeguridad(403,'SIN_PERMISO','Contacto fuera del piloto.');
       await contactos[accion](req.usuario,req.body,{ip:req.ip});res.sendStatus(204);
     }));
   }
   router.get('/invitaciones',auth,envolver(async(req,res)=>res.json(await cuentas.listarInvitaciones(req.usuario,{pagina:req.query.pagina?Number(req.query.pagina):1}))));
-  router.post('/invitaciones',auth,envolver(async(req,res)=>{const r=await cuentas.invitar(req.usuario,req.body,{ip:req.ip});res.status(202).json({mensaje:r.mensaje});}));
+  router.post('/invitaciones',auth,envolver(async(req,res)=>{
+    if(politicaPiloto){
+      if(req.usuario.rol!=='Administrador')throw new ErrorSeguridad(403,'SIN_PERMISO','Sin permiso.');
+      if(!require('../security/pilotoAutenticacion').esCuentaPiloto(req.body))return res.status(202).json({mensaje:require('../services/AutenticacionComercialService').RESPUESTA_NEUTRAL.mensaje});
+    }
+    const r=await cuentas.invitar(req.usuario,req.body,{ip:req.ip});res.status(202).json({mensaje:r.mensaje});}));
   router.post('/invitaciones/:id/revocar',auth,envolver(async(req,res)=>{validarCampos(req.body,[]);await cuentas.revocarInvitacion(req.usuario,req.params.id);res.sendStatus(204);}));
   router.use((error,_req,res,_next)=>{
     const parseo=['entity.parse.failed','entity.too.large'].includes(error.type);

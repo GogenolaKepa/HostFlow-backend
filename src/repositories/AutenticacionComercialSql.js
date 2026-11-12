@@ -133,10 +133,11 @@ class AlcanceSql {
     return this.q(`UPDATE authcom.Desafios SET RevocadaEn=@ahora WHERE IdUsuario=@usuario AND IdEmpresa=@empresa
       AND Proposito='recuperacion' AND ConsumidaEn IS NULL AND RevocadaEn IS NULL;`, { usuario: usuarioId, empresa: this.idEmpresa, ahora: fecha(ahora) });
   }
-  revocarInvitacion(id, empresa, ahora) {
+  async revocarInvitacion(id, empresa, ahora) {
     if (empresa !== this.idEmpresa) throw new Error("Contexto incompatible.");
-    return this.q(`UPDATE authcom.Desafios SET RevocadaEn=@ahora,Pendiente=0 WHERE Id=@id AND IdEmpresa=@empresa
+    const r = await this.q(`UPDATE authcom.Desafios SET RevocadaEn=@ahora,Pendiente=0 WHERE Id=@id AND IdEmpresa=@empresa
       AND Proposito='invitacion' AND ConsumidaEn IS NULL AND RevocadaEn IS NULL;`, { id, empresa, ahora: fecha(ahora) });
+    return r.rowsAffected?.[0] === 1;
   }
   async restablecerPassword(v) {
     if (v.nuevaVersionSesion !== v.versionSesion + 1) throw new Error("Versión inválida.");
@@ -184,10 +185,12 @@ class AlcanceSql {
     await this.q(`UPDATE o SET Sobre=NULL,Estado='descartada',Lease=NULL,LeaseHasta=NULL FROM authcom.Outbox o
       WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND (CodigoFallo IS NULL OR CodigoFallo<>'RESULTADO_INCIERTO') AND (o.ExpiraEn<=SYSUTCDATETIME()
         OR o.DesafioId IS NOT NULL AND NOT EXISTS(SELECT 1 FROM authcom.Desafios d WHERE d.Id=o.DesafioId
-          AND d.ConsumidaEn IS NULL AND d.RevocadaEn IS NULL AND d.CreadaEn<=SYSUTCDATETIME() AND d.ExpiraEn>SYSUTCDATETIME()));
+          AND d.ConsumidaEn IS NULL AND d.RevocadaEn IS NULL AND d.ExpiraEn>SYSUTCDATETIME()));
       `);
     const r = await this.q(`;WITH siguiente AS (SELECT TOP(1) * FROM authcom.Outbox WITH (UPDLOCK,HOLDLOCK)
       WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND ExpiraEn>SYSUTCDATETIME() AND Intentos<3 AND Proxima<=SYSUTCDATETIME()
+       AND (DesafioId IS NULL OR EXISTS(SELECT 1 FROM authcom.Desafios d WHERE d.Id=Outbox.DesafioId
+         AND d.ConsumidaEn IS NULL AND d.RevocadaEn IS NULL AND d.CreadaEn<=SYSUTCDATETIME() AND d.ExpiraEn>SYSUTCDATETIME()))
        AND (PrimerIntentoEn IS NULL OR PrimerIntentoEn>DATEADD(hour,-23,SYSUTCDATETIME()))
        AND (LeaseHasta IS NULL OR LeaseHasta<=SYSUTCDATETIME()) ORDER BY Proxima,Id)
       UPDATE siguiente SET Estado='procesando',Intentos=Intentos+1,PrimerIntentoEn=COALESCE(PrimerIntentoEn,SYSUTCDATETIME()),Lease=@lease,LeaseHasta=DATEADD(second,120,SYSUTCDATETIME())

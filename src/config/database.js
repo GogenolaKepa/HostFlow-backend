@@ -1,5 +1,5 @@
 const sql = require("mssql");
-require("dotenv").config();
+require("dotenv").config({ path: require("node:path").resolve(__dirname, "../../.env") });
 
 const dbConfig = {
   user: process.env.DB_USER,
@@ -23,7 +23,8 @@ const dbConfig = {
   requestTimeout: 30000,
 };
 
-const poolPromise = new sql.ConnectionPool(dbConfig)
+const poolOperativo = new sql.ConnectionPool(dbConfig);
+const poolPromise = poolOperativo
   .connect()
   .then((pool) => {
     console.log(
@@ -38,7 +39,19 @@ const poolPromise = new sql.ConnectionPool(dbConfig)
     throw new Error("La conexión SQL no está disponible.");
   });
 
+// Conservar el pool aunque connect rechace. Esperar que termine de conectar antes
+// de cerrarlo: mssql rechaza close durante una conexión pendiente.
+let cierre;
+function cerrarPool() {
+  return cierre ??= (async () => {
+    try { await poolPromise; } catch { /* La conexión fallida también se cierra. */ }
+    try { await poolOperativo.close(); }
+    catch { throw new Error("Cierre SQL no acreditado."); }
+  })();
+}
+
 module.exports = {
   sql,
   poolPromise,
+  cerrarPool,
 };

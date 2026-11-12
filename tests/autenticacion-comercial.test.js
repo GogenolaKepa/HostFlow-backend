@@ -12,6 +12,42 @@ const { CuentasComercialesAisladas } = require("./helpers/cuentasComercialesAisl
 const contexto = { ip: "127.0.0.1" };
 const password = () => randomBytes(20).toString("hex");
 const codigo = esperado => e => e.codigo === esperado;
+
+test('revocar acredita una única transición y no audita IDs ajenos, ausentes o malformados', async () => {
+  const e = await entorno();
+  await e.enlace('invitacion');
+  const d = [...e.repo.desafios.values()][0];
+  const inicial = e.repo.auditoria.length;
+  for (const id of ['-'.repeat(36), '00000000-0000-0000-0000-000000000000']) {
+    await assert.rejects(e.servicio.revocarInvitacion(e.admin.usuario, id), codigo('ENLACE_INVALIDO'));
+  }
+  e.repo.desafios.get(d.id).idEmpresa = 2;
+  await assert.rejects(e.servicio.revocarInvitacion(e.admin.usuario, d.id), codigo('ENLACE_INVALIDO'));
+  assert.equal(e.repo.desafios.get(d.id).revocadaEn, null);
+  assert.equal(e.repo.auditoria.length, inicial);
+  e.repo.desafios.get(d.id).idEmpresa = 1;
+  const resultados = await Promise.allSettled([
+    e.servicio.revocarInvitacion(e.admin.usuario, d.id),
+    e.servicio.revocarInvitacion(e.admin.usuario, d.id),
+  ]);
+  assert.equal(resultados.filter(r => r.status === 'fulfilled').length, 1);
+  assert.equal(resultados.find(r => r.status === 'rejected').reason.codigo, 'ENLACE_INVALIDO');
+  assert.equal(e.repo.auditoria.filter(a => a.tipo === 'INVITACION_REVOCADA').length, 1);
+});
+
+test('revocación revierte su cambio si falla la auditoría y rechaza resultados desconocidos', async () => {
+  const e = await entorno(); await e.enlace('invitacion');
+  const id = [...e.repo.desafios.values()][0].id;
+  e.repo.fallarAuditoria = true;
+  await assert.rejects(e.servicio.revocarInvitacion(e.admin.usuario, id), codigo('CUENTAS_RESULTADO_INCIERTO'));
+  assert.equal(e.repo.desafios.get(id).revocadaEn, null);
+  e.repo.fallarAuditoria = false;
+  for (const resultado of [undefined, null, false, { rowsAffected: [1] }]) {
+    e.repo.revocarInvitacion = async () => resultado;
+    await assert.rejects(e.servicio.revocarInvitacion(e.admin.usuario, id), codigo('ENLACE_INVALIDO'));
+  }
+  assert.equal(e.repo.auditoria.filter(a => a.tipo === 'INVITACION_REVOCADA').length, 0);
+});
 async function entorno(opciones = {}) {
   const repo = new CuentasComercialesAisladas();
   let ahora = Date.parse("2026-10-30T15:00:00Z");

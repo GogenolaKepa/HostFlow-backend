@@ -12,11 +12,17 @@ function crearLectorCredencialDpapi({habilitado=false,ejecutable,sha256,timeoutM
    const fallo=()=>Error('Credencial privada no acreditada.');
    if(signal?.aborted){reject(fallo());return;}
    try{if(crypto.createHash('sha256').update(fs.readFileSync(ejecutable)).digest('hex')!==sha256)throw Error();}catch{reject(fallo());return;}
+   // LOCALAPPDATA es público y lo exige el lector nativo antes de abrir XML.
+   // Lista explícita: no heredar JWT, AES/HMAC, API keys o credenciales.
+   const localAppData=process.env.LOCALAPPDATA;
+   if(typeof localAppData!=='string'||!/^([A-Za-z]):[\\/]/.test(localAppData)||/[\x00-\x1f:]/.test(localAppData.slice(2))){reject(fallo());return;}
    let p,partes=[],bytes=0,listo=false,timer;
    function limpiar(){clearTimeout(timer);signal?.removeEventListener('abort',abortar);for(const b of partes)b.fill(0);partes=[];}
    function terminar(error,valor){if(listo)return;listo=true;limpiar();if(error)reject(fallo());else resolve(valor);}
    function abortar(){p?.kill();terminar(true);}
-   try{p=spawn(ejecutable,args,{windowsHide:true,shell:false,stdio:['ignore','pipe','ignore']});}catch{terminar(true);return;}
+   // El auxiliar solo necesita Windows. No heredar JWT, claves comerciales ni
+   // otras credenciales del host, aunque lo invoque otro consumidor.
+   try{p=spawn(ejecutable,args,{windowsHide:true,shell:false,stdio:['ignore','pipe','ignore'],env:{SystemRoot:'C:\\Windows',WINDIR:'C:\\Windows',LOCALAPPDATA:path.win32.resolve(localAppData)}});}catch{terminar(true);return;}
    signal?.addEventListener('abort',abortar,{once:true});
    timer=setTimeout(abortar,timeoutMs);
    p.stdout.on('data',b=>{if(listo){b.fill(0);return;}bytes+=b.length;if(bytes>8192){b.fill(0);abortar();return;}partes.push(b);});

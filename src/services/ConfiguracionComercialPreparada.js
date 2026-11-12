@@ -2,14 +2,14 @@
 // Solo prepara opciones del servidor; no monta HTTP ni crea pools.
 const {prepararIntegracionComercial}=require('./IntegracionComercialPreparada');
 const {origenPublico}=require('../security/comercial/origenPublico');
+const {validarRemitente}=require('../security/comercial/configuracionCorreo');
 function leerConfiguracionComercial(env={}){
   const flag=env.HOSTFLOW_AUTH_COMERCIAL_ENABLED??'0';
   if(!['0','1'].includes(flag))throw TypeError('Bandera comercial inválida.');
   if(flag==='0')return Object.freeze({habilitado:false});
   if(env.DB_SERVER!=='hostflow.database.windows.net'||env.DB_DATABASE!=='HostFlow'||env.HOSTFLOW_EMPRESA_ID!=='1')throw TypeError('Destino comercial no aprobado.');
   const origen=origenPublico(env.HOSTFLOW_AUTH_COMERCIAL_ORIGEN);
-  const remitente=env.HOSTFLOW_AUTH_COMERCIAL_REMITENTE,dominio=env.HOSTFLOW_AUTH_COMERCIAL_DOMINIO;
-  if(typeof remitente!=='string'||typeof dominio!=='string'||!remitente.endsWith('@'+dominio)||/[\r\n\s]/.test(remitente))throw TypeError('Remitente comercial inválido.');
+  const {remitente,dominioVerificado:dominio}=validarRemitente(env.HOSTFLOW_AUTH_COMERCIAL_REMITENTE,env.HOSTFLOW_AUTH_COMERCIAL_DOMINIO);
   const raw=env.HOSTFLOW_AUTH_COMERCIAL_LIMITE_DIARIO??'100';
   if(!/^[1-9]\d{0,4}$|^100000$/.test(raw))throw TypeError('Presupuesto comercial inválido.');
   return Object.freeze({habilitado:true,sql:Object.freeze({servidorEsperado:'hostflow',baseEsperada:'HostFlow',idEmpresa:1,altaOperadorRestringida:true}),

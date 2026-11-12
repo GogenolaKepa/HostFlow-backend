@@ -76,7 +76,8 @@ const calendarioRoutes = require(
 );
 
 
-function crearApp({ montajeComercial = null, proxiesComerciales = [] } = {}) {
+function crearApp({ montajeComercial = null, proxiesComerciales = [], montajeClientes = null, politicaPiloto = false } = {}) {
+if(typeof politicaPiloto!=='boolean'||politicaPiloto&&montajeClientes!==null)throw TypeError('Ventana piloto incompatible con montaje de clientes.');
 const app = express();
 if(!Array.isArray(proxiesComerciales)||proxiesComerciales.length>4||proxiesComerciales.some(ip=>!require('node:net').isIP(ip)))throw TypeError('Proxies comerciales no acreditados.');
 if(proxiesComerciales.length){
@@ -92,6 +93,10 @@ if(proxiesComerciales.length){
 // =========================================================
 
 app.use(respuestasSeguras);
+if(montajeClientes!==null){
+  if(typeof montajeClientes!=='function')throw TypeError('Clientes sin montaje acreditado.');
+  app.use('/api/clientes',montajeClientes);
+}
 app.use(corsSeguro());
 
 // Solo el ensamblado administrativo acreditado puede proporcionar este router.
@@ -132,8 +137,15 @@ app.use(
 // ARCHIVOS ESTÁTICOS - IMÁGENES SUBIDAS
 // =========================================================
 
-// Las imágenes de publicaciones son públicas para <img> y canales.
-// Su subida y administración se realiza por la API autenticada.
+// El modo operativo existente conserva sus publicaciones públicas. Al montar
+// clientes nuevos, ningún archivo de la empresa operativa queda disponible
+// anónimamente ni mediante la cookie de clientes. Se exige el JWT operativo.
+// Antes de habilitar clientes, adaptar <img>/canales a la entrega autenticada;
+// no debilitar esta barrera para conservar URLs históricas.
+// Durante el piloto no publicar imágenes operativas, ni siquiera sin JWT.
+// Quitar Authorization no puede eludir la cuarentena de archivos.
+if(politicaPiloto)app.use('/uploads',(_req,res)=>res.status(403).set('Cache-Control','no-store').json({codigo:'ARCHIVOS_NO_DISPONIBLES_EN_PILOTO'}));
+else if(montajeClientes!==null)app.use('/uploads',autenticacion);
 
 app.use(
   "/uploads",

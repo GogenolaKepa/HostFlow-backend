@@ -30,6 +30,17 @@ function entorno(opciones = {}) {
   const config = { pool: {}, driver, baseEsperada: "HostFlow", servidorEsperado: "hostflow", idEmpresa: 1, habilitado: true };
   return { repo: new AutenticacionComercialSql(config), config, consultas, eventos };
 }
+test('revocación SQL solo acredita exactamente una fila afectada de la empresa', async () => {
+  for (const filas of [[1], [0], [2], [null], undefined]) {
+    const e = entorno({ responder: () => ({ rowsAffected: filas }) });
+    const resultado = await e.repo.transaccion(tx => tx.revocarInvitacion('id-ficticio', 1, Date.now()));
+    assert.equal(resultado, filas?.[0] === 1);
+    const q = e.consultas.at(-1);
+    assert.match(q.sql, /Id=@id AND IdEmpresa=@empresa/);
+    assert.match(q.sql, /ConsumidaEn IS NULL AND RevocadaEn IS NULL/);
+    assert.equal(q.params.empresa, 1);
+  }
+});
 test("inactivo por defecto, dependencias explícitas y cero conexión implícita", async () => {
   assert.throws(() => new AutenticacionComercialSql());
   const e = entorno();
