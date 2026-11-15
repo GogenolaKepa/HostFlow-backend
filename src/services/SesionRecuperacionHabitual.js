@@ -1,9 +1,16 @@
 // Supervisión sobre el host/worker existentes. Ninguna señal emulada ni kill.
 function crearSesionHabitual({control,crearHost,comprobarHost=async()=>{},crearTunnel,verificar,alCerrar=async()=>{},avisar=()=>{},proceso=process,intervaloMs=1000}={}){
  if(!control?.sellar||![crearHost,crearTunnel,verificar,alCerrar,avisar].every(f=>typeof f==='function'))throw TypeError('Puertos de sesión incompletos.');
- let host,tunnel,cierre,monitor,terminando=false,worker=false,fallo=false,cierreIncierto=false;let resolver;
+ let host,tunnel,cierre,monitor,terminando=false,worker=false,fallo=false,cierreIncierto=false,inicioPendiente=false,iniciado=false,esperandoPreparacion;let resolver,resolverPreparacion;
  const terminado=new Promise(r=>{resolver=r;});
- const cerrar=()=>cierre??=(async()=>{
+ const preparacionFinalizada=new Promise(r=>{resolverPreparacion=r;});
+ const cerrar=()=>{
+  terminando=true;control.sellar();host?.desactivar();
+  if(inicioPendiente){
+   if(!esperandoPreparacion){avisar('CIERRE_SOLICITADO_ESPERANDO_PREPARACION');if(tunnel&&!tunnel.terminado())avisar('CTRL_C_EN_LA_VENTANA_CLOUDFLARE_PARA_COMPLETAR_CIERRE');esperandoPreparacion=preparacionFinalizada.then(()=>cerrar());}
+   return esperandoPreparacion;
+  }
+  return cierre??=(async()=>{
   terminando=true;control.sellar();clearInterval(monitor);host?.desactivar();
   // El Tunnel tiene su ventana propia. Un único Ctrl+C allí permite detectar
   // su salida antes de drenar HTTP, worker y SQL. Nunca child.kill().
@@ -13,11 +20,12 @@ function crearSesionHabitual({control,crearHost,comprobarHost=async()=>{},crearT
   if(r?.cerrado!==true||cierreIncierto){fallo=true;avisar('CIERRE_INCIERTO_CONSERVAR_TERMINAL_Y_LOCK');resolver({cerrado:false});return{cerrado:false};}
   await alCerrar();proceso.removeListener('SIGINT',señal);proceso.removeListener('SIGTERM',señal);proceso.removeListener('SIGBREAK',señal);
   avisar(fallo?'HOSTFLOW_CERRADO_TRAS_FALLO':'HOSTFLOW_CERRADO');resolver({cerrado:true});return{cerrado:true};
- })().catch(()=>{fallo=true;avisar('CIERRE_INCIERTO_CONSERVAR_TERMINAL_Y_LOCK');resolver({cerrado:false});return{cerrado:false};});
+ })().catch(()=>{fallo=true;avisar('CIERRE_INCIERTO_CONSERVAR_TERMINAL_Y_LOCK');resolver({cerrado:false});return{cerrado:false};});};
  const fallar=codigo=>{if(terminando)return;fallo=true;control.sellar();host?.desactivar();avisar(codigo);if(tunnel&&!tunnel.terminado())avisar('PRESIONE_CTRL_C_PARA_CERRAR_TUNNEL');return cerrar();};
  const señal=()=>{cerrar();};
  for(const s of ['SIGINT','SIGTERM','SIGBREAK'])proceso.on(s,señal);
  async function iniciar(){
+  if(iniciado||terminando)return null;iniciado=true;inicioPendiente=true;
   try{
    host=await crearHost();if(terminando)throw Error();await comprobarHost();if(terminando)throw Error();
    tunnel=await crearTunnel(codigo=>{
@@ -25,9 +33,12 @@ function crearSesionHabitual({control,crearHost,comprobarHost=async()=>{},crearT
     // Marcar incertidumbre sin esperar esa promesa: un cierre HTTP inmediato
     // nunca debe retirar el candado de un Tunnel cuyo cierre se desconoce.
     if(codigo!=='TUNNEL_NO_DISPONIBLE_API_SELLADA')cierreIncierto=true;
-    return fallar(codigo);
+    // No devolver una promesa de cierre al productor del Tunnel: puede estar
+    // esperando resolver la preparación que, a su vez, debe esperar el cierre.
+    fallar(codigo);
    });
    tunnel.cerrado.then(()=>{if(!terminando){avisar('TUNNEL_FINALIZADO');cerrar();}});
+   if(terminando)throw Error();
    await tunnel.listo;if(terminando)throw Error();
    const evidencia=await verificar();if(terminando||tunnel.terminado())throw Error();
    control.acreditar(evidencia);host.iniciarWorker();worker=true;
@@ -36,6 +47,7 @@ function crearSesionHabitual({control,crearHost,comprobarHost=async()=>{},crearT
    monitor=setInterval(()=>{try{if(worker&&host.consultar()?.worker?.estado!=='activo')fallar('WORKER_DETENIDO_API_SELLADA');}catch{fallar('ESTADO_OPERATIVO_INCIERTO');}},intervaloMs);
    return evidencia;
   }catch(e){if(['CIERRE_NO_ACREDITADO','CIERRE_INCOMPLETO'].includes(e?.codigo))cierreIncierto=true;fallar('ARRANQUE_NO_ACREDITADO_API_SELLADA');return null;}
+  finally{inicioPendiente=false;resolverPreparacion();}
  }
  return{iniciar,cerrar,fallar,terminado,consultar:()=>({terminando,worker,fallo})};
 }
