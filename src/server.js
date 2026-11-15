@@ -38,6 +38,9 @@ async function iniciar({ comercial,tlsLocal,clientes=null } = {}) {
   // Política inyectada por el host Node; nunca por JWT, body o tenant del cliente.
   const politicaPiloto=comercial?.dependencias?.dependencias?.politicaPiloto??false;
   if(typeof politicaPiloto!=='boolean')throw Error('Política piloto no acreditada.');
+  const politicaHabitual=comercial?.dependencias?.dependencias?.politicaHabitual??null;
+  if((politicaHabitual!==null)!==(comercial?.alcancePublico==='recuperacion-habitual'))throw Error('Política operativa y borde incompatibles.');
+  if(politicaHabitual!==null)require('./security/comercial/PoliticaRecuperacionHabitual').validarPoliticaHabitual(politicaHabitual);
   if(clientes!==null&&(clientes.estado!=='preparado'||typeof clientes.handler!=='function'||typeof clientes.cerrar!=='function'))throw Error('Clientes no acreditados.');
   if(tlsLocal&&(HOST!=='127.0.0.1'||!Buffer.isBuffer(tlsLocal.key)||!Buffer.isBuffer(tlsLocal.cert)))throw Error('TLS loopback no acreditado.');
   // SQL nunca se habilita si faltan esquema, permisos, roles o primer Admin.
@@ -50,7 +53,7 @@ async function iniciar({ comercial,tlsLocal,clientes=null } = {}) {
   }
   etapa='CONSTRUIR_APP';
   const app=crearApp({montajeComercial:producto.montaje,montajeClientes:clientes?.handler||null,
-    proxiesComerciales:producto.proxiesComerciales||[],politicaPiloto});
+    proxiesComerciales:producto.proxiesComerciales||[],politicaPiloto,alcancePublico:comercial?.alcancePublico??null,controlPublico:comercial?.controlPublico??null});
   // El supervisor requiere un arranque explícito posterior del host acreditado.
   // No se inicia por npm run dev ni por una bandera de entorno.
   app.locals.comercial=producto;

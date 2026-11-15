@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "habilitado": false,
+  "cuenta": "PC-ESCRITORIO\\Kepa",
+  "almacen": "C:\\Users\\Kepa\\AppData\\Local\\HostFlow\\NodePilotoV1\\almacen",
+  "raizOperativa": "C:\\Users\\Kepa\\AppData\\Local\\HostFlow\\RecuperacionHabitualV1",
+  "politica": {
+    "version": 1,
+    "aprobada": false,
+    "idEmpresa": 1,
+    "administradores": "SIN_RECUPERACION_PUBLICA",
+    "operadoresAutorizados": [],
+    "limites": {
+      "cuenta24h": 6,
+      "destino24h": 6,
+      "clase24h": 3,
+      "global24h": 100
+    }
+  },
+  "acreditacion": {
+    "referencia": "PENDIENTE_AUTORIZACION_OPERATIVA",
+    "dominioVerificado": false,
+    "recuperacionVerificada": false,
+    "seguridadHttpVerificada": false,
+    "sqlValidado": false
+  }
+}

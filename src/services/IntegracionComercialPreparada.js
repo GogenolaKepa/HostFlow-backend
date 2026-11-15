@@ -19,17 +19,19 @@ function debePausarPiloto(fase,resultado){
 
 // Factoría de composición inactiva por defecto. Importarla no abre pools,
 // no lee .env y no monta rutas ni inicia timers. Un flag de Vite nunca la habilita.
-async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,correo,autenticar,acreditacion,politicaPiloto=false}={}) {
+async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,correo,autenticar,acreditacion,politicaPiloto=false,politicaHabitual=null}={}) {
   if(habilitado!==true)return Object.freeze({estado:'inactiva'});
+  let protector,indicePrivado;try{
   if(sql?.altaOperadorRestringida!==true)throw TypeError('El producto comercial requiere el alta restringida SQL18.');
   if(!acreditacion?.referencia || !['sqlValidado','dominioVerificado','recuperacionVerificada','seguridadHttpVerificada'].every(k=>acreditacion[k]===true))throw Error('Falta acreditación de infraestructura.');
   if(typeof autenticar!=='function'||!sql||!pools||!correo)throw TypeError('Faltan dependencias explícitas.');
-  const protector=crearAnilloClavesCorreo(claves?.cifrado);
-  const indicePrivado=crearIndicePrivado(claves?.indice);
+  if(politicaHabitual!==null){politicaHabitual=require('../security/comercial/PoliticaRecuperacionHabitual').validarPoliticaHabitual(politicaHabitual);if(politicaPiloto||sql.verificacionContactos||correo.eventos)throw TypeError('Alcance operativo incompatible.');}
+  protector=crearAnilloClavesCorreo(claves?.cifrado);
+  indicePrivado=crearIndicePrivado(claves?.indice);
   if(claves.cifrado.claves.some(v=>v.clave.equals(claves.indice)))throw TypeError('Cifrado y HMAC requieren claves independientes.');
   const repos={};
   const permisos={
-    cuentas:[['authcom.Contactos','SELECT'],['authcom.Contactos','INSERT'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT'],['authcom.CrearOperadorInvitado','EXECUTE']],
+    cuentas:[['authcom.Contactos','SELECT'],...(!politicaHabitual?[['authcom.Contactos','INSERT'],['authcom.CrearOperadorInvitado','EXECUTE']]:[]),['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT']],
     ingresoHttp:[['authcom.Ingresos','INSERT']],
     workerIngreso:[['authcom.Ingresos','SELECT'],['authcom.Ingresos','UPDATE'],['authcom.Desafios','SELECT'],['authcom.Desafios','INSERT'],['authcom.Desafios','UPDATE'],['authcom.Contactos','SELECT'],['authcom.Outbox','INSERT'],['authcom.Auditoria','INSERT']],
     correo:[['authcom.Outbox','SELECT'],['authcom.Outbox','UPDATE'],['authcom.Desafios','SELECT']],
@@ -39,7 +41,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
     const base=new AutenticacionComercialSql({...sql,pool:pools[perfil],habilitado:true,perfil:perfil==='ingresoHttp'?'ingreso-http':perfil==='workerIngreso'?'worker-ingreso':'cuentas'});
     // Verificación real de marcas y permisos efectivos antes de entregar el router.
     await base.transaccion(async tx=>{
-      if(perfil==='cuentas'&&sql.altaOperadorRestringida===true){
+      if(perfil==='cuentas'&&sql.altaOperadorRestringida===true&&!politicaHabitual){
         const marca=await tx.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthAlta';");
         const directo=await tx.q("SELECT HAS_PERMS_BY_NAME(N'dbo.Usuarios','OBJECT','INSERT') AS excesivo;");
         if(marca.recordset[0]?.modelo!=='authcom-operador-v1'||directo.recordset[0]?.excesivo!==0)throw new ErrorSeguridad(503,'ALTA_SQL_NO_ACREDITADA','Alta restringida no acreditada.');
@@ -112,7 +114,7 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
     repos[perfil]=new IngresoComercialSql({repository:base,habilitado:true});
   }
   const proveedor=new ResendCorreo({...correo,habilitado:true});
-  const opciones={protector,indicePrivado,idEmpresa:sql.idEmpresa,origen:correo.origen,politicaPiloto:politicaPiloto===true};
+  const opciones={protector,indicePrivado,idEmpresa:sql.idEmpresa,origen:correo.origen,politicaPiloto:politicaPiloto===true,politicaHabitual};
   const cuentas=new AutenticacionComercialService({...opciones,repository:repos.cuentas});
   let contactos=null;
   if(sql.verificacionContactos===true){
@@ -145,7 +147,16 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
       }
     });
   }
-  const workerCorreo=new EntregaCorreoSeguridad({repository:repos.correo,protector,proveedor,limiteDiario:correo.limiteDiario,
+  const autorizarDestino=politicaHabitual?async(payload,candidata)=>{
+    const {email}=require('../security/comercial/PoliticaRecuperacionHabitual').correoHabitual(payload);
+    return repos.workerIngreso.transaccion(async tx=>{
+      const u=await tx.buscarUsuario(email);
+      if(!trabajadorCuentas.recuperable(u)||!await tx.empresaActiva(sql.idEmpresa))throw Error('Destino operativo no autorizado.');
+      if(candidata.desafioId!==null&&(candidata.usuarioId!==u.idUsuario||candidata.documento?.versionSesion!==u.versionSesion||candidata.documento?.versionContacto!==u.versionContacto||candidata.documento?.emailVerificadoEn!==u.emailVerificadoEn))throw Error('Desafío de cuenta obsoleto.');
+      return{usuarioId:u.idUsuario,cuenta:indicePrivado('correo-habitual-cuenta',String(u.idUsuario)),destino:indicePrivado('correo-habitual-destino',email),versionSesion:u.versionSesion,versionContacto:u.versionContacto,verificado:u.emailVerificadoEn};
+    });
+  }:undefined;
+  const workerCorreo=new EntregaCorreoSeguridad({repository:repos.correo,protector,proveedor,limiteDiario:correo.limiteDiario,politicaHabitual,autorizarDestino,
     eventos:correo.eventos||null,indiceDestino:email=>Buffer.from(indicePrivado('correo-destino',email),'hex')});
   let activa=true,ocupado=false,pausado=false,enCurso=Promise.resolve();
   const router=crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos,politicaPiloto});
@@ -173,8 +184,9 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
   return Object.freeze({estado:'preparada',handler,procesarUna,contactosHabilitados:contactos!==null,
     desactivar(){activa=false;pausado=true;},
     iniciarWorker(){if(!activa)throw Error('Montaje inactivo.');return supervisor.iniciar().finally(()=>{if(supervisor.consultar().estado==='pausado'){activa=false;pausado=true;}});},
-    async cerrar(){activa=false;pausado=true;await supervisor.detener();await enCurso;},
+    async cerrar(){activa=false;pausado=true;await supervisor.detener();await enCurso;protector.liberar();indicePrivado.liberar();},
     consultarWorker:()=>supervisor.consultar(),
   });
+  }catch(error){protector?.liberar();indicePrivado?.liberar();throw error;}
 }
 module.exports={prepararIntegracionComercial,debePausarPiloto};

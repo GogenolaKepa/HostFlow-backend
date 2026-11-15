@@ -9,6 +9,7 @@ function crearAnilloClavesCorreo({activa,claves}={}) {
   return Object.freeze({
     sellar:(payload,id)=>mapa.get(activa).sellar(payload,id),
     abrir:(sobre,id)=>{const clave=mapa.get(sobre?.keyId);if(!clave)throw new ErrorSobreCorreo('CLAVE_CORREO_NO_DISPONIBLE');return clave.abrir(sobre,id);},
+    liberar:()=>{for(const p of mapa.values())p.liberar();},
   });
 }
 module.exports={crearAnilloClavesCorreo};

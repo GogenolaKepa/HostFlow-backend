@@ -4,7 +4,7 @@ const express=require('express');
 // existente sigue exigiendo JWT/relectura para toda administración de invitaciones.
 function crearMontajeComercial({activacionAprobada=false,runtime,origen,alcancePublico=null}={}){
   if(activacionAprobada!==true)return null;
-  if(alcancePublico!==null&&alcancePublico!=='recuperacion')throw TypeError('Alcance público no acreditado.');
+  if(alcancePublico!==null&&!['recuperacion','recuperacion-habitual'].includes(alcancePublico))throw TypeError('Alcance público no acreditado.');
   const u=new URL(origen);
   if(u.protocol!=='https:'||u.origin!==origen||u.username||u.password||runtime?.estado!=='preparado'||typeof runtime.handler!=='function'||typeof runtime.consultar!=='function')throw TypeError('Montaje comercial no acreditado.');
   const router=express.Router();
@@ -22,7 +22,7 @@ function crearMontajeComercial({activacionAprobada=false,runtime,origen,alcanceP
     const disponible=activo();res.json({version:1,recuperacion:disponible,invitaciones:alcancePublico===null&&disponible,
       ...(runtime.consultar()?.contactos===true?{contactos:alcancePublico===null&&disponible}:{})});
   });
-  router.use((req,res,next)=>{if(alcancePublico==='recuperacion'&&(!['/recuperacion/solicitar','/recuperacion/validar','/recuperacion/confirmar'].includes(req.path)||req.method!=='POST'))return res.status(404).json({codigo:'RUTA_NO_DISPONIBLE'});next();});
+  router.use((req,res,next)=>{if(alcancePublico!==null&&(!['/recuperacion/solicitar','/recuperacion/validar','/recuperacion/confirmar'].includes(req.path)||req.method!=='POST'))return res.status(404).json({codigo:'RUTA_NO_DISPONIBLE'});next();});
   router.use((req,res,next)=>activo()?runtime.handler(req,res,next):res.status(503).json({codigo:'CUENTAS_INACTIVAS'}));
   return router;
 }

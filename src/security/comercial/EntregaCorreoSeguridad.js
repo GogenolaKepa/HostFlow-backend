@@ -4,19 +4,37 @@ const {normalizarEmail}=require('../seguridadUsuarios');
 
 // Worker invocado explícitamente. Sin timers, red ni proveedor por defecto.
 class EntregaCorreoSeguridad {
-  constructor({ repository, protector, proveedor, ahora = Date.now, limiteDiario=100, eventos=null, indiceDestino } = {}) {
+  constructor({ repository, protector, proveedor, ahora = Date.now, limiteDiario=100, eventos=null, indiceDestino,politicaHabitual=null,autorizarDestino } = {}) {
     if (typeof repository?.transaccion !== "function" || typeof protector?.abrir !== "function" ||
         typeof proveedor?.enviar !== "function" || !Number.isInteger(limiteDiario) || limiteDiario<1 || limiteDiario>100000) throw new TypeError("Faltan adaptadores de entrega.");
     if(eventos!==null&&(eventos.persistencia!=='sql-durable'||typeof eventos.prepararMensaje!=='function'||typeof eventos.vincularAceptacion!=='function'||typeof indiceDestino!=='function'))throw TypeError('Correlación durable no acreditada.');
     Object.assign(this, { repository, protector, proveedor, ahora,limiteDiario,eventos,indiceDestino });
+    this.politicaHabitual=politicaHabitual===null?null:require('./PoliticaRecuperacionHabitual').validarPoliticaHabitual(politicaHabitual);
+    if(this.politicaHabitual&&typeof autorizarDestino!=='function')throw TypeError('Falta autorización de destinos.');
+    this.autorizarDestino=autorizarDestino;
   }
-  async procesarUna() {
+  async procesarUna(excluir=[]) {
     const lease = randomUUID();
-    let entrega;
+    let entrega,preparada=null;
+    if(this.politicaHabitual){
+      if(excluir.length>=200)return{estado:'limite-alcanzado'};
+      const candidata=await this.repository.transaccion(tx=>tx.consultarEntregaPendiente(excluir));
+      if(!candidata)return{estado:excluir.length?'limite-alcanzado':'sin-pendientes'};
+      const payload=this.protector.abrir(candidata.sobre,candidata.id);
+      const tipo=require('./PoliticaRecuperacionHabitual').correoHabitual(payload);
+      const contexto=await this.autorizarDestino(payload,candidata);
+      preparada={candidata,payload,contexto:{...contexto,clase:tipo.clase}};
+    }
     try {
       entrega = await this.repository.transaccion(async tx => {
-        const e=await tx.reservarEntrega({ ahora: this.ahora(), lease, leaseMs: 120_000, maxIntentos: 3 });
+        const e=await tx.reservarEntrega({ ahora: this.ahora(), lease, leaseMs: 120_000, maxIntentos: 3,...(preparada?{idEsperado:preparada.candidata.id,soloRecuperacion:true}:{}) });
         if(!e) return null;
+        if(preparada){
+          if(e.id!==preparada.candidata.id||JSON.stringify(e.sobre)!==JSON.stringify(preparada.candidata.sobre))throw Error('Entrega cambió; no enviar.');
+          // Ambas admisiones y el lease se confirman/rollback juntos. Sin DDL ni cuota local.
+          for(const cuota of require('./PoliticaRecuperacionHabitual').cuotasEntrega(this.politicaHabitual,preparada.contexto,this.ahora()))if(!await tx.admitir(cuota))throw new ErrorSeguridad(429,'CUOTA_CORREO','Presupuesto de entrega agotado.');
+          return e;
+        }
         // Presupuesto durable compartido por workers. El rechazo revierte también el lease.
         if(!await tx.admitir({proposito:'correo-salida',ahora:this.ahora(),ip:'worker',destino:'worker',ventanaMs:86400000,
           maxIp:this.limiteDiario,maxDestino:this.limiteDiario,maxGlobal:this.limiteDiario,cooldownMs:0})) {
@@ -24,15 +42,23 @@ class EntregaCorreoSeguridad {
         }
         return e;
       });
-    }catch(e){if(e instanceof ErrorSeguridad && e.codigo==='CUOTA_CORREO')return {estado:'limite-alcanzado'};throw e;}
+    }catch(e){if(e instanceof ErrorSeguridad && e.codigo==='CUOTA_CORREO'){
+      // Un destino sin cupo no debe bloquear avisos de seguridad u otras cuentas.
+      // Solo omitir en esta pasada; ni modificar filas ni devolver presupuesto.
+      return preparada?this.procesarUna([...excluir,preparada.candidata.id]):{estado:'limite-alcanzado'};
+    }throw e;}
     if (!entrega) return { estado: "sin-pendientes" };
     let exito = false,cuarentena=false,codigo=null;
     let reintentoMs=entrega.intentos>=2?300000:60000;
     try {
-      const payload = this.protector.abrir(entrega.sobre, entrega.id);
+      const payload = preparada?preparada.payload:this.protector.abrir(entrega.sobre, entrega.id);
       // El destino no puede cambiar entre reintentos de la misma idempotency key.
       // Comprobar supresión también inmediatamente antes del POST del proveedor.
       const antesDeEnviar=async()=>{
+        if(preparada){
+          const actual=await this.autorizarDestino(payload,preparada.candidata);
+          if(JSON.stringify(actual)!==JSON.stringify(Object.fromEntries(Object.entries(preparada.contexto).filter(([k])=>k!=='clase'))))throw Object.assign(Error('Cuenta cambió; no enviar.'),{codigo:'VIGENCIA_NO_ACREDITADA'});
+        }
         if(!await this.repository.transaccion(async tx=>{
           if(!await tx.entregaVigente({id:entrega.id,lease,ahora:this.ahora()}))return false;
           // Durable antes de TODO envío, incluso sin el módulo opcional de eventos.
@@ -70,6 +96,7 @@ class EntregaCorreoSeguridad {
     }
     const finalizada = await this.repository.transaccion(tx => tx.finalizarEntrega({ id: entrega.id, lease, exito,
       ahora: this.ahora(), reintentoMs, maxIntentos: 3,cuarentena,codigo }));
+    if(this.politicaHabitual&&codigo==='RESULTADO_INCIERTO')return{estado:'resultado-incierto'};
     return { estado: finalizada ? (codigo==='CONFIGURACION'?'pausada-configuracion':exito ? "entregada" : "fallida") : "resultado-incierto" };
   }
 }

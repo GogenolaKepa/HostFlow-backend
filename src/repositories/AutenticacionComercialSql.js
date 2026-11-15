@@ -63,7 +63,7 @@ class AlcanceSql {
     return (await this.q("SELECT IdEmpresa FROM dbo.Empresas WITH (UPDLOCK,HOLDLOCK) WHERE IdEmpresa=@id AND Activo=1;", { id })).recordset.length === 1;
   }
   async leerUsuario(filtro, parametros) {
-    const r = await this.q(`SELECT u.IdUsuario AS idUsuario,u.Nombre AS nombre,u.Email AS email,${this.perfil==='worker-ingreso'?'NULL':'u.PasswordHash'} AS passwordHash,
+    const r = await this.q(`SELECT u.IdUsuario AS idUsuario,u.Nombre AS nombre,u.EmailNormalizado AS email,${this.perfil==='worker-ingreso'?'NULL':'u.PasswordHash'} AS passwordHash,
       u.Estado AS estado,u.DebeCambiarPassword AS debeCambiarPassword,u.VersionSesion AS versionSesion,
       u.VersionRegistro AS versionRegistro,r.Nombre AS rol,r.Activo AS rolActivo,
       c.VerificadoEn AS verificado,c.VersionContacto AS versionContacto
@@ -171,13 +171,27 @@ class AlcanceSql {
     return this.q("INSERT authcom.Auditoria(Tipo,UsuarioId,ActorId,DesafioId,IdEmpresa,Fecha) VALUES(@tipo,@usuario,@actor,@desafio,@empresa,@fecha);",
       { tipo: v.tipo, usuario: v.usuarioId ?? null, actor: v.actorId ?? null, desafio: v.desafioId ?? null, empresa: this.idEmpresa, fecha: fecha(v.ahora) });
   }
-  async reservarEntrega({ lease, leaseMs, maxIntentos }) {
+  async consultarEntregaPendiente(excluir=[]){
+    if(!Array.isArray(excluir)||excluir.length>200||excluir.some(id=>!/^[a-f0-9-]{36}$/i.test(id)))throw Error('Selección de correo inválida.');
+    const omitidas=excluir.length?` AND o.Id NOT IN (${excluir.map((_,i)=>'@omitida'+i).join(',')})`:'';
+    // Lectura previa: no tomar leases ni tocar cuotas antes de clasificar/autorizar.
+    const r=await this.q(`SELECT TOP(1) o.Id AS id,o.Sobre AS sobre,o.DesafioId AS desafioId,
+      d.IdUsuario AS usuarioId,d.Documento AS documento FROM authcom.Outbox o WITH (HOLDLOCK)
+      LEFT JOIN authcom.Desafios d WITH (HOLDLOCK) ON d.Id=o.DesafioId
+      WHERE o.Sobre IS NOT NULL AND o.EnCuarentena=0 AND o.ExpiraEn>SYSUTCDATETIME() AND o.Intentos<3 AND o.Proxima<=SYSUTCDATETIME()
+        AND (o.PrimerIntentoEn IS NULL OR o.PrimerIntentoEn>DATEADD(hour,-23,SYSUTCDATETIME()))
+        AND (o.LeaseHasta IS NULL OR o.LeaseHasta<=SYSUTCDATETIME())
+        AND (o.DesafioId IS NULL OR d.IdEmpresa=@empresa AND d.Proposito='recuperacion' AND d.ConsumidaEn IS NULL AND d.RevocadaEn IS NULL AND d.CreadaEn<=SYSUTCDATETIME() AND d.ExpiraEn>SYSUTCDATETIME()) ${omitidas} ORDER BY CASE WHEN o.DesafioId IS NULL THEN 0 ELSE 1 END,o.Proxima,o.Id;`,{empresa:this.idEmpresa,...Object.fromEntries(excluir.map((id,i)=>['omitida'+i,id]))});
+    const e=r.recordset[0];return e?{...e,sobre:JSON.parse(e.sobre),documento:e.documento===null?null:JSON.parse(e.documento)}:null;
+  }
+  async reservarEntrega({ lease, leaseMs, maxIntentos,idEsperado=null,soloRecuperacion=false }) {
     if (maxIntentos !== 3 || leaseMs !== 120000) throw new Error("Política de entrega incompatible.");
+    if(typeof soloRecuperacion!=='boolean'||soloRecuperacion&&(!idEsperado||!/^[a-f0-9-]{36}$/i.test(idEsperado))||!soloRecuperacion&&idEsperado!==null)throw Error('Selección de entrega inválida.');
     const marca=await this.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthCorreo';");
     if(marca.recordset[0]?.modelo!=='authcom-correo-v1') throw new Error('Política SQL de correo no validada.');
     const resiliencia=await this.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthResiliencia';");
     if(resiliencia.recordset[0]?.modelo!=='authcom-resiliencia-v1')throw Error('Resiliencia de correo no validada.');
-    await this.q(`UPDATE authcom.Outbox SET Estado='fallida',EnCuarentena=1,CodigoFallo=CASE WHEN CodigoFallo='RESULTADO_INCIERTO' THEN CodigoFallo WHEN Intentos>=3 THEN 'INTENTOS_AGOTADOS' ELSE 'VENTANA_CERRADA' END,Lease=NULL,LeaseHasta=NULL
+    if(!soloRecuperacion){await this.q(`UPDATE authcom.Outbox SET Estado='fallida',EnCuarentena=1,CodigoFallo=CASE WHEN CodigoFallo='RESULTADO_INCIERTO' THEN CodigoFallo WHEN Intentos>=3 THEN 'INTENTOS_AGOTADOS' ELSE 'VENTANA_CERRADA' END,Lease=NULL,LeaseHasta=NULL
       WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND (Intentos>=3 OR PrimerIntentoEn<=DATEADD(hour,-23,SYSUTCDATETIME())
        OR CodigoFallo='RESULTADO_INCIERTO' AND (ExpiraEn<=SYSUTCDATETIME() OR DesafioId IS NOT NULL AND NOT EXISTS
         (SELECT 1 FROM authcom.Desafios d WHERE d.Id=Outbox.DesafioId AND d.CreadaEn<=SYSUTCDATETIME() AND d.ExpiraEn>SYSUTCDATETIME() AND d.RevocadaEn IS NULL AND d.ConsumidaEn IS NULL)))
@@ -186,15 +200,16 @@ class AlcanceSql {
       WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND (CodigoFallo IS NULL OR CodigoFallo<>'RESULTADO_INCIERTO') AND (o.ExpiraEn<=SYSUTCDATETIME()
         OR o.DesafioId IS NOT NULL AND NOT EXISTS(SELECT 1 FROM authcom.Desafios d WHERE d.Id=o.DesafioId
           AND d.ConsumidaEn IS NULL AND d.RevocadaEn IS NULL AND d.ExpiraEn>SYSUTCDATETIME()));
-      `);
+      `);}
     const r = await this.q(`;WITH siguiente AS (SELECT TOP(1) * FROM authcom.Outbox WITH (UPDLOCK,HOLDLOCK)
       WHERE Sobre IS NOT NULL AND EnCuarentena=0 AND ExpiraEn>SYSUTCDATETIME() AND Intentos<3 AND Proxima<=SYSUTCDATETIME()
+       ${soloRecuperacion?"AND Id=@idEsperado AND (CodigoFallo IS NULL OR CodigoFallo<>'RESULTADO_INCIERTO') AND (DesafioId IS NULL OR EXISTS(SELECT 1 FROM authcom.Desafios h WHERE h.Id=Outbox.DesafioId AND h.IdEmpresa=@empresa AND h.Proposito='recuperacion'))":''}
        AND (DesafioId IS NULL OR EXISTS(SELECT 1 FROM authcom.Desafios d WHERE d.Id=Outbox.DesafioId
          AND d.ConsumidaEn IS NULL AND d.RevocadaEn IS NULL AND d.CreadaEn<=SYSUTCDATETIME() AND d.ExpiraEn>SYSUTCDATETIME()))
        AND (PrimerIntentoEn IS NULL OR PrimerIntentoEn>DATEADD(hour,-23,SYSUTCDATETIME()))
        AND (LeaseHasta IS NULL OR LeaseHasta<=SYSUTCDATETIME()) ORDER BY Proxima,Id)
       UPDATE siguiente SET Estado='procesando',Intentos=Intentos+1,PrimerIntentoEn=COALESCE(PrimerIntentoEn,SYSUTCDATETIME()),Lease=@lease,LeaseHasta=DATEADD(second,120,SYSUTCDATETIME())
-      OUTPUT inserted.Id AS id,inserted.Sobre AS sobre,inserted.Intentos AS intentos;`, { lease });
+      OUTPUT inserted.Id AS id,inserted.Sobre AS sobre,inserted.Intentos AS intentos;`, { lease,...(soloRecuperacion?{idEsperado,empresa:this.idEmpresa}:{}) });
     const e = r.recordset[0]; return e ? { id: e.id, sobre: JSON.parse(e.sobre),intentos:e.intentos } : null;
   }
   async entregaVigente({id,lease}) {

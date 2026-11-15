@@ -76,7 +76,7 @@ async function ejecutar(args=process.argv.slice(2),puertos={}){
   if(typeof puertos.crearProveedorCorreo!=='function'&&!o['--proveedor-correo']||puertos.crearProveedorCorreo&&o['--proveedor-correo'])throw Error('Proveedor externo de correo pendiente o ambiguo.');
   dependencias=prepararDependenciasWindows({aprobacion:true,env,acreditacion,
    driver:puertos.driver??require('mssql'),obtenerCredencial:opciones=>lector(opciones),transportar:puertos.transportar??globalThis.fetch,
-   obtenerSecretoCorreo:opciones=>secretoCorreo.obtener(opciones),clavesMemoria:puertos.clavesMemoria,tlsDirecto:Boolean(puertos.tlsLocal),politicaPiloto:puertos.politicaPiloto,alcancePublico:puertos.alcancePublico});
+   obtenerSecretoCorreo:opciones=>secretoCorreo.obtener(opciones),clavesMemoria:puertos.clavesMemoria,tlsDirecto:Boolean(puertos.tlsLocal),politicaPiloto:puertos.politicaPiloto,alcancePublico:puertos.alcancePublico,politicaHabitual:puertos.politicaHabitual,controlPublico:puertos.controlPublico});
   // Las claves ya están en buffers de dependencias. Retirar el entorno ANTES
   // del primer auxiliar nativo, incluso la consulta de identidad SQL.
   for(const k of SECRETOS_ENTORNO)delete env[k];
@@ -96,8 +96,10 @@ async function ejecutar(args=process.argv.slice(2),puertos={}){
   const alCerrar=()=>{cerrar().then(r=>{if(!r.cerrado)p.exitCode=1;p.stderr.write(r.cerrado?'HostFlow cerrado.\n':'Cierre no acreditado; inspección necesaria.\n');});};
   p.once('SIGINT',alCerrar);p.once('SIGTERM',alCerrar);
   // Promesa del ciclo de vida, no se espera para bloquear el arranque.
-  etapa='ACTIVAR_WORKER';if(o['--iniciar-worker'])Promise.resolve(servidor.comercial.iniciarWorker()).catch(()=>{p.exitCode=1;return cerrar();});
-  return{estado:'iniciado',cerrar:async()=>{p.removeListener('SIGINT',alCerrar);p.removeListener('SIGTERM',alCerrar);return cerrar();}};
+  let workerIniciado=false;
+  const iniciarWorker=()=>{if(workerIniciado||cierre)throw Error('Worker ya iniciado o cerrando.');workerIniciado=true;Promise.resolve(servidor.comercial.iniciarWorker()).catch(()=>{p.exitCode=1;return cerrar();});};
+  etapa='ACTIVAR_WORKER';if(o['--iniciar-worker'])iniciarWorker();
+  return{estado:'iniciado',iniciarWorker,consultar:()=>servidor.comercial.consultar(),desactivar:()=>servidor.comercial.desactivar(),cerrar:async()=>{p.removeListener('SIGINT',alCerrar);p.removeListener('SIGTERM',alCerrar);return cerrar();}};
  }catch(error){cierreExternoPendiente=error?.codigo==='CIERRE_NO_ACREDITADO'||error?.codigo==='CIERRE_INCOMPLETO';const r=await cerrar();const e=Error('Host comercial no acreditado. Sin detalles privados.');e.diagnosticoArranque=diagnostico(etapa,error);if(!r.cerrado)e.codigo='CIERRE_NO_ACREDITADO';throw e;}
 }
 if(require.main===module)ejecutar().then(()=>console.log('Host comercial iniciado. No acredita operaciones ni entrega de correo.')).catch(()=>{console.error('Host comercial no iniciado. Revisar configuración y autorizaciones; sin reintento.');process.exitCode=1;});

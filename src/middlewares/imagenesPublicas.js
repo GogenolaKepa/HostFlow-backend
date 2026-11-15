@@ -9,7 +9,7 @@ function rutaImagenPublica(raw){
  return partes.slice(1);
 }
 // Sólo imágenes dentro del árbol de publicaciones. No lee archivos al importar.
-function crearImagenesPublicas({carpetaUploads=path.resolve(process.cwd(),'uploads')}={}){
+function crearImagenesPublicas({carpetaUploads=path.resolve(__dirname,'../../uploads')}={}){
  const raiz=path.resolve(carpetaUploads),normalizar=p=>process.platform==='win32'?p.toLowerCase():p;
  return async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method))return res.sendStatus(404);

@@ -76,8 +76,9 @@ const calendarioRoutes = require(
 );
 
 
-function crearApp({ montajeComercial = null, proxiesComerciales = [], montajeClientes = null, politicaPiloto = false } = {}) {
+function crearApp({ montajeComercial = null, proxiesComerciales = [], montajeClientes = null, politicaPiloto = false, alcancePublico = null, controlPublico = null } = {}) {
 if(typeof politicaPiloto!=='boolean'||politicaPiloto&&montajeClientes!==null)throw TypeError('Ventana piloto incompatible con montaje de clientes.');
+if(alcancePublico!==null&&(!['recuperacion','recuperacion-habitual'].includes(alcancePublico)||politicaPiloto!==(alcancePublico==='recuperacion')||typeof montajeComercial!=='function'||montajeClientes!==null||proxiesComerciales.length!==0))throw TypeError('Ventana pública incompatible.');
 const app = express();
 if(!Array.isArray(proxiesComerciales)||proxiesComerciales.length>4||proxiesComerciales.some(ip=>!require('node:net').isIP(ip)))throw TypeError('Proxies comerciales no acreditados.');
 if(proxiesComerciales.length){
@@ -93,6 +94,13 @@ if(proxiesComerciales.length){
 // =========================================================
 
 app.use(respuestasSeguras);
+if(alcancePublico==='recuperacion-habitual')app.use(require('./security/comercial/ProteccionRecuperacionHabitual').crearProteccionRecuperacionHabitual({control:controlPublico,activo:()=>app.locals.comercial?.consultar?.()?.disponible===true}));
+if(alcancePublico==='recuperacion'){
+ const p=require('./security/comercial/ProteccionPublicaPiloto');
+ app.use(p.crearProteccionPublicaPiloto({activo:()=>app.locals.comercial?.consultar?.()?.disponible===true}));
+ app.post('/api/auth/login',express.json({limit:'8kb'}),p.loginDePrueba);
+ app.use(['/api/auth/me','/api/auth/logout'],(req,res,next)=>req.method==='OPTIONS'?next():autenticacion(req,res,()=>p.sesionDePrueba(req,res,next)));
+}
 if(montajeClientes!==null){
   if(typeof montajeClientes!=='function')throw TypeError('Clientes sin montaje acreditado.');
   app.use('/api/clientes',montajeClientes);

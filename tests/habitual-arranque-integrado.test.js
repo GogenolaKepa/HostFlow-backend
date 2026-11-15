@@ -1,0 +1,26 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{EventEmitter}=require('node:events'),path=require('node:path');
+const {iniciar}=require('../scripts/hostflowHabitualWindows');
+const {crearConfiguracionAprobada}=require('../scripts/prepararRecuperacionHabitual');
+const {ROOT}=require('../src/security/comercial/ConfiguracionHabitualWindows');
+const {crearTlsLocal}=require('../src/security/comercial/TlsLocalNode');
+function fixture(){const mapa=new Map(),eventos=[],avisos=[],cfg=crearConfiguracionAprobada([101,102],'HABITUAL-1794710000000');mapa.set(path.join(ROOT,'configuracion.json'),Buffer.from(JSON.stringify(cfg)));
+ let finCF=false,resolverCF,worker='detenido',runtimeCerrado=false;const cerrado=new Promise(r=>{resolverCF=()=>{finCF=true;eventos.push('CF_CERRADO');r();};});
+ const proceso=new EventEmitter();Object.assign(proceso,{platform:'win32',pid:54321,stdin:{isTTY:true},stderr:{isTTY:true,write:s=>{avisos.push(s);if(s.startsWith('HOSTFLOW_HABITUAL_DISPONIBLE'))setTimeout(resolverCF,5);}}});
+ const maestro=Buffer.alloc(32,6),runtime={keyId:'ficticio',claves:{cifrado:Buffer.alloc(32,7),indice:Buffer.alloc(32,8)},lectorSql:()=>{},identidad:{cuenta:'PC-ESCRITORIO\\Kepa'},proveedorCorreo:{},cerrar(){runtimeCerrado=true;eventos.push('RUNTIME_CERRADO');this.claves.cifrado.fill(0);this.claves.indice.fill(0);}};
+ const puertos={disco:{unlinkSync:p=>{assert.equal(p,path.join(ROOT,'sesion-activa.json'));eventos.push('LOCK_RETIRADO');mapa.delete(p);}},archivos:{identidad:c=>{assert.equal(c,cfg.cuenta);},verificar(){},leer:p=>{if(!mapa.has(p))throw Error();return mapa.get(p);},escribirNuevo:(p,b)=>{assert.equal(mapa.has(p),false);mapa.set(p,b);}},comprobarSinServicios:()=>{},leerSecreto:async()=>maestro,crearCustodia:()=>({abrirRuntime:async s=>{assert.equal(s,maestro);return runtime;}}),comprobarSql:async()=>{eventos.push('SQL_FICTICIO');},comprobarDNS:async s=>s,servidoresWindows:()=>['192.0.2.1'],comprobarTunnel:()=>{},validarOffline:()=>{},crearTls:crearTlsLocal,tlsOrigen:async()=>{eventos.push('TLS_FICTICIO');},transportar:async()=>{throw Error('RED_REAL_PROHIBIDA');},
+ ejecutarHost:async(args,p)=>{assert.ok(args.includes('--sin-worker'));assert.equal(p.alcancePublico,'recuperacion-habitual');assert.equal(p.politicaPiloto,false);assert.deepEqual(p.politicaHabitual.operadoresAutorizados,[101,102]);assert.equal(p.controlPublico.enviosPermitidos(),false);return{iniciarWorker(){assert.equal(p.controlPublico.enviosPermitidos(),true);worker='activo';eventos.push('WORKER_FICTICIO');},consultar:()=>({worker:{estado:worker}}),desactivar(){},cerrar:async()=>{eventos.push('HOST_CERRADO');p.liberarSecretos();return{cerrado:true};}};},
+ crearTunnel:async()=>({listo:Promise.resolve(),cerrado,terminado:()=>finCF}),verificarBorde:async()=>{eventos.push('GET_FICTICIOS');return{resultado:'BORDE_HABITUAL_ACREDITADO',fechaUTC:new Date().toISOString(),GET:7,sinWorker:true};}};
+ return{mapa,eventos,avisos,cfg,proceso,maestro,runtime,puertos,runtimeCerrado:()=>runtimeCerrado};
+}
+async function conEntorno(fn){const antes={...process.env};try{return await fn();}finally{for(const k of Object.keys(process.env))if(!Object.hasOwn(antes,k))delete process.env[k];for(const [k,v]of Object.entries(antes))process.env[k]=v;}}
+test('habitual: recorrido de arranque integrado aislado, un maestro oculto y cierre CF→HTTP/SQL→memoria',()=>conEntorno(async()=>{
+ const f=fixture(),r=await iniciar({proceso:f.proceso,puertos:f.puertos});assert.equal(r.cerrado,true);assert.equal(f.maestro.every(b=>b===0),true);assert.equal(f.runtimeCerrado(),true);assert.equal(f.mapa.has(path.join(ROOT,'sesion-activa.json')),false);
+ assert.ok(f.eventos.indexOf('GET_FICTICIOS')<f.eventos.indexOf('WORKER_FICTICIO'));assert.ok(f.eventos.indexOf('CF_CERRADO')<f.eventos.indexOf('HOST_CERRADO'));assert.ok(f.eventos.indexOf('HOST_CERRADO')<f.eventos.indexOf('LOCK_RETIRADO'));assert.ok([...f.mapa.keys()].some(p=>path.basename(p).startsWith('cerrado.')));
+}));
+test('habitual: configuración bloqueada y sesión existente fallan antes de leer maestro/SQL',()=>conEntorno(async()=>{
+ for(const variante of ['config','lock','referenciaTunnel']){const f=fixture();let secretos=0;f.puertos.leerSecreto=async()=>{secretos++;throw Error();};if(variante==='config'){const c=structuredClone(f.cfg);c.habilitado=false;f.mapa.set(path.join(ROOT,'configuracion.json'),Buffer.from(JSON.stringify(c)));}else if(variante==='lock')f.mapa.set(path.join(ROOT,'sesion-activa.json'),Buffer.from('FICTICIO_PREVIO'));else f.puertos.comprobarTunnel=()=>{throw Error('ACL FICTICIA NO PRIVADA');};
+ const r=await iniciar({proceso:f.proceso,puertos:f.puertos});assert.equal(r.cerrado,false);assert.equal(secretos,0);assert.equal(f.eventos.includes('SQL_FICTICIO'),false);}
+}));
+test('habitual: error de secreto/pérdida de acceso no muestra detalles y conserva lock para revisión',()=>conEntorno(async()=>{
+ const f=fixture();f.puertos.crearCustodia=()=>({abrirRuntime:async()=>{throw Error('FICTICIO_PRIVADO_API_KEY');}});const r=await iniciar({proceso:f.proceso,puertos:f.puertos});assert.equal(r.cerrado,false);assert.equal(f.maestro.every(b=>b===0),true);assert.equal(f.mapa.has(path.join(ROOT,'sesion-activa.json')),true);assert.doesNotMatch(f.avisos.join(''),/FICTICIO_PRIVADO_API_KEY/);assert.equal(f.eventos.includes('WORKER_FICTICIO'),false);
+}));

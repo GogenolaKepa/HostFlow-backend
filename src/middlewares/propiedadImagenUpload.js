@@ -7,17 +7,9 @@ const {archivoImagenPermitido}=require('./imagenesPublicas');
 // CARPETA BASE
 // =========================================================
 
-const carpetaBase = path.join(
-  process.cwd(),
-  "uploads",
-  "propiedades"
-);
-
-if (!fs.existsSync(carpetaBase)) {
-  fs.mkdirSync(carpetaBase, {
-    recursive: true,
-  });
-}
+// Raíz estable del backend. Importar rutas nunca crea directorios.
+// destination ya crea recursivamente la carpeta al recibir una carga autorizada.
+const carpetaBase = path.resolve(__dirname, "../../uploads/propiedades");
 
 // =========================================================
 // STORAGE

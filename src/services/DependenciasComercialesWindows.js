@@ -9,7 +9,7 @@ function clave32(valor){
  return bytes;
 }
 // Sólo composición explícita. No lee process.env, DPAPI, SQL ni red al importar.
-function prepararDependenciasWindows({aprobacion=false,env={},acreditacion,driver,obtenerCredencial,transportar,obtenerSecretoCorreo,clavesMemoria,tlsDirecto=false,politicaPiloto=false,alcancePublico=null}={}){
+function prepararDependenciasWindows({aprobacion=false,env={},acreditacion,driver,obtenerCredencial,transportar,obtenerSecretoCorreo,clavesMemoria,tlsDirecto=false,politicaPiloto=false,alcancePublico=null,politicaHabitual=null,controlPublico=null}={}){
  if(aprobacion!==true||env.HOSTFLOW_AUTH_COMERCIAL_ENABLED!=='1')return Object.freeze({estado:'inactivo',liberar(){}});
  const config=leerConfiguracionComercial(env);
  if(config.correo.dominioVerificado!=='hostflow.com.ar'||config.correo.remitente!=='seguridad@hostflow.com.ar')throw TypeError('Dominio de correo del host no acreditado.');
@@ -31,9 +31,9 @@ function prepararDependenciasWindows({aprobacion=false,env={},acreditacion,drive
   if(typeof keyId!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(keyId))throw TypeError('Versión de clave comercial no acreditada.');
   let liberado=false;
   return Object.freeze({estado:'preparado',
-   comercial:{aprobacion:true,proxiesComerciales:proxies,alcancePublico,dependencias:{driver,obtenerCredencial,
+   comercial:{aprobacion:true,proxiesComerciales:proxies,alcancePublico,controlPublico,dependencias:{driver,obtenerCredencial,
     identidades:Object.fromEntries(Object.entries(IDENTIDADES).map(([perfil,principal])=>[perfil,{tipo:'sql',principal}])),
-    dependencias:{sql:{altaOperadorRestringida:true},acreditacion:Object.freeze({...acreditacion}),politicaPiloto:politicaPiloto===true,
+    dependencias:{sql:{altaOperadorRestringida:true},acreditacion:Object.freeze({...acreditacion}),politicaPiloto:politicaPiloto===true,politicaHabitual,
      claves:{cifrado:{activa:keyId,claves:[{keyId,clave:cifrado}]},indice},
      correo:{transportar,obtenerSecreto:async opciones=>{if(liberado)throw Error('Correo inactivo.');return obtenerSecretoCorreo(opciones);}}}}},
    liberar(){if(liberado)return;liberado=true;cifrado.fill(0);indice.fill(0);},

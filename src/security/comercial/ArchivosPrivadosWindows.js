@@ -29,7 +29,10 @@ function ruta(p){
 }
 function consultar(accion,p){
  if(process.platform!=='win32')throw fallo();if(p)ruta(p);
- const r=spawnSync('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',script],{shell:false,windowsHide:true,env:sistema,input:JSON.stringify({accion,ruta:p})+'\n',encoding:'utf8',timeout:10000,maxBuffer:8192});
+ // stdin de Windows PowerShell puede usar una página OEM. JSON ASCII preserva
+ // rutas con Año/acentos sin cambiar ExecutionPolicy ni debilitar validaciones.
+ const entrada=JSON.stringify({accion,ruta:p}).replace(/[^\x00-\x7f]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'))+'\n';
+ const r=spawnSync('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',script],{shell:false,windowsHide:true,env:sistema,input:entrada,encoding:'utf8',timeout:10000,maxBuffer:8192});
  if(r.status!==0)throw fallo();let d;try{d=JSON.parse(r.stdout.replace(/^\uFEFF/,''));}catch{throw fallo();}
  if(typeof d.cuenta!=='string'||!/^S-1-5-21-\d+-\d+-\d+-\d+$/.test(d.sid||'')||accion!=='identidad'&&d.privado!==true)throw fallo();return d;
 }

@@ -26,11 +26,13 @@ function contactoVerificado(u) {
 class AutenticacionComercialService {
   constructor({ repository, protector, indicePrivado, origen, idEmpresa,
     ahora = Date.now, hashPassword = (p) => bcrypt.hash(p, 12),
-    recuperacionMs = 15 * 60_000, invitacionMs = 24 * 60 * 60_000, politicaPiloto = false } = {}) {
+    recuperacionMs = 15 * 60_000, invitacionMs = 24 * 60 * 60_000, politicaPiloto = false, politicaHabitual = null } = {}) {
     if (typeof repository?.transaccion !== "function" || typeof protector?.sellar !== "function" ||
         typeof indicePrivado !== "function" || !Number.isSafeInteger(idEmpresa) || idEmpresa <= 0 ||
         typeof ahora !== "function" || typeof hashPassword !== "function" || typeof politicaPiloto !== 'boolean') throw new TypeError("Faltan adaptadores de seguridad explícitos.");
     this.politicaPiloto = politicaPiloto;
+    if(politicaHabitual!==null&&politicaPiloto)throw TypeError('Políticas incompatibles.');
+    this.politicaHabitual=politicaHabitual===null?null:require('../security/comercial/PoliticaRecuperacionHabitual').validarPoliticaHabitual(politicaHabitual);
     Object.assign(this, { repository, protector, indicePrivado, origen: origenPublico(origen), idEmpresa, ahora, hashPassword });
     this.duraciones = { recuperacion: ttl(recuperacionMs, 60_000, 60 * 60_000), invitacion: ttl(invitacionMs, 60_000, 7 * 86400_000) };
   }
@@ -62,7 +64,7 @@ class AutenticacionComercialService {
 
   recuperable(u) {
     // Administradores requieren una política de recuperación reforzada, aún no aprobada.
-    return esUsuarioHabilitado(u) && u.rol === "Operador" && contactoVerificado(u) && (!this.politicaPiloto || esCuentaPiloto(u));
+    return esUsuarioHabilitado(u) && u.rol === "Operador" && contactoVerificado(u) && (!this.politicaPiloto || esCuentaPiloto(u)) && (!this.politicaHabitual||this.politicaHabitual.operadoresAutorizados.includes(u.idUsuario));
   }
 
   async emitir(tx, datos, ahora) {
@@ -115,6 +117,7 @@ class AutenticacionComercialService {
   }
 
   async listarInvitaciones(actor, { pagina = 1 } = {}) {
+    if(this.politicaHabitual)throw new ErrorSeguridad(403,'SIN_PERMISO','Alta de cuentas no habilitada.');
     if (!Number.isSafeInteger(pagina) || pagina < 1 || pagina > 10000) throw new ErrorSeguridad(400, "VALIDACION", "Página no válida.");
     return this.transaccion(async tx => {
       await this.administrador(tx, actor);
@@ -125,6 +128,7 @@ class AutenticacionComercialService {
   }
 
   async invitar(actor, body, { ip } = {}) {
+    if(this.politicaHabitual)throw new ErrorSeguridad(403,'SIN_PERMISO','Alta de cuentas no habilitada.');
     // Primera fase: solo altas nuevas de Operador en la instalación actual.
     // Ningún rol/empresa/ID de usuario procede del formulario.
     validarCampos(body, ["nombre", "email"]);
@@ -144,6 +148,7 @@ class AutenticacionComercialService {
   }
 
   async vigente(tx, hash, proposito, ahora) {
+    if(this.politicaHabitual&&proposito!=='recuperacion')throw tokenInvalido();
     const d = hash && await tx.desafio(hash, proposito);
     if (!d || this.politicaPiloto&&!esCuentaPiloto(d) || d.proposito !== proposito || d.idEmpresa !== this.idEmpresa || d.consumidaEn !== null ||
         d.revocadaEn !== null || d.expiraEn <= ahora || !await tx.empresaActiva(this.idEmpresa)) throw tokenInvalido();
@@ -203,6 +208,7 @@ class AutenticacionComercialService {
   aceptarInvitacion(body, contexto) { return this.confirmar("invitacion", body, contexto); }
 
   async revocarInvitacion(actor, id) {
+    if(this.politicaHabitual)throw new ErrorSeguridad(403,'SIN_PERMISO','Invitaciones no habilitadas.');
     if(this.politicaPiloto)throw new ErrorSeguridad(403,'SIN_PERMISO','La revocación no forma parte del piloto.');
     if (typeof id !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id)) throw tokenInvalido();
     return this.transaccion(async (tx) => {

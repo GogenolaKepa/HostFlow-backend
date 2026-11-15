@@ -12,14 +12,15 @@ function crearRouterCuentasComerciales({cuentas,ingreso,autenticar,contactos=nul
     if(claves.length&&!paginacion)return next(new ErrorSeguridad(400,'SOLICITUD_INVALIDA','No se admiten credenciales en la URL.'));next();
   });
   const envolver=fn=>(req,res,next)=>Promise.resolve().then(()=>fn(req,res)).catch(next);
-  router.use((req,_res,next)=>Promise.resolve().then(()=>ingreso.limitar(req.ip)).then(()=>next(),next));
+  const ip=req=>req.ipComercial??req.ip;
+  router.use((req,_res,next)=>Promise.resolve().then(()=>ingreso.limitar(ip(req))).then(()=>next(),next));
   router.use(express.json({limit:'8kb',strict:true}));
   router.post('/recuperacion/solicitar',envolver(async(req,res)=>{
     if(politicaPiloto&&!require('../security/pilotoAutenticacion').esCuentaPiloto(req.body))return res.status(202).json({mensaje:require('../services/AutenticacionComercialService').RESPUESTA_NEUTRAL.mensaje});
-    const r=await ingreso.solicitar(req.body,{ip:req.ip});res.status(202).json({mensaje:r.mensaje});}));
+    const r=await ingreso.solicitar(req.body,{ip:ip(req)});res.status(202).json({mensaje:r.mensaje});}));
   for(const [url,proposito] of [['recuperacion','recuperacion'],['invitaciones','invitacion']]) {
-    router.post(`/${url}/validar`,envolver(async(req,res)=>{validarCampos(req.body,['token']);await cuentas.validarEnlace(proposito,req.body.token,{ip:req.ip});res.sendStatus(204);}));
-    router.post(`/${url}/confirmar`,envolver(async(req,res)=>{await (proposito==='recuperacion'?cuentas.confirmarRecuperacion(req.body,{ip:req.ip}):cuentas.aceptarInvitacion(req.body,{ip:req.ip}));res.sendStatus(204);}));
+    router.post(`/${url}/validar`,envolver(async(req,res)=>{validarCampos(req.body,['token']);await cuentas.validarEnlace(proposito,req.body.token,{ip:ip(req)});res.sendStatus(204);}));
+    router.post(`/${url}/confirmar`,envolver(async(req,res)=>{await (proposito==='recuperacion'?cuentas.confirmarRecuperacion(req.body,{ip:ip(req)}):cuentas.aceptarInvitacion(req.body,{ip:ip(req)}));res.sendStatus(204);}));
   }
   // El autenticador inyectado debe validar JWT y releer usuario/VersionSesion.
   const auth=(req,res,next)=>Promise.resolve().then(()=>autenticar(req,res,next)).catch(next);
