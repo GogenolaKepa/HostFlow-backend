@@ -4,13 +4,14 @@ const ms = valor => valor == null ? null : new Date(valor).getTime();
 
 // Sin pool, .env, database.js, singletons ni activación operativa implícitos.
 class AutenticacionComercialSql {
-  constructor({ pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado = false, perfil='cuentas', altaOperadorRestringida=true } = {}) {
+  constructor({ pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado = false, perfil='cuentas', altaOperadorRestringida=true,recuperacionAutomatica=false } = {}) {
     if (!pool || !driver || !baseEsperada || !servidorEsperado || !Number.isSafeInteger(idEmpresa) || idEmpresa <= 0) {
       throw new TypeError("Pool, driver, destino y empresa explícitos obligatorios.");
     }
     if(!['cuentas','ingreso-http','worker-ingreso'].includes(perfil))throw new TypeError('Perfil SQL no válido.');
     if(typeof altaOperadorRestringida!=='boolean')throw new TypeError('Política de altas inválida.');
-    Object.assign(this, { pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado, perfil,altaOperadorRestringida });
+    if(typeof recuperacionAutomatica!=='boolean')throw new TypeError('Política de identidad inválida.');
+    Object.assign(this, { pool, driver, baseEsperada, servidorEsperado, idEmpresa, habilitado, perfil,altaOperadorRestringida,recuperacionAutomatica });
   }
   async transaccion(callback) {
     if (this.habilitado !== true) throw new ErrorSeguridad(503, "AUTH_COMERCIAL_INACTIVA", "Persistencia comercial desactivada.");
@@ -20,7 +21,7 @@ class AutenticacionComercialSql {
     t.on?.('rollback',abortada=>{if(abortada===true)revertidaPorMotor=true;});
     try {
       await t.begin(this.driver.ISOLATION_LEVEL.SERIALIZABLE); iniciada = true;
-      const tx = new AlcanceSql(t, this.driver, this.idEmpresa,this.perfil,this.altaOperadorRestringida);
+      const tx = new AlcanceSql(t, this.driver, this.idEmpresa,this.perfil,this.altaOperadorRestringida,this.recuperacionAutomatica);
       const r = await tx.q(`SELECT DB_NAME() AS base, CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor,
         (SELECT CONVERT(nvarchar(80),value) FROM sys.extended_properties
          WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthModelo') AS modelo;`);
@@ -49,7 +50,7 @@ class AutenticacionComercialSql {
 }
 
 class AlcanceSql {
-  constructor(transaction, driver, idEmpresa,perfil,altaOperadorRestringida) { Object.assign(this, { transaction, driver, idEmpresa,perfil,altaOperadorRestringida }); }
+  constructor(transaction, driver, idEmpresa,perfil,altaOperadorRestringida,recuperacionAutomatica) { Object.assign(this, { transaction, driver, idEmpresa,perfil,altaOperadorRestringida,recuperacionAutomatica }); }
   q(texto, parametros = {}) {
     const r = new this.driver.Request(this.transaction);
     for (const [nombre, valor] of Object.entries(parametros)) {
@@ -66,7 +67,7 @@ class AlcanceSql {
     const r = await this.q(`SELECT u.IdUsuario AS idUsuario,u.Nombre AS nombre,u.EmailNormalizado AS email,${this.perfil==='worker-ingreso'?'NULL':'u.PasswordHash'} AS passwordHash,
       u.Estado AS estado,u.DebeCambiarPassword AS debeCambiarPassword,u.VersionSesion AS versionSesion,
       u.VersionRegistro AS versionRegistro,r.Nombre AS rol,r.Activo AS rolActivo,
-      c.VerificadoEn AS verificado,c.VersionContacto AS versionContacto
+      c.VerificadoEn AS verificado,c.VersionContacto AS versionContacto${this.recuperacionAutomatica?",N'dbo.Usuarios' AS ambitoIdentidad,authcom.PermitePasswordLocal(u.IdUsuario) AS passwordLocalHabilitada":''}
       FROM dbo.Usuarios u WITH (UPDLOCK,HOLDLOCK) JOIN dbo.Roles r WITH (HOLDLOCK) ON r.IdRol=u.IdRol
       LEFT JOIN authcom.Contactos c WITH (UPDLOCK,HOLDLOCK) ON c.IdUsuario=u.IdUsuario
         AND c.Email=LOWER(LTRIM(RTRIM(u.Email))) COLLATE Latin1_General_100_BIN2 AND c.RevocadoEn IS NULL
@@ -176,7 +177,7 @@ class AlcanceSql {
     const omitidas=excluir.length?` AND o.Id NOT IN (${excluir.map((_,i)=>'@omitida'+i).join(',')})`:'';
     // Lectura previa: no tomar leases ni tocar cuotas antes de clasificar/autorizar.
     const r=await this.q(`SELECT TOP(1) o.Id AS id,o.Sobre AS sobre,o.DesafioId AS desafioId,
-      d.IdUsuario AS usuarioId,d.Documento AS documento FROM authcom.Outbox o WITH (HOLDLOCK)
+      d.IdUsuario AS usuarioId,d.Documento AS documento${this.recuperacionAutomatica?',d.IdEmpresa AS empresa,d.Proposito AS proposito':''} FROM authcom.Outbox o WITH (HOLDLOCK)
       LEFT JOIN authcom.Desafios d WITH (HOLDLOCK) ON d.Id=o.DesafioId
       WHERE o.Sobre IS NOT NULL AND o.EnCuarentena=0 AND o.ExpiraEn>SYSUTCDATETIME() AND o.Intentos<3 AND o.Proxima<=SYSUTCDATETIME()
         AND (o.PrimerIntentoEn IS NULL OR o.PrimerIntentoEn>DATEADD(hour,-23,SYSUTCDATETIME()))

@@ -63,8 +63,10 @@ class AutenticacionComercialService {
   }
 
   recuperable(u) {
-    // Administradores requieren una política de recuperación reforzada, aún no aprobada.
-    return esUsuarioHabilitado(u) && u.rol === "Operador" && contactoVerificado(u) && (!this.politicaPiloto || esCuentaPiloto(u)) && (!this.politicaHabitual||this.politicaHabitual.operadoresAutorizados.includes(u.idUsuario));
+    const politica=this.politicaHabitual;
+    const rol=politica?require('../security/comercial/PoliticaRecuperacionHabitual').usuarioAutorizado(politica,u):u?.rol==='Operador';
+    return esUsuarioHabilitado(u) && rol && contactoVerificado(u) && (!this.politicaPiloto || esCuentaPiloto(u)) &&
+      (politica?.version!==2||Date.parse(u.emailVerificadoEn)<=this.ahora()&&u.versionSesion<2147483647);
   }
 
   async emitir(tx, datos, ahora) {
@@ -198,7 +200,8 @@ class AutenticacionComercialService {
       }
       const id = randomUUID();
       await tx.encolar({ id, desafioId: null, expiraEn: ahora + 86400_000,
-        sobre: this.protector.sellar({ destinatario: d.email, plantilla: "seguridad-cuenta", evento: proposito }, id) });
+        sobre: this.protector.sellar({ destinatario: d.email, plantilla: "seguridad-cuenta", evento: proposito,
+          ...(this.politicaHabitual?.version===2?{cuenta:{ambitoIdentidad:'dbo.Usuarios',usuarioId,versionSesion:u.versionSesion+1,versionContacto:u.versionContacto,emailVerificadoEn:u.emailVerificadoEn}}:{}) }, id) });
       await tx.auditar({ tipo: proposito === "recuperacion" ? "PASSWORD_RESTABLECIDA" : "INVITACION_ACEPTADA", usuarioId, ahora });
       return { status: 204 }; // No token JWT ni inicio automático de sesión.
     });

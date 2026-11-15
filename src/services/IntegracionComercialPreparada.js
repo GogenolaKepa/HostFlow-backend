@@ -38,9 +38,13 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
   };
   for(const perfil of Object.keys(permisos)) {
     if(!pools[perfil])throw TypeError('Falta pool de un perfil comercial.');
-    const base=new AutenticacionComercialSql({...sql,pool:pools[perfil],habilitado:true,perfil:perfil==='ingresoHttp'?'ingreso-http':perfil==='workerIngreso'?'worker-ingreso':'cuentas'});
+    const base=new AutenticacionComercialSql({...sql,recuperacionAutomatica:politicaHabitual?.version===2,pool:pools[perfil],habilitado:true,perfil:perfil==='ingresoHttp'?'ingreso-http':perfil==='workerIngreso'?'worker-ingreso':'cuentas'});
     // Verificación real de marcas y permisos efectivos antes de entregar el router.
     await base.transaccion(async tx=>{
+      if(politicaHabitual?.version===2&&['cuentas','workerIngreso'].includes(perfil)){
+        const r=await tx.q("SELECT HAS_PERMS_BY_NAME(N'authcom.PermitePasswordLocal',N'OBJECT',N'EXECUTE') AS permitido,CONVERT(nvarchar(80),(SELECT value FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthPasswordLocal')) AS modelo;");
+        if(r.recordset[0]?.permitido!==1||r.recordset[0]?.modelo!=='authcom-password-local-v1')throw Error('Método password no acreditado.');
+      }
       if(perfil==='cuentas'&&sql.altaOperadorRestringida===true&&!politicaHabitual){
         const marca=await tx.q("SELECT CONVERT(nvarchar(80),value) AS modelo FROM sys.extended_properties WHERE class=3 AND major_id=SCHEMA_ID(N'authcom') AND name=N'HostFlowAuthAlta';");
         const directo=await tx.q("SELECT HAS_PERMS_BY_NAME(N'dbo.Usuarios','OBJECT','INSERT') AS excesivo;");
@@ -151,9 +155,11 @@ async function prepararIntegracionComercial({habilitado=false,sql,pools,claves,c
     const {email}=require('../security/comercial/PoliticaRecuperacionHabitual').correoHabitual(payload);
     return repos.workerIngreso.transaccion(async tx=>{
       const u=await tx.buscarUsuario(email);
-      if(!trabajadorCuentas.recuperable(u)||!await tx.empresaActiva(sql.idEmpresa))throw Error('Destino operativo no autorizado.');
+      if(!trabajadorCuentas.recuperable(u)||!await tx.empresaActiva(sql.idEmpresa))throw Object.assign(Error('Destino operativo no autorizado.'),{codigo:'VIGENCIA_NO_ACREDITADA'});
+      require('../security/comercial/PoliticaRecuperacionHabitual').validarVinculoCorreo(politicaHabitual,payload,candidata,u,sql.idEmpresa);
       if(candidata.desafioId!==null&&(candidata.usuarioId!==u.idUsuario||candidata.documento?.versionSesion!==u.versionSesion||candidata.documento?.versionContacto!==u.versionContacto||candidata.documento?.emailVerificadoEn!==u.emailVerificadoEn))throw Error('Desafío de cuenta obsoleto.');
-      return{usuarioId:u.idUsuario,cuenta:indicePrivado('correo-habitual-cuenta',String(u.idUsuario)),destino:indicePrivado('correo-habitual-destino',email),versionSesion:u.versionSesion,versionContacto:u.versionContacto,verificado:u.emailVerificadoEn};
+      return{usuarioId:u.idUsuario,cuenta:indicePrivado('correo-habitual-cuenta',String(u.idUsuario)),destino:indicePrivado('correo-habitual-destino',email),versionSesion:u.versionSesion,versionContacto:u.versionContacto,verificado:u.emailVerificadoEn,
+        ...(politicaHabitual.version===2?{rol:u.rol,ambitoIdentidad:u.ambitoIdentidad,passwordLocalHabilitada:u.passwordLocalHabilitada,debeCambiarPassword:u.debeCambiarPassword}:{} )};
     });
   }:undefined;
   const workerCorreo=new EntregaCorreoSeguridad({repository:repos.correo,protector,proveedor,limiteDiario:correo.limiteDiario,politicaHabitual,autorizarDestino,
