@@ -2,10 +2,11 @@
 const PERFILES=Object.freeze(['ingresoHttp','workerIngreso','cuentas','correo']);
 const PROHIBIDOS=new Set(['dbo','sa','guest','public','hostflowadmin','hostflow_app','hostflow_authcom_owner']);
 const {diagnostico}=require('../security/comercial/diagnosticoArranque');
+const {abrirConexionSql,crearPlazo}=require('../security/comercial/ConexionSqlResiliente');
 class ErrorPoolsComerciales extends Error {
   constructor(codigo){super('No se pudo acreditar el runtime SQL comercial.');this.codigo=codigo;}
 }
-async function abrirPoolsComerciales({habilitado=false,driver,identidades,obtenerCredencial,timeoutMs=10000}={}){
+async function abrirPoolsComerciales({habilitado=false,driver,identidades,obtenerCredencial,timeoutMs=10000,conectar=abrirConexionSql,signal}={}){
   if(habilitado!==true)return Object.freeze({estado:'inactivo'});
   if(typeof driver?.ConnectionPool!=='function'||typeof obtenerCredencial!=='function'||!Number.isInteger(timeoutMs)||timeoutMs<100||timeoutMs>30000)throw new ErrorPoolsComerciales('CONFIGURACION_INVALIDA');
   const nombres=new Set(),perfiles={};
@@ -14,14 +15,15 @@ async function abrirPoolsComerciales({habilitado=false,driver,identidades,obtene
     nombres.add(i.principal.toLowerCase());
     perfiles[perfil]=Object.freeze({tipo:i.tipo,principal:i.principal});
   }
-  const abiertos=[],pools={};let cerrando,perfilActual;
+  const abiertos=[],pools={},conexiones={};const hasta=crearPlazo();let cerrando,perfilActual;
   function cerrar(){return cerrando??=(async()=>{
-    const r=await Promise.allSettled(abiertos.map(p=>p.close()));
+    const r=await Promise.allSettled(abiertos.map(p=>Promise.resolve().then(()=>p.close())));
     if(r.some(x=>x.status==='rejected'))throw new ErrorPoolsComerciales('CIERRE_INCOMPLETO');
   })();}
   try{
     for(const perfil of PERFILES){
       perfilActual=perfil;
+      if(signal?.aborted)throw new ErrorPoolsComerciales('SQL_NO_DISPONIBLE');
       const i=perfiles[perfil],controller=new AbortController();let timer,credencial;
       try{
         credencial=await Promise.race([
@@ -40,19 +42,20 @@ async function abrirPoolsComerciales({habilitado=false,driver,identidades,obtene
         config.authentication={type:'azure-active-directory-access-token',options:{token:credencial.token}};
       }
       credencial=undefined;
-      const p=new driver.ConnectionPool(config);abiertos.push(p);
-      // Nunca registrar objetos de conexión o errores del driver con credenciales.
-      p.on('error',()=>{});await p.connect();
+      let conectado;
+      try{conectado=await conectar({driver,config,perfil,hasta,signal});}
+      finally{config.password='';if(config.authentication)config.authentication={type:config.authentication.type,options:{}};}
+      const p=conectado.pool;abiertos.push(p);conexiones[perfil]=conectado.diagnostico;
       const r=await p.request().query("SELECT DB_NAME() AS base,CONVERT(nvarchar(128),SERVERPROPERTY('ServerName')) AS servidor,CONVERT(int,SERVERPROPERTY('EngineEdition')) AS motor,USER_NAME() AS principal;");
       const id=r.recordset[0];
       if(id?.base!=='HostFlow'||id.servidor!=='hostflow'||id.motor!==5||id.principal!==i.principal)throw new ErrorPoolsComerciales('IDENTIDAD_NO_ACREDITADA');
       pools[perfil]=p;
     }
     return Object.freeze({estado:'preparados',pools:Object.freeze(pools),cerrar,
-      consultar:()=>Object.freeze({estado:cerrando?'cerrado-o-cerrando':'preparado',pools:PERFILES.map(perfil=>({perfil,conectado:!!pools[perfil].connected}))})});
+      consultar:()=>Object.freeze({estado:cerrando?'cerrado-o-cerrando':'preparado',pools:PERFILES.map(perfil=>({perfil,conectado:!!pools[perfil].connected,conexion:conexiones[perfil]}))})});
   }catch(error){
-    try{await cerrar();}catch{const e=new ErrorPoolsComerciales('CIERRE_INCOMPLETO');e.diagnosticoArranque=diagnostico('CIERRE',error,perfilActual);throw e;}
-    const e=new ErrorPoolsComerciales(error instanceof ErrorPoolsComerciales?error.codigo:'SQL_NO_DISPONIBLE');e.diagnosticoArranque=diagnostico('ABRIR_POOLS_COMERCIALES',error,perfilActual);throw e;
+    let cierreIncierto=error?.codigo==='CIERRE_INCOMPLETO';try{await cerrar();}catch{cierreIncierto=true;}
+    const e=new ErrorPoolsComerciales(cierreIncierto?'CIERRE_INCOMPLETO':error instanceof ErrorPoolsComerciales?error.codigo:'SQL_NO_DISPONIBLE');e.diagnosticoArranque=diagnostico('ABRIR_POOLS_COMERCIALES',error,perfilActual);if(error?.conexionSQL)e.conexionSQL=error.conexionSQL;throw e;
   }
 }
 module.exports={abrirPoolsComerciales,PERFILES,ErrorPoolsComerciales};

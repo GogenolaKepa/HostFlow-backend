@@ -1,4 +1,5 @@
 const sql = require("mssql");
+const { abrirConexionSql } = require("../security/comercial/ConexionSqlResiliente");
 require("dotenv").config({ path: require("node:path").resolve(__dirname, "../../.env") });
 
 const dbConfig = {
@@ -23,20 +24,24 @@ const dbConfig = {
   requestTimeout: 30000,
 };
 
-const poolOperativo = new sql.ConnectionPool(dbConfig);
-const poolPromise = poolOperativo
-  .connect()
-  .then((pool) => {
+let poolOperativo, errorConexion;
+const poolPromise = abrirConexionSql({driver:sql,config:dbConfig,perfil:'operativo'})
+  .then(({pool}) => {
+    poolOperativo = pool;
     console.log(
       "✅ Conexión a Azure SQL establecida correctamente."
     );
 
     return pool;
   })
-  .catch(() => {
+  .catch((error) => {
+    errorConexion = error;
     // El driver puede incluir datos de la conexion en sus errores.
     console.error("No se pudo establecer la conexión SQL.");
-    throw new Error("La conexión SQL no está disponible.");
+    const seguro = new Error("La conexión SQL no está disponible.");
+    if(error?.codigo==='CIERRE_INCOMPLETO')seguro.codigo=error.codigo;
+    if(error?.diagnosticoArranque)seguro.diagnosticoArranque=error.diagnosticoArranque;
+    throw seguro;
   });
 
 // Conservar el pool aunque connect rechace. Esperar que termine de conectar antes
@@ -45,7 +50,8 @@ let cierre;
 function cerrarPool() {
   return cierre ??= (async () => {
     try { await poolPromise; } catch { /* La conexión fallida también se cierra. */ }
-    try { await poolOperativo.close(); }
+    if(errorConexion?.codigo==='CIERRE_INCOMPLETO')throw new Error("Cierre SQL no acreditado.");
+    try { await poolOperativo?.close(); }
     catch { throw new Error("Cierre SQL no acreditado."); }
   })();
 }
