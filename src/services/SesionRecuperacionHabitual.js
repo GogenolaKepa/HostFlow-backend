@@ -20,7 +20,13 @@ function crearSesionHabitual({control,crearHost,comprobarHost=async()=>{},crearT
  async function iniciar(){
   try{
    host=await crearHost();if(terminando)throw Error();await comprobarHost();if(terminando)throw Error();
-   tunnel=await crearTunnel(codigo=>fallar(codigo));
+   tunnel=await crearTunnel(codigo=>{
+    // El callback puede ejecutarse antes de resolver el PID y antes del catch.
+    // Marcar incertidumbre sin esperar esa promesa: un cierre HTTP inmediato
+    // nunca debe retirar el candado de un Tunnel cuyo cierre se desconoce.
+    if(codigo!=='TUNNEL_NO_DISPONIBLE_API_SELLADA')cierreIncierto=true;
+    return fallar(codigo);
+   });
    tunnel.cerrado.then(()=>{if(!terminando){avisar('TUNNEL_FINALIZADO');cerrar();}});
    await tunnel.listo;if(terminando)throw Error();
    const evidencia=await verificar();if(terminando||tunnel.terminado())throw Error();

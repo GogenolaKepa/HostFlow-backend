@@ -5,7 +5,7 @@ No se contrató alojamiento. El piloto público ya acreditado y sus recibos 2/2 
 conservan: este modo no los reinicia, renombra ni utiliza. No ejecutar nuevamente
 el piloto para activar este modo.
 
-## Política pendiente de aprobación operativa
+## Política operativa con aprobación explícita
 
 Solo Operadores activos, con contacto vigente/verificado e ID incluido en una
 lista privada aprobada. Empresa fija 1; nunca confiar en IDs enviados por cliente.
@@ -14,7 +14,7 @@ Un correo desconocido o no autorizado recibe la misma respuesta neutral 202.
 El enlace dura 15 minutos, viaja en el fragmento y se consume una vez; se conserva
 la invalidación de sesiones y el aviso de seguridad del código acreditado.
 
-Propuesta explícita, no activada: por 24 horas, máximo 6 intentos por cuenta y
+Política inicial aprobada, no activada: por 24 horas, máximo 6 intentos por cuenta y
 destino, hasta 3 de recuperación y 3 de aviso; máximo global 100 en total. Las
 cuotas cuentan **intentos**, incluidos reintentos conocidos, no entregas. Si hay
 errores del proveedor, podrían no completarse tres recorridos. Avisos y otros
@@ -35,9 +35,14 @@ de esta política operativa: no son una vía para continuar el piloto agotado.
 Cuenta requerida: `PC-ESCRITORIO\Kepa`. Configuración privada nueva y sin secretos:
 `C:\Users\Kepa\AppData\Local\HostFlow\RecuperacionHabitualV1\configuracion.json`.
 La plantilla incluida en el expediente está bloqueada y no inicia servicios.
-No se creó esa configuración operativa ni se accedió a secretos durante la
-preparación. Para la primera activación hay que aprobar los IDs y límites y
-confirmar PITR/restauración, exclusividad, remitente y disponibilidad personal.
+Para esta instalación la política inicial del usuario 3 y los límites indicados
+fueron aprobados el 15/11/2026; su configuración ya fue preparada sin activación.
+No repetir el preparador si `configuracion.json` existe. La primera activación
+requiere presencia del usuario, exclusividad, PITR/restauración y remitente
+vigentes, y resolver primero la ACL de la referencia Tunnel.
+La preparación anterior no creó configuración operativa. Este cierre creó solo
+la configuración pública privada aprobada, sin acceder a secretos. Antes de
+activar hay que confirmar PITR/restauración, exclusividad, remitente y presencia.
 
 Requisito local encontrado, sin cambios de permisos: el archivo de credencial
 `C:\Users\Kepa\.cloudflared\03a9247c-8e33-45f3-8964-518d9333bca3.json` tiene

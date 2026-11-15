@@ -17,6 +17,10 @@ test('habitual: fallo TLS posterior a crear host lo cierra sin fugas; cierre SQL
 test('habitual: pérdida del Tunnel después de acreditar cierra host y bloquea transporte',async()=>{
  const p=puertos(),s=crearSesionHabitual(p);await s.iniciar();p.terminar();await s.terminado;assert.equal(p.control.enviosPermitidos(),false);assert.ok(p.eventos.includes('host-cerrado'));
 });
+test('habitual: aviso incierto antes de conocer PID conserva candado aunque el host cierre inmediatamente',async()=>{
+ const p=puertos();p.crearTunnel=async avisar=>{avisar('TUNNEL_OBSERVADOR_INCIERTO');throw Object.assign(Error('FICTICIO'),{codigo:'CIERRE_NO_ACREDITADO'});};
+ const s=crearSesionHabitual(p);await s.iniciar();assert.equal((await s.terminado).cerrado,false);assert.equal(p.eventos.includes('limpiar'),false);assert.equal(p.control.enviosPermitidos(),false);assert.equal(p.eventos.includes('worker'),false);
+});
 test('habitual: CF child no hereda secretos, DNS no usa fallback ni Bypass y mantiene HTTPS',async()=>{
  assert.deepEqual(Object.keys(T.entornoAuxiliar()).sort(),['LOCALAPPDATA','SystemRoot','USERPROFILE','WINDIR']);for(const k of ['JWT_SECRET','RESEND_API_KEY','HOSTFLOW_AUTH_COMERCIAL_CIFRADO_BASE64','TUNNEL_TOKEN','NO_TLS_VERIFY','NODE_TLS_REJECT_UNAUTHORIZED','NODE_OPTIONS','NODE_EXTRA_CA_CERTS','NODE_USE_ENV_PROXY','HTTPS_PROXY','HTTP_PROXY'])assert.throws(()=>T.comprobarEntorno([k]));
  assert.deepEqual(T.argumentos('FICTICIO.yml',['192.0.2.1']).slice(-4),['run','--dns-resolver-addrs','192.0.2.1:53',T.UUID]);
