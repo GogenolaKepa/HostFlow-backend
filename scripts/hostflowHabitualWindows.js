@@ -33,19 +33,34 @@ async function iniciar({archivo=path.join(C.ROOT,'configuracion.json'),proceso=p
   maestro=await(puertos.leerSecreto||require('../src/security/comercial/EntradaSecretaTTY').leerSecreto)('Maestro operativo (entrada oculta):');
   runtime=await(puertos.crearCustodia||require('../src/security/comercial/CustodiaNode').crearCustodia)({raiz:cfg.almacen,cuenta:cfg.cuenta}).abrirRuntime(maestro);maestro.fill(0);
   const protector=require('../src/security/comercial/AnilloClavesCorreo').crearAnilloClavesCorreo({activa:runtime.keyId,claves:[{keyId:runtime.keyId,clave:runtime.claves.cifrado}]});
-  try{await(puertos.comprobarSql||require('../src/services/PreflightRecuperacionHabitual').comprobarHabitual)({runtime:{...runtime,protectorHabitual:protector},politica:cfg.politica});}finally{protector.liberar();}
+  try{
+   const previo=await(puertos.comprobarSql||require('../src/services/PreflightRecuperacionHabitual').comprobarHabitual)({runtime:{...runtime,protectorHabitual:protector},politica:cfg.politica});
+   if(previo?.ingresosPendientes!==0||previo?.outboxPendiente!==0){avisar('COLAS_NO_VACIAS_O_DESCONOCIDAS_NO_ACTIVAR');throw Error('Colas requieren revisión antes de activar.');}
+  }finally{protector.liberar();}
   const dns=await(puertos.comprobarDNS||T.comprobarDNS)((puertos.servidoresWindows||T.servidoresWindows)());
   tls=(puertos.crearTls||require('../src/security/comercial/TlsLocalNode').crearTlsLocal)();const pem=path.join(C.ROOT,'certificado.'+ref+'.pem'),yml=path.join(C.ROOT,'tunnel.'+ref+'.yml');archivos.escribirNuevo(pem,tls.certificado);archivos.escribirNuevo(yml,Buffer.from(T.yaml(pem)));(puertos.validarOffline||T.validarOffline)(yml);
-  const control=crearControlPublicoHabitual(),env=C.entornoHabitual(),lector=runtime.lectorSql;lector.consultarIdentidad=async()=>runtime.identidad;
+  const control=crearControlPublicoHabitual(),env={...C.entornoHabitual(),HOSTFLOW_AUTH_COMERCIAL_KEY_ID:runtime.keyId},lector=runtime.lectorSql;lector.consultarIdentidad=async()=>runtime.identidad;
   for(const [k,v]of Object.entries(env))process.env[k]=v;
+  let primerFallo;
+  const ejecutarPaso=async(fase,operacion)=>{
+   try{return await operacion();}catch(error){
+    if(!primerFallo){
+     primerFallo={version:1,fechaUTC:new Date().toISOString(),fase,diagnostico:require('../src/security/comercial/diagnosticoArranque').diagnostico('VALIDACION_HOST',error)};
+     // Solo fase y categorías cerradas. Nunca mensajes, stack, causas o secretos.
+     try{archivos.escribirNuevo(path.join(C.ROOT,'fallo.'+ref+'.json'),Buffer.from(JSON.stringify(primerFallo)));}catch{avisar('DIAGNOSTICO_LOCAL_NO_PERSISTIDO');}
+     avisar(JSON.stringify({resultado:'FALLO_HABITUAL_SANITIZADO',...primerFallo}));
+    }
+    throw error;
+   }
+  };
   const limpiar=async()=>{clearTimeout(certTimer);runtime?.cerrar();if(archivos.leer(lock).toString('utf8')!==propietarioLock)throw Error();archivos.escribirNuevo(path.join(C.ROOT,'cerrado.'+ref+'.json'),Buffer.from(JSON.stringify({version:1,referencia:ref,fechaUTC:new Date().toISOString(),cerrado:true})));disco.unlinkSync(lock);};
   sesion=require('../src/services/SesionRecuperacionHabitual').crearSesionHabitual({control,proceso,avisar,alCerrar:limpiar,
-   crearHost:async()=>{const h=await(puertos.ejecutarHost||require('./iniciarComercialWindows').ejecutar)(['--activar-comercial','--ventana-confirmada','--sin-worker','--cuenta',cfg.cuenta,'--acreditacion','ACTA_EN_MEMORIA'],{
+   crearHost:()=>ejecutarPaso('CREAR_HOST',async()=>{const h=await(puertos.ejecutarHost||require('./iniciarComercialWindows').ejecutar)(['--activar-comercial','--ventana-confirmada','--sin-worker','--cuenta',cfg.cuenta,'--acreditacion','ACTA_EN_MEMORIA'],{
     proceso:procesoDelHost(proceso),env,leerAcreditacion:()=>cfg.acreditacion,clavesMemoria:runtime.claves,crearLector:()=>lector,crearProveedorCorreo:()=>runtime.proveedorCorreo,transportar:transporteHabitual(control,puertos.transportar||globalThis.fetch),tlsLocal:tls.opciones,politicaPiloto:false,politicaHabitual:cfg.politica,alcancePublico:'recuperacion-habitual',controlPublico:control,liberarSecretos:()=>runtime.cerrar()});
-    return h;},
-   comprobarHost:async()=>{tls.liberar();await(puertos.tlsOrigen||tlsOrigen)(tls.certificado,tls.sha256);},
-   crearTunnel:async onFallo=>(puertos.crearTunnel||crearTunnel)({archivo:yml,dns,onFallo}),
-   verificar:async()=>{const e=await(puertos.verificarBorde||require('../src/security/comercial/VerificacionBordeHabitual').verificarBorde)();archivos.escribirNuevo(path.join(C.ROOT,'borde.'+ref+'.json'),Buffer.from(JSON.stringify(e)));return e;},
+    return h;}),
+   comprobarHost:()=>ejecutarPaso('TLS_ORIGEN',async()=>{tls.liberar();await(puertos.tlsOrigen||tlsOrigen)(tls.certificado,tls.sha256);}),
+   crearTunnel:onFallo=>ejecutarPaso('PREPARAR_TUNNEL',()=>(puertos.crearTunnel||crearTunnel)({archivo:yml,dns,onFallo})),
+   verificar:()=>ejecutarPaso('GET_PUBLICOS',async()=>{const e=await(puertos.verificarBorde||require('../src/security/comercial/VerificacionBordeHabitual').verificarBorde)();archivos.escribirNuevo(path.join(C.ROOT,'borde.'+ref+'.json'),Buffer.from(JSON.stringify(e)));return e;}),
   });
   // No ventana artificial: el certificado de sesión sí debe seguir siendo válido.
   const vence=new crypto.X509Certificate(tls.certificado).validTo;
